@@ -1,0 +1,460 @@
+"""
+Macro Playback Engine for Point Clicker Desktop.
+Replays recorded mouse moves, clicks, drags, wheels, and keystrokes with accurate
+timing, pause/resume time tracking, speed scaling, loop repetition, and safety resets.
+"""
+
+import time
+import threading
+from app.core.input_simulator import InputSimulator
+from app.core.vision import find_template_on_screen, wait_for_template_on_screen
+
+
+class MacroPlayer:
+    """Executes a sequence of macro steps with precise timing control."""
+
+    STATE_IDLE = "IDLE"
+    STATE_PLAYING = "PLAYING"
+    STATE_PAUSED = "PAUSED"
+    STATE_STOPPED = "STOPPED"
+
+    def __init__(self, simulator=None):
+        self.simulator = simulator or InputSimulator()
+        self.state = self.STATE_IDLE
+        self.state_lock = threading.Lock()
+
+        self._thread = None
+        self._stop_requested = threading.Event()
+        self._pause_requested = threading.Event()
+        self._resume_event = threading.Event()
+        self._resume_event.set()
+
+        # Playback configuration
+        self.steps = []
+        self.speed = 1.0
+        self.repeat = False
+        self.repeat_count = 1
+        self.variables = {}
+
+        # Callbacks
+        self.on_state_changed = None
+        self.on_progress = None
+        self.on_pass_progress = None  # (current_pass, total_passes) - 0 if infinite
+        self.on_cursor_action = None  # (x, y, action_type) for visual indicator
+
+    def is_playing(self):
+        with self.state_lock:
+            return self.state in (self.STATE_PLAYING, self.STATE_PAUSED)
+
+    def is_paused(self):
+        with self.state_lock:
+            return self.state == self.STATE_PAUSED
+
+    def play(self, steps, speed=1.0, repeat=False, repeat_count=1):
+        """Start playing back the provided macro steps."""
+        self.stop()  # Clean up any existing playback
+
+        if not steps:
+            return False
+
+        with self.state_lock:
+            self.steps = list(steps)
+            self.speed = max(0.25, min(3.0, float(speed)))
+            self.repeat = bool(repeat)
+            self.repeat_count = max(1, int(repeat_count))
+            self.state = self.STATE_PLAYING
+
+        self._stop_requested.clear()
+        self._pause_requested.clear()
+        self._resume_event.set()
+
+        self._thread = threading.Thread(target=self._playback_worker, daemon=True)
+        self._thread.start()
+
+        if self.on_state_changed:
+            self.on_state_changed(self.state)
+        return True
+
+    def pause(self):
+        """Pause playback, preserving position and held buttons."""
+        with self.state_lock:
+            if self.state == self.STATE_PLAYING:
+                self.state = self.STATE_PAUSED
+                self._resume_event.clear()
+                self._pause_requested.set()
+                if self.on_state_changed:
+                    self.on_state_changed(self.state)
+
+    def resume(self):
+        """Resume playback from paused state."""
+        with self.state_lock:
+            if self.state == self.STATE_PAUSED:
+                self.state = self.STATE_PLAYING
+                self._pause_requested.clear()
+                self._resume_event.set()
+                if self.on_state_changed:
+                    self.on_state_changed(self.state)
+
+    def stop(self):
+        """Stop playback immediately and release any held buttons/keys."""
+        with self.state_lock:
+            if self.state in (self.STATE_IDLE, self.STATE_STOPPED):
+                return
+            self.state = self.STATE_STOPPED
+
+        self._stop_requested.set()
+        self._resume_event.set()  # Unblock thread if paused
+
+        if self._thread and self._thread.is_alive() and threading.current_thread() != self._thread:
+            self._thread.join(timeout=1.0)
+            self._thread = None
+
+        self.simulator.release_all_held()
+
+        with self.state_lock:
+            self.state = self.STATE_IDLE
+
+        if self.on_state_changed:
+            self.on_state_changed(self.state)
+
+    def set_repeat(self, repeat):
+        """Update repeat state while running. Turning off lets current pass finish."""
+        self.repeat = bool(repeat)
+
+    def _playback_worker(self):
+        """Worker thread executing macro steps."""
+        try:
+            current_pass = 0
+            while not self._stop_requested.is_set():
+                current_pass += 1
+                if self.on_pass_progress:
+                    tot = 0 if self.repeat else self.repeat_count
+                    self.on_pass_progress(current_pass, tot)
+
+                self._execute_single_pass()
+
+                if self._stop_requested.is_set():
+                    break
+
+                # If infinite repeat enabled, continue; otherwise check if reached repeat_count
+                if self.repeat:
+                    time.sleep(0.05)
+                    continue
+                elif current_pass < self.repeat_count:
+                    time.sleep(0.05)
+                    continue
+                else:
+                    break
+        finally:
+            self.simulator.release_all_held()
+            with self.state_lock:
+                self.state = self.STATE_IDLE
+            if self.on_state_changed:
+                self.on_state_changed(self.state)
+
+    def _execute_single_pass(self):
+        steps = self.steps
+        total_steps = len(steps)
+        if total_steps == 0:
+            return
+
+        has_branching = any("found_next" in s or "miss_next" in s for s in steps)
+        if has_branching:
+            self._execute_graph_pass(steps)
+        else:
+            self._execute_linear_pass(steps)
+
+    def _execute_linear_pass(self, steps):
+        total_steps = len(steps)
+        base_time = time.perf_counter()
+        speed = self.speed
+
+        for i, step in enumerate(steps):
+            if self._stop_requested.is_set():
+                break
+
+            # Handle Pause / Resume timing
+            if self._pause_requested.is_set():
+                pause_start = time.perf_counter()
+                self._resume_event.wait()
+                if self._stop_requested.is_set():
+                    break
+                # Adjust base_time by the duration of the pause
+                pause_duration = time.perf_counter() - pause_start
+                base_time += pause_duration
+
+            target_dt_ms = step.get("dt", 0)
+            scaled_target_sec = (target_dt_ms / 1000.0) / speed
+            now_sec = time.perf_counter() - base_time
+
+            wait_sec = scaled_target_sec - now_sec
+            if wait_sec > 0:
+                # Sleep in small slices to remain responsive to stop/pause
+                while wait_sec > 0:
+                    if self._stop_requested.is_set():
+                        return
+                    if self._pause_requested.is_set():
+                        break
+                    slice_sec = min(wait_sec, 0.015)
+                    time.sleep(slice_sec)
+                    wait_sec = scaled_target_sec - (time.perf_counter() - base_time)
+
+            if self._stop_requested.is_set():
+                break
+
+            # Execute the step
+            self._execute_step(step)
+
+            if self.on_progress:
+                self.on_progress(i + 1, total_steps)
+
+    def _execute_graph_pass(self, steps):
+        step_map = {s["id"]: s for s in steps if "id" in s}
+        curr_step = steps[0]
+        step_count = 0
+        max_steps = 10000
+
+        while curr_step and not self._stop_requested.is_set() and step_count < max_steps:
+            step_count += 1
+
+            # Pause handling
+            if self._pause_requested.is_set():
+                self._resume_event.wait()
+                if self._stop_requested.is_set():
+                    break
+
+            # Execute the current step
+            cond_res = self._execute_step(curr_step)
+
+            if self.on_progress:
+                self.on_progress(min(step_count, len(steps)), len(steps))
+
+            if self._stop_requested.is_set():
+                break
+
+            # Inter-step interval (if not delay node)
+            if curr_step.get("type") != "delay":
+                time.sleep(max(0.005, 0.030 / self.speed))
+
+            # Determine next step
+            if "found_next" in curr_step or "miss_next" in curr_step:
+                next_id = curr_step.get("found_next") if cond_res else curr_step.get("miss_next")
+            else:
+                next_id = curr_step.get("next")
+
+            if not next_id:
+                break
+
+            curr_step = step_map.get(next_id)
+
+    def _execute_step(self, step):
+        if step.get("_unplugged", False):
+            return False
+
+        st_type = step.get("type", "")
+        x = step.get("x")
+        y = step.get("y")
+        btn = step.get("button", "left")
+
+        # Notify visual indicator if coordinate action
+        if x is not None and y is not None and self.on_cursor_action:
+            self.on_cursor_action(int(x), int(y), st_type)
+
+        if st_type == "move":
+            if x is not None and y is not None:
+                self.simulator.move_to(x, y)
+            return True
+
+        elif st_type == "down":
+            self.simulator.mouse_down(btn, x, y)
+            return True
+
+        elif st_type == "up":
+            self.simulator.mouse_up(btn, x, y)
+            return True
+
+        elif st_type == "click":
+            self.simulator.click(x, y, btn)
+            return True
+
+        elif st_type == "dblclick":
+            self.simulator.double_click(x, y, btn)
+            return True
+
+        elif st_type == "wheel":
+            dx = step.get("deltaX", 0)
+            dy = step.get("deltaY", 0)
+            self.simulator.mouse_wheel(dy, dx, x, y)
+            return True
+
+        elif st_type == "type":
+            val = step.get("value", "")
+            if val:
+                self.simulator.type_text(val)
+            return True
+
+        elif st_type == "key_down":
+            vk = step.get("vk")
+            if vk is not None:
+                self.simulator.key_down(vk)
+            return True
+
+        elif st_type == "key_up":
+            vk = step.get("vk")
+            if vk is not None:
+                self.simulator.key_up(vk)
+            return True
+
+        elif st_type == "delay":
+            dur_ms = step.get("duration", 0)
+            if dur_ms > 0:
+                time.sleep((dur_ms / 1000.0) / self.speed)
+            return True
+
+        elif st_type in ("find_image", "wait_image", "wait", "waitforimage"):
+            try:
+                template_path = step.get("template", "")
+                confidence = float(step.get("confidence", 0.85))
+                action = str(step.get("action", "click")).lower().replace(" ", "")
+                btn = step.get("button", "left")
+                is_wait = st_type in ("wait_image", "wait", "waitforimage")
+                speed_factor = max(0.01, self.speed)
+                timeout_sec = (float(step.get("timeout", 5.0)) / speed_factor) if is_wait else 0.5
+                region = step.get("region")
+
+                res = wait_for_template_on_screen(
+                    template_path,
+                    confidence=confidence,
+                    timeout_sec=timeout_sec,
+                    poll_interval_sec=0.25,
+                    region=region,
+                    stop_check_fn=lambda: self._stop_requested.is_set(),
+                )
+
+                if res is not None:
+                    cx, cy, _, _, _ = res
+                    if self.on_cursor_action:
+                        self.on_cursor_action(cx, cy, "vision_found")
+                    if action in ("click",):
+                        self.simulator.click(cx, cy, btn)
+                    elif action in ("move",):
+                        self.simulator.move_to(cx, cy)
+                    elif action in ("dblclick", "doubleclick"):
+                        self.simulator.double_click(cx, cy, btn)
+                    elif action in ("none",):
+                        pass
+                    return True
+                else:
+                    return False
+            except Exception:
+                return False
+
+        elif st_type == "math_op":
+            var_name = str(step.get("var_name", "var")).lstrip("$")
+            op = step.get("operation", "set")
+            val = step.get("value", "0")
+            if op == "set":
+                try:
+                    self.variables[var_name] = int(val) if "." not in str(val) else float(val)
+                except (ValueError, TypeError):
+                    self.variables[var_name] = str(val)
+            elif op == "increment":
+                self.variables[var_name] = self.variables.get(var_name, 0) + 1
+            elif op == "decrement":
+                self.variables[var_name] = self.variables.get(var_name, 0) - 1
+            elif op == "add":
+                try:
+                    self.variables[var_name] = self.variables.get(var_name, 0) + float(val)
+                except Exception:
+                    pass
+            elif op == "subtract":
+                try:
+                    self.variables[var_name] = self.variables.get(var_name, 0) - float(val)
+                except Exception:
+                    pass
+            elif op == "multiply":
+                try:
+                    self.variables[var_name] = self.variables.get(var_name, 0) * float(val)
+                except Exception:
+                    pass
+            elif op == "random":
+                import random
+                min_v = int(step.get("min_val", 1))
+                max_v = int(step.get("max_val", 100))
+                self.variables[var_name] = random.randint(min(min_v, max_v), max(min_v, max_v))
+            return True
+
+        elif st_type == "pixel_color":
+            from PyQt6.QtGui import QGuiApplication, QColor
+            px = int(step.get("x", 0))
+            py = int(step.get("y", 0))
+            target_hex = step.get("color", "#FFFFFF")
+            target_col = QColor(target_hex)
+            tolerance = int(step.get("tolerance", 15))
+
+            matches = False
+            screen = QGuiApplication.primaryScreen()
+            if screen:
+                cur_img = screen.grabWindow(0, px, py, 1, 1).toImage()
+                if not cur_img.isNull():
+                    c = cur_img.pixelColor(0, 0)
+                    diff = (
+                        abs(c.red() - target_col.red())
+                        + abs(c.green() - target_col.green())
+                        + abs(c.blue() - target_col.blue())
+                    )
+                    matches = diff <= (tolerance * 3)
+                    self.variables["$pixel_match"] = matches
+                    if self.on_cursor_action and matches:
+                        self.on_cursor_action(px, py, "pixel_matched")
+            return matches
+
+        elif st_type == "if_condition":
+            var_a_raw = str(step.get("var_a", ""))
+            val_b_raw = str(step.get("val_b", ""))
+            op = step.get("operator", "==")
+
+            if var_a_raw.startswith("$"):
+                key = var_a_raw.lstrip("$")
+                var_a = self.variables.get(key, self.variables.get(var_a_raw, ""))
+            else:
+                var_a = var_a_raw
+
+            if val_b_raw.startswith("$"):
+                key = val_b_raw.lstrip("$")
+                val_b = self.variables.get(key, self.variables.get(val_b_raw, ""))
+            else:
+                val_b = val_b_raw
+
+            res = False
+            try:
+                fa = float(var_a)
+                fb = float(val_b)
+                if op == "==": res = (fa == fb)
+                elif op == "!=": res = (fa != fb)
+                elif op == ">": res = (fa > fb)
+                elif op == "<": res = (fa < fb)
+                elif op == ">=": res = (fa >= fb)
+                elif op == "<=": res = (fa <= fb)
+            except (ValueError, TypeError):
+                sa = str(var_a)
+                sb = str(val_b)
+                if op == "==": res = (sa == sb)
+                elif op == "!=": res = (sa != sb)
+                elif op == "contains": res = (sb in sa)
+                elif op == "is empty": res = (len(sa.strip()) == 0)
+
+            self.variables["$last_condition"] = res
+            return res
+
+        elif st_type == "hotkey":
+            combo = step.get("combo", "")
+            if combo:
+                self.simulator.hotkey(combo)
+            return True
+
+        elif st_type == "stop_playback":
+            self.stop()
+            return False
+
+        return True

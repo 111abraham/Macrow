@@ -1,0 +1,35 @@
+# Python byte-code and caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Build artifacts
+build/
+*.spec.bak
+PointClicker.spec
+
+# Editor and OS
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+Thumbs.db
+Desktop.ini
+
+# Temporary and test artifacts
+*.tmp
+*.bak
+*.log
+test_red.png
+test_config.json
+snippets/
+dist/snippets/

@@ -1,0 +1,660 @@
+"""Graphics items for nodes in the node editor."""
+
+from __future__ import annotations
+
+import os
+import uuid
+from typing import Optional, List, Dict, Any, TYPE_CHECKING
+from PyQt6.QtCore import Qt, QRectF, QPointF
+from PyQt6.QtGui import (
+    QPainter,
+    QColor,
+    QPen,
+    QBrush,
+    QFont,
+    QPixmap,
+    QImage,
+)
+from PyQt6.QtWidgets import QGraphicsItem
+
+from app.ui.node_editor.node_socket import NodeSocketItem
+
+if TYPE_CHECKING:
+    from app.ui.node_editor.node_group import NodeGroupItem
+    from app.ui.node_editor.node_scene import NodeScene
+
+
+class BaseNodeItem(QGraphicsItem):
+    """Base class for all visual nodes in the flow editor."""
+
+    def __init__(
+        self,
+        title: str = "Node",
+        node_type: str = "action",
+        color: Optional[QColor] = None,
+        parent: Optional[QGraphicsItem] = None,
+    ):
+        super().__init__(parent)
+        self.id = getattr(self, "id", None) or uuid.uuid4().hex[:8]
+        self.title = title
+        self.node_type = node_type
+        self.accent_color = color or QColor(56, 189, 248)  # Cyan default
+
+        self.width = 190.0
+        self.height = 85.0
+        self.header_height = 28.0
+
+        self.input_sockets: List[NodeSocketItem] = []
+        self.output_sockets: List[NodeSocketItem] = []
+        self.group: Optional["NodeGroupItem"] = None
+
+        # Data properties dictionary for serialization and execution
+        self.properties: Dict[str, Any] = {}
+
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
+        self.setZValue(1)
+
+    def clone(self) -> "BaseNodeItem":
+        """Create a clone instance of this node with copied properties."""
+        cls = self.__class__
+        new_node = cls(node_type=self.node_type, properties=dict(self.properties))
+        return new_node
+
+    def boundingRect(self) -> QRectF:
+        return QRectF(-10, -10, self.width + 20, self.height + 20)
+
+    def add_input_socket(self, name: str = "In", color: Optional[QColor] = None) -> NodeSocketItem:
+        socket = NodeSocketItem(self, NodeSocketItem.TYPE_INPUT, name=name, color=color)
+        self.input_sockets.append(socket)
+        self._layout_sockets()
+        return socket
+
+    def add_output_socket(self, name: str = "Out", color: Optional[QColor] = None) -> NodeSocketItem:
+        socket = NodeSocketItem(self, NodeSocketItem.TYPE_OUTPUT, name=name, color=color)
+        self.output_sockets.append(socket)
+        self._layout_sockets()
+        return socket
+
+    def _layout_sockets(self):
+        # Input sockets along the left edge (x=0)
+        n_in = len(self.input_sockets)
+        for i, sock in enumerate(self.input_sockets):
+            sy = self.header_height + (self.height - self.header_height) * (i + 1) / (n_in + 1)
+            sock.setPos(0, sy)
+
+        # Output sockets along the right edge (x=self.width)
+        n_out = len(self.output_sockets)
+        for i, sock in enumerate(self.output_sockets):
+            sy = self.header_height + (self.height - self.header_height) * (i + 1) / (n_out + 1)
+            sock.setPos(self.width, sy)
+
+    def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
+        if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
+            # Update all connected wires when node moves
+            for sock in self.input_sockets + self.output_sockets:
+                sock.update_connections()
+        return super().itemChange(change, value)
+
+    def get_summary_text(self) -> str:
+        """Returns brief text for node body."""
+        return ""
+
+    def paint(self, painter: QPainter, option, widget=None):
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        rect = QRectF(0, 0, self.width, self.height)
+        is_sel = self.isSelected()
+
+        # Body background
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QBrush(QColor(30, 41, 59)))  # Slate 800
+        painter.drawRoundedRect(rect, 8, 8)
+
+        # Header background
+        header_rect = QRectF(0, 0, self.width, self.header_height)
+        painter.setBrush(QBrush(self.accent_color))
+        painter.drawRoundedRect(header_rect, 8, 8)
+        # Flatten bottom corners of header
+        painter.fillRect(QRectF(0, self.header_height - 6, self.width, 6), self.accent_color)
+
+        # Border
+        border_col = QColor(251, 146, 60) if is_sel else QColor(71, 85, 105)
+        border_width = 2.5 if is_sel else 1.2
+        painter.setPen(QPen(border_col, border_width))
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawRoundedRect(rect, 8, 8)
+
+        # Header Title
+        painter.setPen(QColor(255, 255, 255))
+        painter.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+        text_rect = QRectF(10, 0, self.width - 20, self.header_height)
+        painter.drawText(
+            text_rect,
+            Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft,
+            self.title,
+        )
+
+        # Body summary text
+        summary = self.get_summary_text()
+        if summary:
+            painter.setPen(QColor(203, 213, 225))  # Slate 300
+            painter.setFont(QFont("Segoe UI", 8, QFont.Weight.Normal))
+            body_rect = QRectF(12, self.header_height + 4, self.width - 24, self.height - self.header_height - 8)
+            painter.drawText(
+                body_rect,
+                Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft,
+                summary,
+            )
+
+
+class StartNodeItem(BaseNodeItem):
+    """Entry point node for macro execution."""
+
+    def __init__(self, parent=None):
+        super().__init__(
+            title="▶ Start",
+            node_type="start",
+            color=QColor(16, 185, 129),  # Emerald
+            parent=parent,
+        )
+        self.width = 130.0
+        self.height = 60.0
+        self.add_output_socket(name="Out")
+
+    def get_summary_text(self) -> str:
+        return "Begin execution"
+
+
+class ActionNodeItem(BaseNodeItem):
+    """Action node (Click, Double Click, Mouse Down, Mouse Up, Move, Delay, Key, Type, Wheel)."""
+
+    COLORS = {
+        "click": QColor(56, 189, 248),      # Cyan
+        "dblclick": QColor(14, 165, 233),   # Sky blue
+        "down": QColor(59, 130, 246),       # Blue
+        "up": QColor(99, 102, 241),         # Indigo
+        "move": QColor(168, 85, 247),       # Purple
+        "delay": QColor(245, 158, 11),      # Amber
+        "key_down": QColor(236, 72, 153),   # Pink
+        "key_up": QColor(244, 114, 182),    # Light pink
+        "type": QColor(217, 70, 239),       # Fuchsia
+        "wheel": QColor(99, 102, 241),      # Indigo
+        "action": QColor(71, 85, 105),      # Slate
+    }
+
+    TITLES = {
+        "click": "🖱 Mouse Click",
+        "dblclick": "🖱 Double Click",
+        "down": "🖱 Mouse Down (Hold)",
+        "up": "🖱 Mouse Up (Release)",
+        "move": "🏹 Mouse Move",
+        "delay": "⏳ Delay Wait",
+        "key_down": "⌨ Key Press",
+        "key_up": "⌨ Key Release",
+        "type": "🔤 Type Text",
+        "wheel": "📜 Mouse Wheel",
+        "action": "⚙ Custom Action",
+    }
+
+    def __init__(
+        self,
+        action_type: str = "click",
+        properties: Optional[Dict[str, Any]] = None,
+        parent=None,
+    ):
+        props = properties or {}
+
+        super().__init__(
+            title=self.TITLES.get(action_type, "⚙ Action"),
+            node_type=action_type,
+            color=self.COLORS.get(action_type, QColor(56, 189, 248)),
+            parent=parent,
+        )
+        self.properties = dict(props)
+        self.properties.setdefault("action_type", action_type)
+
+        self.add_input_socket(name="In")
+        self.add_output_socket(name="Out")
+
+    def set_action_type(self, new_type: str):
+        self.node_type = new_type
+        self.properties["action_type"] = new_type
+        self.title = self.TITLES.get(new_type, "⚙ Action")
+        self.accent_color = self.COLORS.get(new_type, QColor(56, 189, 248))
+        self.update()
+
+    def get_summary_text(self) -> str:
+        at = self.properties.get("action_type", self.node_type)
+        if at in ("click", "dblclick", "down", "up"):
+            x = self.properties.get("x", 0)
+            y = self.properties.get("y", 0)
+            btn = self.properties.get("button", "left").capitalize()
+            desc = "Click" if at == "click" else ("Double Click" if at == "dblclick" else ("Down" if at == "down" else "Up"))
+            return f"{btn} {desc}\nX: {x},  Y: {y}"
+        elif at == "move":
+            x = self.properties.get("x", 0)
+            y = self.properties.get("y", 0)
+            direct = self.properties.get("direct_jump", True)
+            pts = len(self.properties.get("path_points", []))
+            mode = "Direct" if direct else (f"Path ({pts} pts)" if pts > 1 else "Path")
+            return f"Move ({mode})\nX: {x},  Y: {y}"
+        elif at == "delay":
+            ms = self.properties.get("duration", 500)
+            return f"Pause for {ms} ms\n({ms/1000.0:.2f} seconds)"
+        elif at == "type":
+            txt = self.properties.get("value", "")
+            disp = (txt[:18] + "..") if len(txt) > 20 else txt
+            return f"Type text:\n\"{disp}\""
+        elif at in ("key_down", "key_up"):
+            vk = self.properties.get("vk", "")
+            action_desc = "Press" if at == "key_down" else "Release"
+            return f"{action_desc} VK: {vk}"
+        elif at == "wheel":
+            dy = self.properties.get("deltaY", 0)
+            return f"Scroll delta: {dy}"
+        return f"Action: {at}"
+
+    def clone(self) -> "ActionNodeItem":
+        return ActionNodeItem(
+            action_type=self.node_type,
+            properties=dict(self.properties),
+        )
+
+
+class VisionNodeItem(BaseNodeItem):
+    """Smart AI vision node: finds template image or waits for it on screen."""
+
+    def __init__(
+        self,
+        vision_type: str = "find_image",  # 'find_image' or 'wait_image'
+        properties: Optional[Dict[str, Any]] = None,
+        parent=None,
+    ):
+        title = "👁 Smart Find Image" if vision_type == "find_image" else "⏳ Wait For Image"
+        super().__init__(
+            title=title,
+            node_type=vision_type,
+            color=QColor(16, 185, 129),  # Emerald
+            parent=parent,
+        )
+        self.properties = properties or {}
+        self.properties.setdefault("action_type", vision_type)
+        self.properties.setdefault("confidence", 0.85)
+        self.properties.setdefault("action", "click")
+        self.properties.setdefault("button", "left")
+        self.properties.setdefault("timeout", 5.0)
+        self.properties.setdefault("template", "")
+
+        self.width = 210.0
+        self.height = 135.0  # Room for snippet preview thumbnail!
+
+        self.thumbnail_pixmap: Optional[QPixmap] = None
+        self._load_thumbnail()
+
+        # Sockets: 1 Input, 2 Outputs (Success branch, Failure branch!)
+        self.add_input_socket(name="In")
+        self.socket_success = self.add_output_socket(
+            name="Found", color=QColor(16, 185, 129)  # Green
+        )
+        self.socket_fail = self.add_output_socket(
+            name="Not Found", color=QColor(244, 63, 94)  # Rose red
+        )
+
+    def _load_thumbnail(self):
+        tmpl = self.properties.get("template", "")
+        if tmpl and os.path.exists(tmpl):
+            pix = QPixmap(tmpl)
+            if not pix.isNull():
+                self.thumbnail_pixmap = pix.scaled(
+                    120, 44, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation
+                )
+            else:
+                self.thumbnail_pixmap = None
+        else:
+            self.thumbnail_pixmap = None
+
+    def update_template(self, image_path: str):
+        self.properties["template"] = image_path
+        self._load_thumbnail()
+        self.update()
+
+    def get_summary_text(self) -> str:
+        conf = int(self.properties.get("confidence", 0.85) * 100)
+        act = self.properties.get("action", "click").capitalize()
+        btn = self.properties.get("button", "left").capitalize()
+        return f"Match: ≥{conf}%  •  {act} ({btn})"
+
+    def paint(self, painter: QPainter, option, widget=None):
+        super().paint(painter, option, widget)
+
+        # Draw thumbnail box
+        thumb_rect = QRectF(16, self.header_height + 6, 130, 52)
+        painter.setPen(QPen(QColor(51, 65, 85), 1))
+        painter.setBrush(QBrush(QColor(15, 23, 42)))
+        painter.drawRoundedRect(thumb_rect, 4, 4)
+
+        if self.thumbnail_pixmap:
+            # Center thumbnail inside box
+            tx = thumb_rect.x() + (thumb_rect.width() - self.thumbnail_pixmap.width()) / 2
+            ty = thumb_rect.y() + (thumb_rect.height() - self.thumbnail_pixmap.height()) / 2
+            painter.drawPixmap(int(tx), int(ty), self.thumbnail_pixmap)
+        else:
+            painter.setPen(QColor(148, 163, 184))
+            painter.setFont(QFont("Segoe UI", 7, QFont.Weight.Normal))
+            painter.drawText(
+                thumb_rect,
+                Qt.AlignmentFlag.AlignCenter,
+                "No template\n(Snip screen)",
+            )
+
+        # Label socket outputs
+        painter.setFont(QFont("Segoe UI", 7, QFont.Weight.Bold))
+        painter.setPen(QColor(16, 185, 129))
+        painter.drawText(
+            QRectF(self.width - 65, self.header_height + 8, 55, 16),
+            Qt.AlignmentFlag.AlignRight,
+            "Found →",
+        )
+        painter.setPen(QColor(244, 63, 94))
+        painter.drawText(
+            QRectF(self.width - 65, self.height - 24, 55, 16),
+            Qt.AlignmentFlag.AlignRight,
+            "Miss →",
+        )
+
+    def clone(self) -> "VisionNodeItem":
+        return VisionNodeItem(
+            vision_type=self.node_type,
+            properties=dict(self.properties),
+        )
+
+
+class IfConditionNodeItem(BaseNodeItem):
+    """Conditional branching node: If Variable/Value compare with Operator."""
+
+    def __init__(
+        self,
+        node_type: str = "if_condition",
+        properties: Optional[Dict[str, Any]] = None,
+        parent=None,
+    ):
+        super().__init__(
+            title="🔀 If / Compare",
+            node_type="if_condition",
+            color=QColor(245, 158, 11),  # Amber
+            parent=parent,
+        )
+        self.properties = properties or {}
+        self.properties.setdefault("action_type", "if_condition")
+        self.properties.setdefault("var_a", "$count")
+        self.properties.setdefault("operator", "==")
+        self.properties.setdefault("val_b", "5")
+
+        self.width = 190.0
+        self.height = 95.0
+
+        # Sockets: 1 Input, 2 Outputs (True branch, False branch)
+        self.add_input_socket(name="In")
+        self.socket_true = self.add_output_socket(name="True", color=QColor(16, 185, 129))
+        self.socket_false = self.add_output_socket(name="False", color=QColor(244, 63, 94))
+
+    def get_summary_text(self) -> str:
+        va = self.properties.get("var_a", "$var")
+        op = self.properties.get("operator", "==")
+        vb = self.properties.get("val_b", "")
+        return f"If {va} {op} {vb}"
+
+    def paint(self, painter: QPainter, option, widget=None):
+        super().paint(painter, option, widget)
+        # Socket output labels
+        painter.setFont(QFont("Segoe UI", 7, QFont.Weight.Bold))
+        painter.setPen(QColor(16, 185, 129))
+        painter.drawText(
+            QRectF(self.width - 55, self.header_height + 4, 45, 16),
+            Qt.AlignmentFlag.AlignRight,
+            "True →",
+        )
+        painter.setPen(QColor(244, 63, 94))
+        painter.drawText(
+            QRectF(self.width - 55, self.height - 20, 45, 16),
+            Qt.AlignmentFlag.AlignRight,
+            "False →",
+        )
+
+    def clone(self) -> "IfConditionNodeItem":
+        return IfConditionNodeItem(properties=dict(self.properties))
+
+
+class MathNodeItem(BaseNodeItem):
+    """Math arithmetic & variable assignment node."""
+
+    def __init__(
+        self,
+        node_type: str = "math_op",
+        properties: Optional[Dict[str, Any]] = None,
+        parent=None,
+    ):
+        super().__init__(
+            title="🔢 Math / Variable",
+            node_type="math_op",
+            color=QColor(20, 184, 166),  # Teal
+            parent=parent,
+        )
+        self.properties = properties or {}
+        self.properties.setdefault("action_type", "math_op")
+        self.properties.setdefault("var_name", "count")
+        self.properties.setdefault("operation", "increment")
+        self.properties.setdefault("value", "1")
+        self.properties.setdefault("min_val", 100)
+        self.properties.setdefault("max_val", 1000)
+
+        self.width = 190.0
+        self.height = 85.0
+
+        self.add_input_socket(name="In")
+        self.add_output_socket(name="Out")
+
+    def get_summary_text(self) -> str:
+        vn = self.properties.get("var_name", "var")
+        op = self.properties.get("operation", "increment")
+        val = self.properties.get("value", "1")
+        if op == "increment":
+            return f"${vn} += 1"
+        elif op == "decrement":
+            return f"${vn} -= 1"
+        elif op == "set":
+            return f"${vn} = {val}"
+        elif op == "add":
+            return f"${vn} += {val}"
+        elif op == "subtract":
+            return f"${vn} -= {val}"
+        elif op == "multiply":
+            return f"${vn} *= {val}"
+        elif op == "random":
+            mn = self.properties.get("min_val", 1)
+            mx = self.properties.get("max_val", 100)
+            return f"${vn} = rand({mn}..{mx})"
+        return f"${vn} {op}"
+
+    def clone(self) -> "MathNodeItem":
+        return MathNodeItem(properties=dict(self.properties))
+
+
+class PixelColorNodeItem(BaseNodeItem):
+    """Pixel color matching node."""
+
+    def __init__(
+        self,
+        node_type: str = "pixel_color",
+        properties: Optional[Dict[str, Any]] = None,
+        parent=None,
+    ):
+        super().__init__(
+            title="🎨 Pixel Color Check",
+            node_type="pixel_color",
+            color=QColor(217, 70, 239),  # Fuchsia
+            parent=parent,
+        )
+        self.properties = properties or {}
+        self.properties.setdefault("action_type", "pixel_color")
+        self.properties.setdefault("x", 500)
+        self.properties.setdefault("y", 300)
+        self.properties.setdefault("color", "#38BDF8")
+        self.properties.setdefault("tolerance", 15)
+
+        self.width = 195.0
+        self.height = 95.0
+
+        self.add_input_socket(name="In")
+        self.socket_match = self.add_output_socket(name="Match", color=QColor(16, 185, 129))
+        self.socket_mismatch = self.add_output_socket(name="Mismatch", color=QColor(244, 63, 94))
+
+    def get_summary_text(self) -> str:
+        x = self.properties.get("x", 0)
+        y = self.properties.get("y", 0)
+        col = self.properties.get("color", "#FFFFFF")
+        return f"Pos: ({x}, {y})\nColor: {col}"
+
+    def paint(self, painter: QPainter, option, widget=None):
+        super().paint(painter, option, widget)
+
+        # Draw mini color swatch
+        col_hex = self.properties.get("color", "#FFFFFF")
+        swatch_rect = QRectF(14, self.height - 22, 16, 14)
+        painter.setPen(QPen(QColor(255, 255, 255), 1))
+        painter.setBrush(QBrush(QColor(col_hex)))
+        painter.drawRoundedRect(swatch_rect, 2, 2)
+
+        # Socket output labels
+        painter.setFont(QFont("Segoe UI", 7, QFont.Weight.Bold))
+        painter.setPen(QColor(16, 185, 129))
+        painter.drawText(
+            QRectF(self.width - 60, self.header_height + 4, 50, 16),
+            Qt.AlignmentFlag.AlignRight,
+            "Match →",
+        )
+        painter.setPen(QColor(244, 63, 94))
+        painter.drawText(
+            QRectF(self.width - 60, self.height - 20, 50, 16),
+            Qt.AlignmentFlag.AlignRight,
+            "Miss →",
+        )
+
+    def clone(self) -> "PixelColorNodeItem":
+        return PixelColorNodeItem(properties=dict(self.properties))
+
+
+class HotkeyNodeItem(BaseNodeItem):
+    """Multi-key keyboard combination node."""
+
+    def __init__(
+        self,
+        node_type: str = "hotkey",
+        properties: Optional[Dict[str, Any]] = None,
+        parent=None,
+    ):
+        super().__init__(
+            title="⌨ Key Combination",
+            node_type="hotkey",
+            color=QColor(139, 92, 246),  # Violet
+            parent=parent,
+        )
+        self.properties = properties or {}
+        self.properties.setdefault("action_type", "hotkey")
+        self.properties.setdefault("combo", "Ctrl+C")
+
+        self.width = 180.0
+        self.height = 80.0
+
+        self.add_input_socket(name="In")
+        self.add_output_socket(name="Out")
+
+    def get_summary_text(self) -> str:
+        return f"Press:\n{self.properties.get('combo', 'Ctrl+C')}"
+
+    def clone(self) -> "HotkeyNodeItem":
+        return HotkeyNodeItem(properties=dict(self.properties))
+
+
+class LoopNodeItem(BaseNodeItem):
+    """Loop repeat node."""
+
+    def __init__(
+        self,
+        node_type: str = "loop_count",
+        properties: Optional[Dict[str, Any]] = None,
+        parent=None,
+    ):
+        super().__init__(
+            title="🔁 Loop (N Times)",
+            node_type="loop_count",
+            color=QColor(99, 102, 241),  # Indigo
+            parent=parent,
+        )
+        self.properties = properties or {}
+        self.properties.setdefault("action_type", "loop_count")
+        self.properties.setdefault("count", 5)
+        self.properties.setdefault("var_name", "i")
+
+        self.width = 190.0
+        self.height = 95.0
+
+        self.add_input_socket(name="In")
+        self.socket_body = self.add_output_socket(name="Body", color=QColor(16, 185, 129))
+        self.socket_done = self.add_output_socket(name="Done", color=QColor(6, 182, 212))
+
+    def get_summary_text(self) -> str:
+        cnt = self.properties.get("count", 5)
+        vn = self.properties.get("var_name", "i")
+        return f"Repeat {cnt} times\n(Index: ${vn})"
+
+    def paint(self, painter: QPainter, option, widget=None):
+        super().paint(painter, option, widget)
+        painter.setFont(QFont("Segoe UI", 7, QFont.Weight.Bold))
+        painter.setPen(QColor(16, 185, 129))
+        painter.drawText(
+            QRectF(self.width - 55, self.header_height + 4, 45, 16),
+            Qt.AlignmentFlag.AlignRight,
+            "Body →",
+        )
+        painter.setPen(QColor(6, 182, 212))
+        painter.drawText(
+            QRectF(self.width - 55, self.height - 20, 45, 16),
+            Qt.AlignmentFlag.AlignRight,
+            "Done →",
+        )
+
+    def clone(self) -> "LoopNodeItem":
+        return LoopNodeItem(properties=dict(self.properties))
+
+
+class StopNodeItem(BaseNodeItem):
+    """Explicitly stops macro playback."""
+
+    def __init__(
+        self,
+        node_type: str = "stop_playback",
+        properties: Optional[Dict[str, Any]] = None,
+        parent=None,
+    ):
+        super().__init__(
+            title="⏹ Stop Playback",
+            node_type="stop_playback",
+            color=QColor(239, 68, 68),  # Red
+            parent=parent,
+        )
+        self.properties = properties or {}
+        self.properties.setdefault("action_type", "stop_playback")
+
+        self.width = 150.0
+        self.height = 65.0
+
+        self.add_input_socket(name="In")
+
+    def get_summary_text(self) -> str:
+        return "Halt playback"
+
+    def clone(self) -> "StopNodeItem":
+        return StopNodeItem(properties=dict(self.properties))

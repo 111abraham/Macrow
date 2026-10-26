@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "positions": {
+    "M1": null,
+    "M5": null,
+    "M15": null,
+    "M30": null,
+    "H1": null,
+    "H4": null,
+    "D1": null
+  },
+  "active_position": "M1",
+  "repeat_interval_ms": 100,
+  "panel_opacity": 0.95,
+  "macros": {},
+  "instances": {
+    "1": {
+      "x": 120,
+      "y": 120,
+      "minimized": false,
+      "selected_macro": null,
+      "speed": 1.0,
+      "repeat": false
+    }
+  },
+  "hotkeys": {
+    "kill_switch": "Ctrl+Alt+Esc",
+    "record_toggle": "Ctrl+F9",
+    "play_toggle": "Ctrl+F8",
+    "stop_playback": "Ctrl+F7"
+  }
+}

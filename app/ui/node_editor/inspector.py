@@ -1,0 +1,1057 @@
+"""Property inspector side panel for the node editor."""
+
+from __future__ import annotations
+
+import os
+from typing import Optional, TYPE_CHECKING
+from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtGui import QPixmap, QFont, QColor
+from PyQt6.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPlainTextEdit,
+    QSpinBox,
+    QDoubleSpinBox,
+    QComboBox,
+    QSlider,
+    QCheckBox,
+    QPushButton,
+    QFileDialog,
+    QColorDialog,
+    QFrame,
+    QScrollArea,
+)
+
+from app.ui.node_editor.node_items import (
+    BaseNodeItem,
+    ActionNodeItem,
+    VisionNodeItem,
+    IfConditionNodeItem,
+    MathNodeItem,
+    PixelColorNodeItem,
+    HotkeyNodeItem,
+    LoopNodeItem,
+    StopNodeItem,
+)
+from app.ui.snippet_tool import ScreenSnipper
+from app.ui.eye_dropper import CoordinateEyeDropper
+
+if TYPE_CHECKING:
+    from app.ui.node_editor.node_scene import NodeScene
+
+
+class PropertyInspector(QWidget):
+    """Right-side dock panel allowing live editing of selected node properties."""
+
+    property_changed = pyqtSignal()
+
+    def __init__(self, scene: NodeScene, parent=None):
+        super().__init__(parent)
+        self.node_scene = scene
+        self.current_node: Optional[BaseNodeItem] = None
+
+        # Allow flexible resizing from right to left via QSplitter
+        self.setMinimumWidth(260)
+        self.setMaximumWidth(800)
+
+        self._init_ui()
+
+        # Connect scene selection change
+        self.node_scene.node_selected.connect(self.set_node)
+
+    def _init_ui(self):
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(10, 10, 10, 10)
+        main_layout.setSpacing(12)
+
+        # Title Header
+        header = QLabel("⚙ Property Inspector")
+        header.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        header.setStyleSheet("color: #38bdf8;")
+        main_layout.addWidget(header)
+
+        # Scrollable container for dynamic controls
+        self.scroll = QScrollArea()
+        self.scroll.setWidgetResizable(True)
+        self.scroll.setStyleSheet("background: transparent; border: none;")
+
+        self.content_widget = QWidget()
+        self.content_layout = QVBoxLayout(self.content_widget)
+        self.content_layout.setContentsMargins(0, 0, 0, 0)
+        self.content_layout.setSpacing(10)
+        self.scroll.setWidget(self.content_widget)
+
+        main_layout.addWidget(self.scroll, 1)
+
+        self._show_empty_state()
+
+    def _clear_content(self):
+        while self.content_layout.count():
+            item = self.content_layout.takeAt(0)
+            w = item.widget()
+            if w:
+                w.deleteLater()
+
+    def _show_empty_state(self):
+        self._clear_content()
+        lbl = QLabel("Select a node on the canvas\nto view and edit its settings.")
+        lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        lbl.setStyleSheet("color: #64748b; font-size: 11px; padding: 30px 10px;")
+        lbl.setWordWrap(True)
+        self.content_layout.addWidget(lbl)
+        self.content_layout.addStretch()
+
+    def set_node(self, node: Optional[BaseNodeItem]):
+        self.current_node = node
+        if not node:
+            self._show_empty_state()
+            return
+
+        self._clear_content()
+
+        # Node Title Badge
+        badge = QLabel(f"Node: {node.title}")
+        badge.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        badge.setStyleSheet("color: #f1f5f9; background: #1e293b; padding: 6px; border-radius: 4px;")
+        self.content_layout.addWidget(badge)
+
+        # Build controls based on node type
+        if isinstance(node, VisionNodeItem):
+            self._build_vision_controls(node)
+        elif isinstance(node, IfConditionNodeItem):
+            self._build_if_controls(node)
+        elif isinstance(node, MathNodeItem):
+            self._build_math_controls(node)
+        elif isinstance(node, PixelColorNodeItem):
+            self._build_pixel_color_controls(node)
+        elif isinstance(node, HotkeyNodeItem):
+            self._build_hotkey_controls(node)
+        elif isinstance(node, LoopNodeItem):
+            self._build_loop_controls(node)
+        elif isinstance(node, StopNodeItem):
+            self._build_stop_controls(node)
+        elif isinstance(node, ActionNodeItem):
+            self._build_action_controls(node)
+        else:
+            info = QLabel(node.get_summary_text() or "No editable settings")
+            info.setStyleSheet("color: #94a3b8; font-size: 11px;")
+            self.content_layout.addWidget(info)
+
+        self.content_layout.addStretch()
+
+    def _build_action_controls(self, node: ActionNodeItem):
+        at = node.properties.get("action_type", node.node_type)
+
+        # 1. Action Type Selector at top of inspector
+        type_box = QFrame()
+        type_box.setStyleSheet("background: #1e293b; border-radius: 6px; padding: 8px;")
+        tb_layout = QVBoxLayout(type_box)
+        tb_layout.setSpacing(6)
+
+        lbl_type = QLabel("Action Category / Type")
+        lbl_type.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+        lbl_type.setStyleSheet("color: #38bdf8;")
+        tb_layout.addWidget(lbl_type)
+
+        combo_type = QComboBox()
+        actions_list = [
+            ("click", "🖱 Mouse Click"),
+            ("dblclick", "🖱 Double Click"),
+            ("down", "🖱 Mouse Down (Hold)"),
+            ("up", "🖱 Mouse Up (Release)"),
+            ("move", "🏹 Mouse Move"),
+            ("delay", "⏳ Delay Wait"),
+            ("type", "🔤 Type Text"),
+            ("key_down", "⌨ Key Press"),
+            ("key_up", "⌨ Key Release"),
+            ("wheel", "📜 Mouse Wheel"),
+        ]
+        curr_idx = 0
+        for idx, (k, label) in enumerate(actions_list):
+            combo_type.addItem(label, k)
+            if k == at:
+                curr_idx = idx
+
+        combo_type.setCurrentIndex(curr_idx)
+
+        def on_type_changed(idx):
+            new_key = combo_type.itemData(idx)
+            if new_key and new_key != at:
+                node.set_action_type(new_key)
+                self.set_node(node)
+                self.property_changed.emit()
+
+        combo_type.currentIndexChanged.connect(on_type_changed)
+        tb_layout.addWidget(combo_type)
+        self.content_layout.addWidget(type_box)
+
+        # 2. Specific controls based on action type
+        if at in ("click", "dblclick", "down", "up", "move") or at not in ("delay", "type", "key_down", "key_up", "wheel"):
+            coord_box = QFrame()
+            coord_box.setStyleSheet("background: #1e293b; border-radius: 6px; padding: 8px;")
+            cb_layout = QVBoxLayout(coord_box)
+            cb_layout.setSpacing(8)
+
+            lbl_xy = QLabel("Target Screen Position")
+            lbl_xy.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+            lbl_xy.setStyleSheet("color: #e2e8f0;")
+            cb_layout.addWidget(lbl_xy)
+
+            row_xy = QHBoxLayout()
+            row_xy.addWidget(QLabel("X:"))
+            spin_x = QSpinBox()
+            spin_x.setRange(-30000, 60000)
+            spin_x.setValue(int(node.properties.get("x", 0)))
+            row_xy.addWidget(spin_x)
+
+            row_xy.addWidget(QLabel("Y:"))
+            spin_y = QSpinBox()
+            spin_y.setRange(-30000, 60000)
+            spin_y.setValue(int(node.properties.get("y", 0)))
+            row_xy.addWidget(spin_y)
+            cb_layout.addLayout(row_xy)
+
+            # Eye dropper button for sampling coordinate on screen!
+            btn_dropper = QPushButton("🎯 Sample Coord (Eye Dropper)")
+            btn_dropper.setStyleSheet("""
+                QPushButton {
+                    background-color: #0284c7;
+                    color: white;
+                    font-weight: 600;
+                    padding: 5px;
+                    border-radius: 4px;
+                }
+                QPushButton:hover {
+                    background-color: #0369a1;
+                }
+            """)
+
+            def on_pick_coord():
+                parent_win = self.window()
+                if parent_win:
+                    parent_win.showMinimized()
+
+                dropper = CoordinateEyeDropper(parent=None)
+
+                def on_picked(x, y, hex_col, rgb):
+                    spin_x.setValue(x)
+                    spin_y.setValue(y)
+                    node.properties["x"] = x
+                    node.properties["y"] = y
+                    node.update()
+                    self.property_changed.emit()
+                    if parent_win:
+                        parent_win.showNormal()
+                        parent_win.activateWindow()
+
+                dropper.coord_picked.connect(on_picked)
+                dropper.rejected.connect(lambda: parent_win.showNormal() if parent_win else None)
+                dropper.exec()
+
+            btn_dropper.clicked.connect(on_pick_coord)
+            cb_layout.addWidget(btn_dropper)
+
+            def on_x_changed(val):
+                node.properties["x"] = val
+                node.update()
+                self.property_changed.emit()
+
+            def on_y_changed(val):
+                node.properties["y"] = val
+                node.update()
+                self.property_changed.emit()
+
+            spin_x.valueChanged.connect(on_x_changed)
+            spin_y.valueChanged.connect(on_y_changed)
+
+            # Button selector for click/press actions
+            if at in ("click", "dblclick", "down", "up"):
+                row_btn = QHBoxLayout()
+                row_btn.addWidget(QLabel("Button:"))
+                combo_btn = QComboBox()
+                combo_btn.addItems(["Left", "Right", "Middle"])
+                curr_btn = str(node.properties.get("button", "left")).capitalize()
+                idx = combo_btn.findText(curr_btn)
+                if idx >= 0:
+                    combo_btn.setCurrentIndex(idx)
+
+                def on_btn_changed(txt):
+                    node.properties["button"] = txt.lower()
+                    node.update()
+                    self.property_changed.emit()
+
+                combo_btn.currentTextChanged.connect(on_btn_changed)
+                row_btn.addWidget(combo_btn)
+                cb_layout.addLayout(row_btn)
+
+            # Move node options: Direct Jump vs. in-between trajectory
+            elif at == "move":
+                move_opts_box = QFrame()
+                move_opts_box.setStyleSheet(
+                    "background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 8px;"
+                )
+                mob_layout = QVBoxLayout(move_opts_box)
+                mob_layout.setSpacing(6)
+
+                chk_direct = QCheckBox("Direct Jump (Skip in-between movements)")
+                chk_direct.setStyleSheet("color: #f1f5f9; font-weight: 600; font-size: 11px;")
+                chk_direct.setChecked(bool(node.properties.get("direct_jump", True)))
+
+                path_pts = node.properties.get("path_points", [])
+                pts_count = len(path_pts)
+                if pts_count > 1:
+                    lbl_pts = QLabel(f"📍 Recorded Path: {pts_count} trajectory points stored")
+                    lbl_pts.setStyleSheet("color: #38bdf8; font-size: 11px;")
+                else:
+                    lbl_pts = QLabel("📍 Single target destination (no path recorded)")
+                    lbl_pts.setStyleSheet("color: #64748b; font-size: 11px;")
+
+                def on_direct_toggled(checked):
+                    node.properties["direct_jump"] = bool(checked)
+                    node.update()
+                    self.property_changed.emit()
+
+                chk_direct.toggled.connect(on_direct_toggled)
+                mob_layout.addWidget(chk_direct)
+                mob_layout.addWidget(lbl_pts)
+                cb_layout.addWidget(move_opts_box)
+
+            self.content_layout.addWidget(coord_box)
+
+        elif at == "delay":
+            delay_box = QFrame()
+            delay_box.setStyleSheet("background: #1e293b; border-radius: 6px; padding: 8px;")
+            db_layout = QVBoxLayout(delay_box)
+
+            lbl_d = QLabel("Wait Duration")
+            lbl_d.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+            lbl_d.setStyleSheet("color: #e2e8f0;")
+            db_layout.addWidget(lbl_d)
+
+            row_d = QHBoxLayout()
+            row_d.addWidget(QLabel("Milliseconds:"))
+            spin_ms = QSpinBox()
+            spin_ms.setRange(10, 60000)
+            spin_ms.setSingleStep(50)
+            spin_ms.setValue(int(node.properties.get("duration", 500)))
+
+            def on_dur_changed(val):
+                node.properties["duration"] = val
+                node.update()
+                self.property_changed.emit()
+
+            spin_ms.valueChanged.connect(on_dur_changed)
+            row_d.addWidget(spin_ms)
+            db_layout.addLayout(row_d)
+
+            # Quick presets
+            preset_row = QHBoxLayout()
+            for ms in (100, 250, 500, 1000, 2000):
+                p_btn = QPushButton(f"{ms}ms" if ms < 1000 else f"{ms//1000}s")
+                p_btn.setStyleSheet("padding: 2px 4px; font-size: 10px; background: #334155; color: #f1f5f9;")
+                p_btn.clicked.connect(lambda _, m=ms: spin_ms.setValue(m))
+                preset_row.addWidget(p_btn)
+            db_layout.addLayout(preset_row)
+
+            self.content_layout.addWidget(delay_box)
+
+        elif at == "type":
+            type_box = QFrame()
+            type_box.setStyleSheet("background: #1e293b; border-radius: 6px; padding: 8px;")
+            tb_layout = QVBoxLayout(type_box)
+
+            lbl_t = QLabel("Text to Type")
+            lbl_t.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+            lbl_t.setStyleSheet("color: #e2e8f0;")
+            tb_layout.addWidget(lbl_t)
+
+            # Spacious multi-line typing field
+            txt_edit = QPlainTextEdit(node.properties.get("value", ""))
+            txt_edit.setFixedHeight(110)
+            txt_edit.setPlaceholderText("Enter the exact text string or phrase to type...")
+            txt_edit.setStyleSheet("""
+                QPlainTextEdit {
+                    background-color: #0f172a;
+                    color: #f8fafc;
+                    border: 1px solid #475569;
+                    border-radius: 4px;
+                    padding: 6px;
+                    font-family: 'Consolas', monospace;
+                    font-size: 12px;
+                }
+                QPlainTextEdit:focus {
+                    border-color: #38bdf8;
+                }
+            """)
+
+            lbl_len = QLabel(f"Characters: {len(txt_edit.toPlainText())}")
+            lbl_len.setStyleSheet("color: #94a3b8; font-size: 10px;")
+
+            def on_txt_changed():
+                val = txt_edit.toPlainText()
+                node.properties["value"] = val
+                lbl_len.setText(f"Characters: {len(val)}")
+                node.update()
+                self.property_changed.emit()
+
+            txt_edit.textChanged.connect(on_txt_changed)
+            tb_layout.addWidget(txt_edit)
+            tb_layout.addWidget(lbl_len)
+
+            btn_clear = QPushButton("Clear Text")
+            btn_clear.setStyleSheet("background: #334155; color: #f87171; font-size: 10px; padding: 3px;")
+            btn_clear.clicked.connect(lambda: txt_edit.clear())
+            tb_layout.addWidget(btn_clear)
+
+            self.content_layout.addWidget(type_box)
+
+        elif at in ("key_down", "key_up"):
+            k_box = QFrame()
+            k_box.setStyleSheet("background: #1e293b; border-radius: 6px; padding: 8px;")
+            kb_layout = QVBoxLayout(k_box)
+            kb_layout.setSpacing(8)
+
+            lbl_k = QLabel("Keyboard Keystroke")
+            lbl_k.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+            lbl_k.setStyleSheet("color: #f472b6;")
+            kb_layout.addWidget(lbl_k)
+
+            # Virtual Key code
+            row_vk = QHBoxLayout()
+            row_vk.addWidget(QLabel("Virtual Key (VK):"))
+            spin_vk = QSpinBox()
+            spin_vk.setRange(1, 255)
+            spin_vk.setValue(int(node.properties.get("vk", 13)))
+            row_vk.addWidget(spin_vk)
+            kb_layout.addLayout(row_vk)
+
+            # Common keys presets
+            combo_keys = QComboBox()
+            key_presets = [
+                ("Enter (Return)", 13),
+                ("Escape", 27),
+                ("Tab", 9),
+                ("Space", 32),
+                ("Backspace", 8),
+                ("Delete", 46),
+                ("Arrow Up", 38),
+                ("Arrow Down", 40),
+                ("Arrow Left", 37),
+                ("Arrow Right", 39),
+                ("Shift", 16),
+                ("Control", 17),
+                ("Alt", 18),
+                ("Windows Key", 91),
+                ("F1", 112), ("F2", 113), ("F3", 114), ("F4", 115),
+                ("F5", 116), ("F6", 117), ("F7", 118), ("F8", 119),
+                ("F9", 120), ("F10", 121), ("F11", 122), ("F12", 123),
+            ]
+            for kname, vk_code in key_presets:
+                combo_keys.addItem(f"{kname} (VK {vk_code})", vk_code)
+
+            # Set current preset if matches
+            cur_vk = int(node.properties.get("vk", 13))
+            for i in range(combo_keys.count()):
+                if combo_keys.itemData(i) == cur_vk:
+                    combo_keys.setCurrentIndex(i)
+                    break
+
+            def on_key_preset(idx):
+                code = combo_keys.itemData(idx)
+                if code:
+                    spin_vk.setValue(code)
+
+            combo_keys.currentIndexChanged.connect(on_key_preset)
+            kb_layout.addWidget(QLabel("Key Preset:"))
+            kb_layout.addWidget(combo_keys)
+
+            def on_vk_change(v):
+                node.properties["vk"] = v
+                node.update()
+                self.property_changed.emit()
+
+            spin_vk.valueChanged.connect(on_vk_change)
+
+            self.content_layout.addWidget(k_box)
+
+        elif at == "wheel":
+            w_box = QFrame()
+            w_box.setStyleSheet("background: #1e293b; border-radius: 6px; padding: 8px;")
+            wb_layout = QVBoxLayout(w_box)
+            wb_layout.setSpacing(8)
+
+            lbl_w = QLabel("Mouse Wheel Scroll")
+            lbl_w.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+            lbl_w.setStyleSheet("color: #6366f1;")
+            wb_layout.addWidget(lbl_w)
+
+            row_dy = QHBoxLayout()
+            row_dy.addWidget(QLabel("Vertical Scroll (Delta Y):"))
+            spin_dy = QSpinBox()
+            spin_dy.setRange(-10000, 10000)
+            spin_dy.setSingleStep(120)
+            spin_dy.setValue(int(node.properties.get("deltaY", 120)))
+            row_dy.addWidget(spin_dy)
+            wb_layout.addLayout(row_dy)
+
+            btn_row = QHBoxLayout()
+            b_up = QPushButton("▲ Scroll Up (+120)")
+            b_down = QPushButton("▼ Scroll Down (-120)")
+            b_up.clicked.connect(lambda: spin_dy.setValue(120))
+            b_down.clicked.connect(lambda: spin_dy.setValue(-120))
+            btn_row.addWidget(b_up)
+            btn_row.addWidget(b_down)
+            wb_layout.addLayout(btn_row)
+
+            def on_dy_change(v):
+                node.properties["deltaY"] = v
+                node.update()
+                self.property_changed.emit()
+
+            spin_dy.valueChanged.connect(on_dy_change)
+            self.content_layout.addWidget(w_box)
+
+    def _build_if_controls(self, node: IfConditionNodeItem):
+        box = QFrame()
+        box.setStyleSheet("background: #1e293b; border-radius: 6px; padding: 10px;")
+        layout = QVBoxLayout(box)
+        layout.setSpacing(8)
+
+        lbl = QLabel("If / Condition Evaluation")
+        lbl.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+        lbl.setStyleSheet("color: #f59e0b;")
+        layout.addWidget(lbl)
+
+        # Variable A
+        layout.addWidget(QLabel("Variable A (e.g. $count):"))
+        edit_a = QLineEdit(node.properties.get("var_a", "$count"))
+        edit_a.setPlaceholderText("$variable or value")
+
+        def on_a_change(val):
+            node.properties["var_a"] = val
+            node.update()
+            self.property_changed.emit()
+
+        edit_a.textChanged.connect(on_a_change)
+        layout.addWidget(edit_a)
+
+        # Operator
+        layout.addWidget(QLabel("Comparison Operator:"))
+        combo_op = QComboBox()
+        ops = [
+            "== (Equal)",
+            "!= (Not Equal)",
+            "> (Greater Than)",
+            "< (Less Than)",
+            ">= (Greater or Equal)",
+            "<= (Less or Equal)",
+            "contains (Text Contains)",
+            "is empty",
+        ]
+        combo_op.addItems(ops)
+        curr_op = node.properties.get("operator", "==")
+        for i, o in enumerate(ops):
+            if o.startswith(curr_op + " ") or o == curr_op:
+                combo_op.setCurrentIndex(i)
+                break
+
+        def on_op_change(txt):
+            raw_op = txt.split(" ")[0]
+            node.properties["operator"] = raw_op
+            node.update()
+            self.property_changed.emit()
+
+        combo_op.currentTextChanged.connect(on_op_change)
+        layout.addWidget(combo_op)
+
+        # Value B
+        layout.addWidget(QLabel("Value B:"))
+        edit_b = QLineEdit(node.properties.get("val_b", "5"))
+
+        def on_b_change(val):
+            node.properties["val_b"] = val
+            node.update()
+            self.property_changed.emit()
+
+        edit_b.textChanged.connect(on_b_change)
+        layout.addWidget(edit_b)
+
+        info = QLabel("Routes flow to 'True' if condition matches, else 'False'.")
+        info.setStyleSheet("color: #94a3b8; font-size: 10px;")
+        info.setWordWrap(True)
+        layout.addWidget(info)
+
+        self.content_layout.addWidget(box)
+
+    def _build_math_controls(self, node: MathNodeItem):
+        box = QFrame()
+        box.setStyleSheet("background: #1e293b; border-radius: 6px; padding: 10px;")
+        layout = QVBoxLayout(box)
+        layout.setSpacing(8)
+
+        lbl = QLabel("Math & Variable Assignment")
+        lbl.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+        lbl.setStyleSheet("color: #14b8a6;")
+        layout.addWidget(lbl)
+
+        # Variable Name
+        layout.addWidget(QLabel("Variable Name:"))
+        edit_var = QLineEdit(node.properties.get("var_name", "count"))
+
+        def on_var_change(txt):
+            node.properties["var_name"] = txt.lstrip("$")
+            node.update()
+            self.property_changed.emit()
+
+        edit_var.textChanged.connect(on_var_change)
+        layout.addWidget(edit_var)
+
+        # Operation
+        layout.addWidget(QLabel("Operation:"))
+        combo_op = QComboBox()
+        combo_op.addItems([
+            "Increment (+1)",
+            "Decrement (-1)",
+            "Set Value (=)",
+            "Add (+ Value)",
+            "Subtract (- Value)",
+            "Multiply (* Value)",
+            "Random Number (Min..Max)",
+        ])
+        curr_op = node.properties.get("operation", "increment")
+        op_map = {
+            "increment": 0, "decrement": 1, "set": 2, "add": 3,
+            "subtract": 4, "multiply": 5, "random": 6,
+        }
+        combo_op.setCurrentIndex(op_map.get(curr_op, 0))
+
+        # Value container
+        val_box = QWidget()
+        val_layout = QVBoxLayout(val_box)
+        val_layout.setContentsMargins(0, 0, 0, 0)
+        lbl_v = QLabel("Value:")
+        edit_val = QLineEdit(str(node.properties.get("value", "1")))
+        val_layout.addWidget(lbl_v)
+        val_layout.addWidget(edit_val)
+
+        # Random container
+        rand_box = QWidget()
+        rand_layout = QHBoxLayout(rand_box)
+        rand_layout.setContentsMargins(0, 0, 0, 0)
+        spin_min = QSpinBox()
+        spin_min.setRange(-100000, 100000)
+        spin_min.setValue(int(node.properties.get("min_val", 100)))
+        spin_max = QSpinBox()
+        spin_max.setRange(-100000, 100000)
+        spin_max.setValue(int(node.properties.get("max_val", 1000)))
+        rand_layout.addWidget(QLabel("Min:"))
+        rand_layout.addWidget(spin_min)
+        rand_layout.addWidget(QLabel("Max:"))
+        rand_layout.addWidget(spin_max)
+
+        def update_visibility(idx):
+            val_box.setVisible(idx in (2, 3, 4, 5))
+            rand_box.setVisible(idx == 6)
+
+        update_visibility(combo_op.currentIndex())
+
+        def on_op_selected(idx):
+            keys = ["increment", "decrement", "set", "add", "subtract", "multiply", "random"]
+            node.properties["operation"] = keys[idx]
+            update_visibility(idx)
+            node.update()
+            self.property_changed.emit()
+
+        combo_op.currentIndexChanged.connect(on_op_selected)
+        layout.addWidget(combo_op)
+        layout.addWidget(val_box)
+        layout.addWidget(rand_box)
+
+        def on_val_change(txt):
+            node.properties["value"] = txt
+            node.update()
+            self.property_changed.emit()
+
+        edit_val.textChanged.connect(on_val_change)
+        spin_min.valueChanged.connect(lambda v: (node.properties.update({"min_val": v}), node.update(), self.property_changed.emit()))
+        spin_max.valueChanged.connect(lambda v: (node.properties.update({"max_val": v}), node.update(), self.property_changed.emit()))
+
+        self.content_layout.addWidget(box)
+
+    def _build_pixel_color_controls(self, node: PixelColorNodeItem):
+        box = QFrame()
+        box.setStyleSheet("background: #1e293b; border-radius: 6px; padding: 10px;")
+        layout = QVBoxLayout(box)
+        layout.setSpacing(8)
+
+        lbl = QLabel("Pixel Color Verification")
+        lbl.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+        lbl.setStyleSheet("color: #d946ef;")
+        layout.addWidget(lbl)
+
+        # Coordinates
+        row_xy = QHBoxLayout()
+        spin_x = QSpinBox()
+        spin_x.setRange(-30000, 60000)
+        spin_x.setValue(int(node.properties.get("x", 0)))
+        spin_y = QSpinBox()
+        spin_y.setRange(-30000, 60000)
+        spin_y.setValue(int(node.properties.get("y", 0)))
+        row_xy.addWidget(QLabel("X:"))
+        row_xy.addWidget(spin_x)
+        row_xy.addWidget(QLabel("Y:"))
+        row_xy.addWidget(spin_y)
+        layout.addLayout(row_xy)
+
+        # Eye dropper button for sampling coordinate AND color together!
+        btn_sample = QPushButton("🎯 Pick Color & Coord (Eye Dropper)")
+        btn_sample.setStyleSheet("""
+            QPushButton {
+                background-color: #d946ef;
+                color: white;
+                font-weight: bold;
+                padding: 6px;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #c026d3;
+            }
+        """)
+
+        # Color row: swatch + hex edit
+        row_col = QHBoxLayout()
+        swatch_lbl = QLabel()
+        swatch_lbl.setFixedSize(28, 24)
+        curr_hex = node.properties.get("color", "#38BDF8")
+        swatch_lbl.setStyleSheet(f"background-color: {curr_hex}; border: 1px solid #ffffff; border-radius: 4px;")
+        row_col.addWidget(swatch_lbl)
+
+        edit_hex = QLineEdit(curr_hex)
+        row_col.addWidget(edit_hex)
+
+        def update_color(h_str):
+            node.properties["color"] = h_str
+            swatch_lbl.setStyleSheet(f"background-color: {h_str}; border: 1px solid #ffffff; border-radius: 4px;")
+            node.update()
+            self.property_changed.emit()
+
+        edit_hex.textChanged.connect(update_color)
+
+        btn_pick_dlg = QPushButton("Palette...")
+        btn_pick_dlg.setStyleSheet("padding: 3px 6px; font-size: 11px;")
+
+        def on_open_palette():
+            col = QColorDialog.getColor(QColor(node.properties.get("color", "#FFFFFF")), self)
+            if col.isValid():
+                edit_hex.setText(col.name().upper())
+
+        btn_pick_dlg.clicked.connect(on_open_palette)
+        row_col.addWidget(btn_pick_dlg)
+
+        def on_sample():
+            parent_win = self.window()
+            if parent_win:
+                parent_win.showMinimized()
+
+            dropper = CoordinateEyeDropper(parent=None)
+
+            def on_picked(x, y, hex_col, rgb):
+                spin_x.setValue(x)
+                spin_y.setValue(y)
+                edit_hex.setText(hex_col)
+                node.properties["x"] = x
+                node.properties["y"] = y
+                node.properties["color"] = hex_col
+                node.update()
+                self.property_changed.emit()
+                if parent_win:
+                    parent_win.showNormal()
+                    parent_win.activateWindow()
+
+            dropper.coord_picked.connect(on_picked)
+            dropper.rejected.connect(lambda: parent_win.showNormal() if parent_win else None)
+            dropper.exec()
+
+        btn_sample.clicked.connect(on_sample)
+        layout.addWidget(btn_sample)
+        layout.addLayout(row_col)
+
+        # Tolerance
+        tol_val = int(node.properties.get("tolerance", 15))
+        lbl_tol = QLabel(f"Color Tolerance: ±{tol_val}")
+        layout.addWidget(lbl_tol)
+
+        slider_tol = QSlider(Qt.Orientation.Horizontal)
+        slider_tol.setRange(0, 60)
+        slider_tol.setValue(tol_val)
+
+        def on_tol_change(v):
+            node.properties["tolerance"] = v
+            lbl_tol.setText(f"Color Tolerance: ±{v}")
+            node.update()
+            self.property_changed.emit()
+
+        slider_tol.valueChanged.connect(on_tol_change)
+        layout.addWidget(slider_tol)
+
+        self.content_layout.addWidget(box)
+
+    def _build_hotkey_controls(self, node: HotkeyNodeItem):
+        box = QFrame()
+        box.setStyleSheet("background: #1e293b; border-radius: 6px; padding: 10px;")
+        layout = QVBoxLayout(box)
+        layout.setSpacing(8)
+
+        lbl = QLabel("Key Combination (Hotkey)")
+        lbl.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+        lbl.setStyleSheet("color: #8b5cf6;")
+        layout.addWidget(lbl)
+
+        combo_preset = QComboBox()
+        presets = [
+            "Ctrl+C (Copy)",
+            "Ctrl+V (Paste)",
+            "Ctrl+A (Select All)",
+            "Ctrl+Z (Undo)",
+            "Ctrl+S (Save)",
+            "Enter",
+            "Escape",
+            "Tab",
+            "Alt+Tab",
+            "Win+D (Show Desktop)",
+            "Backspace",
+            "Custom...",
+        ]
+        combo_preset.addItems(presets)
+
+        edit_combo = QLineEdit(node.properties.get("combo", "Ctrl+C"))
+
+        def on_preset_selected(idx):
+            if idx < len(presets) - 1:
+                key = presets[idx].split(" ")[0]
+                edit_combo.setText(key)
+
+        combo_preset.currentIndexChanged.connect(on_preset_selected)
+        layout.addWidget(QLabel("Preset:"))
+        layout.addWidget(combo_preset)
+
+        layout.addWidget(QLabel("Key Combination:"))
+        layout.addWidget(edit_combo)
+
+        def on_combo_changed(txt):
+            node.properties["combo"] = txt
+            node.update()
+            self.property_changed.emit()
+
+        edit_combo.textChanged.connect(on_combo_changed)
+
+        self.content_layout.addWidget(box)
+
+    def _build_loop_controls(self, node: LoopNodeItem):
+        box = QFrame()
+        box.setStyleSheet("background: #1e293b; border-radius: 6px; padding: 10px;")
+        layout = QVBoxLayout(box)
+        layout.setSpacing(8)
+
+        lbl = QLabel("Loop Repetitions")
+        lbl.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+        lbl.setStyleSheet("color: #6366f1;")
+        layout.addWidget(lbl)
+
+        row_cnt = QHBoxLayout()
+        row_cnt.addWidget(QLabel("Repeat Count:"))
+        spin_cnt = QSpinBox()
+        spin_cnt.setRange(1, 100000)
+        spin_cnt.setValue(int(node.properties.get("count", 5)))
+
+        def on_cnt_change(v):
+            node.properties["count"] = v
+            node.update()
+            self.property_changed.emit()
+
+        spin_cnt.valueChanged.connect(on_cnt_change)
+        row_cnt.addWidget(spin_cnt)
+        layout.addLayout(row_cnt)
+
+        row_var = QHBoxLayout()
+        row_var.addWidget(QLabel("Index Variable:"))
+        edit_v = QLineEdit(node.properties.get("var_name", "i"))
+
+        def on_var_change(txt):
+            node.properties["var_name"] = txt.lstrip("$")
+            node.update()
+            self.property_changed.emit()
+
+        edit_v.textChanged.connect(on_var_change)
+        row_var.addWidget(edit_v)
+        layout.addLayout(row_var)
+
+        info = QLabel("Body wire runs each iteration; Done wire continues when complete.")
+        info.setStyleSheet("color: #94a3b8; font-size: 10px;")
+        info.setWordWrap(True)
+        layout.addWidget(info)
+
+        self.content_layout.addWidget(box)
+
+    def _build_stop_controls(self, node: StopNodeItem):
+        box = QFrame()
+        box.setStyleSheet("background: #1e293b; border-radius: 6px; padding: 10px;")
+        layout = QVBoxLayout(box)
+        lbl = QLabel("Stop Playback Node")
+        lbl.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+        lbl.setStyleSheet("color: #ef4444;")
+        layout.addWidget(lbl)
+        desc = QLabel("When reached in execution, playback immediately stops.")
+        desc.setStyleSheet("color: #cbd5e1; font-size: 11px;")
+        desc.setWordWrap(True)
+        layout.addWidget(desc)
+        self.content_layout.addWidget(box)
+
+    def _build_vision_controls(self, node: VisionNodeItem):
+        vbox = QFrame()
+        vbox.setStyleSheet("background: #1e293b; border-radius: 6px; padding: 10px;")
+        layout = QVBoxLayout(vbox)
+        layout.setSpacing(10)
+
+        # Section header
+        lbl = QLabel("Smart Vision Element")
+        lbl.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+        lbl.setStyleSheet("color: #10b981;")
+        layout.addWidget(lbl)
+
+        # Image preview
+        lbl_thumb = QLabel()
+        lbl_thumb.setFixedHeight(70)
+        lbl_thumb.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        lbl_thumb.setStyleSheet("background: #0f172a; border: 1px dashed #475569; border-radius: 4px;")
+
+        def refresh_thumb():
+            tmpl = node.properties.get("template", "")
+            if tmpl and os.path.exists(tmpl):
+                pix = QPixmap(tmpl)
+                if not pix.isNull():
+                    scaled = pix.scaled(
+                        200, 60, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation
+                    )
+                    lbl_thumb.setPixmap(scaled)
+                    return
+            lbl_thumb.setText("No Image Snippet")
+            lbl_thumb.setStyleSheet("background: #0f172a; border: 1px dashed #475569; border-radius: 4px; color: #64748b; font-size: 10px;")
+
+        refresh_thumb()
+        layout.addWidget(lbl_thumb)
+
+        # Snippet buttons
+        btn_snip = QPushButton("📸 Snip from Screen")
+        btn_snip.setStyleSheet("background: #0284c7; color: white; font-weight: bold; padding: 6px; border-radius: 4px;")
+
+        def on_snip_click():
+            parent_win = self.window()
+            if parent_win:
+                parent_win.showMinimized()
+
+            snipper = ScreenSnipper(parent=None)
+
+            def on_captured(qimg, filepath):
+                node.update_template(filepath)
+                refresh_thumb()
+                self.property_changed.emit()
+                if parent_win:
+                    parent_win.showNormal()
+                    parent_win.activateWindow()
+
+            snipper.snippet_captured.connect(on_captured)
+            snipper.rejected.connect(lambda: parent_win.showNormal() if parent_win else None)
+            snipper.exec()
+
+        btn_snip.clicked.connect(on_snip_click)
+        layout.addWidget(btn_snip)
+
+        btn_browse = QPushButton("📂 Browse File...")
+        btn_browse.setStyleSheet("background: #334155; color: #e2e8f0; padding: 5px; border-radius: 4px;")
+
+        def on_browse():
+            path, _ = QFileDialog.getOpenFileName(
+                self, "Select Template Image", "", "Images (*.png *.jpg *.bmp)"
+            )
+            if path:
+                node.update_template(path)
+                refresh_thumb()
+                self.property_changed.emit()
+
+        btn_browse.clicked.connect(on_browse)
+        layout.addWidget(btn_browse)
+
+        # Confidence Slider
+        curr_conf = int(node.properties.get("confidence", 0.85) * 100)
+        lbl_conf = QLabel(f"Match Confidence: {curr_conf}%")
+        lbl_conf.setStyleSheet("color: #cbd5e1; font-size: 11px;")
+        layout.addWidget(lbl_conf)
+
+        slider_conf = QSlider(Qt.Orientation.Horizontal)
+        slider_conf.setRange(50, 99)
+        slider_conf.setValue(curr_conf)
+
+        def on_conf_change(val):
+            node.properties["confidence"] = val / 100.0
+            lbl_conf.setText(f"Match Confidence: {val}%")
+            node.update()
+            self.property_changed.emit()
+
+        slider_conf.valueChanged.connect(on_conf_change)
+        layout.addWidget(slider_conf)
+
+        # Action on Found
+        row_act = QHBoxLayout()
+        row_act.addWidget(QLabel("On Found:"))
+        combo_act = QComboBox()
+        combo_act.addItems(["Click", "Double Click", "Move", "None"])
+        act_map = {
+            "click": "Click",
+            "doubleclick": "Double Click",
+            "dblclick": "Double Click",
+            "move": "Move",
+            "none": "None",
+        }
+        raw_act = str(node.properties.get("action", "click")).lower().replace(" ", "")
+        disp_act = act_map.get(raw_act, "Click")
+        idx = combo_act.findText(disp_act)
+        if idx >= 0:
+            combo_act.setCurrentIndex(idx)
+
+        def on_act_change(txt):
+            rev_map = {
+                "Click": "click",
+                "Double Click": "doubleclick",
+                "Move": "move",
+                "None": "none",
+            }
+            node.properties["action"] = rev_map.get(txt, "click")
+            node.update()
+            self.property_changed.emit()
+
+        combo_act.currentTextChanged.connect(on_act_change)
+        row_act.addWidget(combo_act)
+        layout.addLayout(row_act)
+
+        # Timeout for wait_image
+        if node.node_type == "wait_image":
+            row_tout = QHBoxLayout()
+            row_tout.addWidget(QLabel("Timeout (sec):"))
+            spin_tout = QDoubleSpinBox()
+            spin_tout.setRange(0.5, 300.0)
+            spin_tout.setValue(float(node.properties.get("timeout", 5.0)))
+
+            def on_tout_change(val):
+                node.properties["timeout"] = val
+                node.update()
+                self.property_changed.emit()
+
+            spin_tout.valueChanged.connect(on_tout_change)
+            row_tout.addWidget(spin_tout)
+            layout.addLayout(row_tout)
+
+        self.content_layout.addWidget(vbox)
