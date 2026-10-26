@@ -66,7 +66,6 @@ python build.py
 ### 4. 2-Key Emergency Stop & Safety
 - **2-Key Emergency Stop (`Alt + S`)**:
   Press **Alt + S** (or **F12**, or **Ctrl + Q**) from any application to immediately halt macro playback and release all held mouse buttons. **It safely stops playback without closing the application!**
-- **Screen Corner Failsafe**: Slamming the physical mouse cursor into the top-left corner `(0, 0)` immediately halts all automations.
 - **Global Shortcuts**:
   - `Alt + S` (or `F12`): Emergency Stop (halts playback safely)
   - `Ctrl + F9` (or `F9`): Start / Stop Recording

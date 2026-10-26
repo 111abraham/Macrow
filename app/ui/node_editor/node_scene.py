@@ -31,7 +31,7 @@ class NodeScene(QGraphicsScene):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setSceneRect(-5000, -5000, 10000, 10000)
+        self.setSceneRect(-100000, -100000, 200000, 200000)
 
         self.nodes: List[BaseNodeItem] = []
         self.connections: List[NodeConnection] = []

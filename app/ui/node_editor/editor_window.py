@@ -254,9 +254,16 @@ class MacroNodeEditorWindow(QMainWindow):
         QShortcut(QKeySequence("Ctrl+Shift+Z"), self, self._on_redo)
         QShortcut(QKeySequence("Ctrl+C"), self, self._copy_selected)
         QShortcut(QKeySequence("Ctrl+V"), self, self._paste_selected)
+        QShortcut(QKeySequence("Ctrl+A"), self, self._select_all_nodes)
         QShortcut(QKeySequence("Ctrl+D"), self, self._duplicate_selected)
         QShortcut(QKeySequence("Ctrl+G"), self, self._group_selected)
+        QShortcut(QKeySequence("R"), self, self.view.frame_selected)
         QShortcut(QKeySequence("Delete"), self, self._delete_selected)
+
+    def _select_all_nodes(self):
+        for node in self.scene.nodes:
+            node.setSelected(True)
+        self.status_bar.showMessage(f"Selected all {len(self.scene.nodes)} node(s) (Ctrl+A).")
 
     def _copy_selected(self):
         count = self.scene.copy_selected()
@@ -665,3 +672,12 @@ class MacroNodeEditorWindow(QMainWindow):
                 event.ignore()
         else:
             event.accept()
+
+        if event.isAccepted() and hasattr(self, "parent_panel") and self.parent_panel:
+            try:
+                if self.parent_panel.isMinimized():
+                    self.parent_panel.showNormal()
+                self.parent_panel.activateWindow()
+                self.parent_panel.raise_()
+            except Exception:
+                pass

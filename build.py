@@ -38,6 +38,7 @@ def build_exe():
         "--hidden-import=ctypes",
         "--hidden-import=ctypes.wintypes",
         "--hidden-import=numpy",
+        "--hidden-import=cv2",
         "--hidden-import=app.core.vision",
         "--hidden-import=app.ui.assets",
         "--hidden-import=app.ui.node_editor",

@@ -71,6 +71,24 @@ class TestVision(unittest.TestCase):
         self.assertFalse(np.isnan(score))
         self.assertFalse(np.isinf(score))
 
+    def test_multiscale_match(self):
+        # Create a 200x200 screen
+        screen = np.full((200, 200), 50, dtype=np.uint8)
+        # Create a 30x30 textured template
+        template = np.full((30, 30), 180, dtype=np.uint8)
+        template[5:15, 5:15] = 250
+        template[15:25, 15:25] = 20
+
+        # Place template at x=80, y=50
+        screen[50:80, 80:110] = template
+
+        # Match at scale 1.0
+        loc, score = match_template(screen, template)
+        self.assertIsNotNone(loc)
+        self.assertEqual(loc[0], 80)
+        self.assertEqual(loc[1], 50)
+        self.assertGreaterEqual(score, 0.98)
+
     def test_find_template_nan_safe(self):
         # Non-existent or flat template search returns None rather than fake match
         res = find_template_on_screen("", confidence=0.85)

@@ -145,8 +145,8 @@ class NodeView(QGraphicsView):
                 event.accept()
                 return
 
-        # 3. Middle click panning
-        if event.button() == Qt.MouseButton.MiddleButton:
+        # 3. Middle click or Right click panning
+        if event.button() in (Qt.MouseButton.MiddleButton, Qt.MouseButton.RightButton):
             self._is_panning = True
             self._pan_start_pos = event.pos()
             self.setCursor(Qt.CursorShape.ClosedHandCursor)
@@ -203,7 +203,7 @@ class NodeView(QGraphicsView):
             event.accept()
             return
 
-        if self._is_panning and (event.button() in (Qt.MouseButton.MiddleButton, Qt.MouseButton.LeftButton)):
+        if self._is_panning and (event.button() in (Qt.MouseButton.MiddleButton, Qt.MouseButton.LeftButton, Qt.MouseButton.RightButton)):
             self._is_panning = False
             self.setCursor(Qt.CursorShape.ArrowCursor)
             event.accept()
@@ -214,6 +214,19 @@ class NodeView(QGraphicsView):
             self.node_scene.scene_modified.emit()
 
     def keyPressEvent(self, event: QKeyEvent):
+        # R key: Frame selected node(s) in middle (or all nodes if none selected)
+        if event.key() == Qt.Key.Key_R and not event.modifiers():
+            self.frame_selected()
+            event.accept()
+            return
+
+        # Ctrl+A: Select all nodes
+        if (event.modifiers() & Qt.KeyboardModifier.ControlModifier) and event.key() == Qt.Key.Key_A:
+            for n in self.node_scene.nodes:
+                n.setSelected(True)
+            event.accept()
+            return
+
         # Y key alone activates knife wire-cutting tool
         if event.key() == Qt.Key.Key_Y and not (event.modifiers() & Qt.KeyboardModifier.ControlModifier):
             self._y_key_held = True
@@ -293,6 +306,27 @@ class NodeView(QGraphicsView):
             )
             painter.setPen(core_pen)
             painter.drawPath(laser_path)
+
+    def frame_selected(self):
+        """Frame/fit selected nodes in the middle of the viewport (or all nodes if none selected)."""
+        sel_nodes = [item for item in self.node_scene.selectedItems() if isinstance(item, BaseNodeItem)]
+        if sel_nodes:
+            rect = QRectF()
+            for n in sel_nodes:
+                rect = rect.united(n.sceneBoundingRect())
+            margin = 90.0
+            target = rect.adjusted(-margin, -margin, margin, margin)
+            self.fitInView(target, Qt.AspectRatioMode.KeepAspectRatio)
+            cur_scale = self.transform().m11()
+            if cur_scale > 1.3:
+                factor = 1.3 / cur_scale
+                self.scale(factor, factor)
+            elif cur_scale < 0.2:
+                factor = 0.2 / cur_scale
+                self.scale(factor, factor)
+            self.current_zoom = max(0.15, min(3.0, self.transform().m11()))
+        else:
+            self.fit_all()
 
     def fit_all(self):
         """Fit all nodes and connections comfortably within the viewport."""

@@ -93,6 +93,7 @@ def capture_desktop_composite_qimage(
     try:
         from PyQt6.QtWidgets import QApplication
         from PyQt6.QtGui import QGuiApplication, QPainter, QImage
+        from PyQt6.QtCore import Qt
 
         app = QApplication.instance()
         screens = QGuiApplication.screens() if app else []
@@ -102,7 +103,9 @@ def capture_desktop_composite_qimage(
                 primary = QGuiApplication.primaryScreen()
                 if primary and rw > 0 and rh > 0:
                     pix = primary.grabWindow(0, rx, ry, rw, rh)
-                    qimg = pix.toImage().scaled(rw, rh).convertToFormat(QImage.Format.Format_ARGB32)
+                    qimg = pix.toImage().scaled(
+                        rw, rh, Qt.AspectRatioMode.IgnoreAspectRatio, Qt.TransformationMode.SmoothTransformation
+                    ).convertToFormat(QImage.Format.Format_ARGB32)
                     return qimg, rx, ry, rw, rh
 
             min_x = min(s.geometry().x() for s in screens)
@@ -122,7 +125,9 @@ def capture_desktop_composite_qimage(
                     p.drawImage(
                         geo.x() - min_x,
                         geo.y() - min_y,
-                        pix.toImage().scaled(geo.width(), geo.height()),
+                        pix.toImage().scaled(
+                            geo.width(), geo.height(), Qt.AspectRatioMode.IgnoreAspectRatio, Qt.TransformationMode.SmoothTransformation
+                        ),
                     )
                 p.end()
                 return comp, min_x, min_y, vw, vh
@@ -336,6 +341,65 @@ def match_template_numpy_fft(
     return ((best_x, best_y), best_score)
 
 
+def match_template_multiscale(
+    screen_arr: np.ndarray,
+    template_arr: np.ndarray,
+    confidence: float = 0.8,
+) -> Tuple[Tuple[int, int], float, Tuple[int, int]]:
+    """Multi-scale template matching using OpenCV with fallback to numpy FFT.
+    Evaluates scales [1.0, 1.25, 0.8, 1.1, 0.9, 1.5, 0.75] to robustly handle Windows DPI scaling.
+    Returns ((best_x, best_y), best_score, (matched_w, matched_h)).
+    """
+    th, tw = template_arr.shape[:2]
+    sh, sw = screen_arr.shape[:2]
+
+    if HAS_CV2:
+        try:
+            # 1. First test 1:1 scale (exact scale)
+            res = cv2.matchTemplate(screen_arr, template_arr, cv2.TM_CCOEFF_NORMED)
+            res = np.nan_to_num(res, nan=-1.0, posinf=1.0, neginf=-1.0)
+            _, max_val, _, max_loc = cv2.minMaxLoc(res)
+            best_score = float(max_val) if not (math.isnan(max_val) or math.isinf(max_val)) else -1.0
+            best_loc = max_loc
+            best_w, best_h = tw, th
+
+            # If 1:1 match already satisfies high confidence, return immediately
+            if best_score >= max(confidence, 0.88):
+                return (best_loc, best_score, (best_w, best_h))
+
+            # 2. Multi-scale search (covers Windows display scaling: 125%, 150%, 80%, 110%, etc.)
+            scales = [1.25, 0.8, 1.1, 0.9, 1.5, 0.75]
+            for s in scales:
+                new_w = int(round(tw * s))
+                new_h = int(round(th * s))
+                if new_w < 8 or new_h < 8 or new_w >= sw or new_h >= sh:
+                    continue
+
+                scaled_tmpl = cv2.resize(
+                    template_arr,
+                    (new_w, new_h),
+                    interpolation=cv2.INTER_AREA if s < 1.0 else cv2.INTER_LINEAR,
+                )
+                s_res = cv2.matchTemplate(screen_arr, scaled_tmpl, cv2.TM_CCOEFF_NORMED)
+                s_res = np.nan_to_num(s_res, nan=-1.0, posinf=1.0, neginf=-1.0)
+                _, s_max_val, _, s_max_loc = cv2.minMaxLoc(s_res)
+                score = float(s_max_val) if not (math.isnan(s_max_val) or math.isinf(s_max_val)) else -1.0
+
+                if score > best_score:
+                    best_score = score
+                    best_loc = s_max_loc
+                    best_w, best_h = new_w, new_h
+                    if best_score >= 0.96:
+                        break
+
+            return (best_loc, best_score, (best_w, best_h))
+        except Exception:
+            pass
+
+    loc, score = match_template_numpy_fft(screen_arr, template_arr)
+    return (loc, score, (tw, th))
+
+
 def match_template(
     screen_arr: np.ndarray,
     template_arr: np.ndarray,
@@ -343,19 +407,8 @@ def match_template(
     """Finds best match of template_arr inside screen_arr.
     Returns ((x, y), confidence_score).
     """
-    if HAS_CV2:
-        try:
-            res = cv2.matchTemplate(screen_arr, template_arr, cv2.TM_CCOEFF_NORMED)
-            res = np.nan_to_num(res, nan=-1.0, posinf=1.0, neginf=-1.0)
-            _, max_val, _, max_loc = cv2.minMaxLoc(res)
-            val = float(max_val)
-            if math.isnan(val) or math.isinf(val):
-                val = -1.0
-            return (max_loc, val)
-        except Exception:
-            pass
-
-    return match_template_numpy_fft(screen_arr, template_arr)
+    loc, score, _ = match_template_multiscale(screen_arr, template_arr, confidence=0.8)
+    return (loc, score)
 
 
 def find_template_on_screen(
@@ -376,7 +429,7 @@ def find_template_on_screen(
         if template_qimg is None or template_qimg.isNull():
             return None
 
-        # Thread-safe screen capture using Win32 GDI
+        # Thread-safe screen capture across all connected monitors
         bgra, rx, ry, rw, rh = capture_screen_win32_bgra(region)
         if bgra is None or rw <= 0 or rh <= 0:
             return None
@@ -389,17 +442,19 @@ def find_template_on_screen(
         if th > sh or tw > sw or th <= 0 or tw <= 0:
             return None
 
-        (match_x, match_y), score = match_template(screen_arr, template_arr)
+        (match_x, match_y), score, (matched_w, matched_h) = match_template_multiscale(
+            screen_arr, template_arr, confidence=confidence
+        )
 
         if math.isnan(score) or math.isinf(score) or score < confidence or score <= 0.0:
             return None
 
         abs_x = rx + match_x
         abs_y = ry + match_y
-        center_x = abs_x + tw // 2
-        center_y = abs_y + th // 2
+        center_x = abs_x + matched_w // 2
+        center_y = abs_y + matched_h // 2
 
-        return (center_x, center_y, tw, th, score)
+        return (center_x, center_y, matched_w, matched_h, score)
     except Exception:
         return None
 

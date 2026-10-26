@@ -63,6 +63,61 @@ class PropertyInspector(QWidget):
         self.node_scene.node_selected.connect(self.set_node)
 
     def _init_ui(self):
+        self.setStyleSheet("""
+            QSpinBox, QDoubleSpinBox {
+                background-color: #1e293b;
+                color: #ffffff;
+                border: 1px solid #475569;
+                border-radius: 4px;
+                padding-left: 8px;
+                padding-right: 28px;
+                padding-top: 3px;
+                padding-bottom: 3px;
+                min-height: 24px;
+                font-size: 12px;
+                font-weight: 600;
+            }
+            QSpinBox:focus, QDoubleSpinBox:focus {
+                border: 1px solid #38bdf8;
+            }
+            QSpinBox::up-button, QDoubleSpinBox::up-button {
+                subcontrol-origin: border;
+                subcontrol-position: top right;
+                width: 22px;
+                height: 12px;
+                border-left: 1px solid #475569;
+                border-bottom: 1px solid #334155;
+                background-color: #334155;
+                border-top-right-radius: 3px;
+            }
+            QSpinBox::up-button:hover, QDoubleSpinBox::up-button:hover {
+                background-color: #0284c7;
+            }
+            QSpinBox::down-button, QDoubleSpinBox::down-button {
+                subcontrol-origin: border;
+                subcontrol-position: bottom right;
+                width: 22px;
+                height: 12px;
+                border-left: 1px solid #475569;
+                background-color: #334155;
+                border-bottom-right-radius: 3px;
+            }
+            QSpinBox::down-button:hover, QDoubleSpinBox::down-button:hover {
+                background-color: #0284c7;
+            }
+            QLineEdit, QComboBox {
+                background-color: #1e293b;
+                color: #f8fafc;
+                border: 1px solid #475569;
+                border-radius: 4px;
+                padding: 4px 8px;
+                min-height: 22px;
+            }
+            QLineEdit:focus, QComboBox:focus {
+                border: 1px solid #38bdf8;
+            }
+        """)
+
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(10, 10, 10, 10)
         main_layout.setSpacing(12)
@@ -1042,8 +1097,10 @@ class PropertyInspector(QWidget):
         row_tout.addWidget(QLabel("Timeout (sec):"))
         spin_tout = QDoubleSpinBox()
         spin_tout.setRange(0.1, 300.0)
+        spin_tout.setDecimals(1)
         spin_tout.setSingleStep(0.5)
         spin_tout.setValue(float(node.properties.get("timeout", 5.0)))
+        spin_tout.setCursor(Qt.CursorShape.ArrowCursor)
 
         def on_tout_change(val):
             node.properties["timeout"] = val

@@ -25,7 +25,7 @@ from PyQt6.QtWidgets import (
     QSizePolicy,
     QMenu,
 )
-from PyQt6.QtCore import Qt, QTimer, QPoint, pyqtSignal, QObject, QEvent
+from PyQt6.QtCore import Qt, QTimer, QPoint, QRect, pyqtSignal, QObject, QEvent
 from PyQt6.QtGui import QIcon, QCursor, QGuiApplication
 
 from app.core.win32_api import get_cursor_pos, init_dpi_awareness, set_window_click_through
@@ -527,7 +527,26 @@ class MacrowPanel(QWidget):
         # Restore Instance settings
         inst = self.cfg.get_instance_settings(self.instance_id)
         if inst.get("x") is not None and inst.get("y") is not None:
-            self.move(int(inst["x"]), int(inst["y"]))
+            saved_x = int(inst["x"])
+            saved_y = int(inst["y"])
+            # Validate that saved coordinates are on a real visible screen
+            screens = QGuiApplication.screens()
+            visible_on_screen = False
+            for s in screens:
+                geom = s.availableGeometry()
+                if geom.intersects(QRect(saved_x, saved_y, 100, 50)):
+                    visible_on_screen = True
+                    break
+            if visible_on_screen and saved_x > -10000 and saved_y > -10000:
+                self.move(saved_x, saved_y)
+            else:
+                primary = QGuiApplication.primaryScreen()
+                if primary:
+                    avail = primary.availableGeometry()
+                    self.move(
+                        avail.x() + (avail.width() - self.width()) // 2,
+                        avail.y() + (avail.height() - self.height()) // 2,
+                    )
 
         if inst.get("width") and inst.get("height"):
             screen = QGuiApplication.primaryScreen()
@@ -554,15 +573,12 @@ class MacrowPanel(QWidget):
             if idx >= 0:
                 self.macro_combo.setCurrentIndex(idx)
 
-        if inst.get("minimized"):
-            self.toggle_minimize(True)
+        # Always start up in normal visible state, never minimized
+        self.showNormal()
 
     def _update_cursor_readout(self):
         x, y = get_cursor_pos()
         self.coords_pill.setText(f"X: {x}  Y: {y}")
-        # Corner Failsafe: if physical mouse is moved to top-left corner (0, 0) during playback
-        if self.player.is_playing() and x <= 2 and y <= 2:
-            self.stop_playback()
 
     def _on_opacity_slider_changed(self, val):
         alpha = val / 100.0
@@ -813,6 +829,7 @@ class MacrowPanel(QWidget):
             config=self.cfg,
             parent=None,
         )
+        editor_win.parent_panel = self
         self._editor_windows[name] = editor_win
         editor_win.show()
         editor_win.raise_()
@@ -866,10 +883,6 @@ class MacrowPanel(QWidget):
                 self.showMinimized()
 
     def changeEvent(self, event):
-        """Detect when window is minimized or restored to sync settings with config."""
-        if event.type() == QEvent.Type.WindowStateChange:
-            is_min = bool(self.windowState() & Qt.WindowState.WindowMinimized)
-            self.cfg.update_instance_settings(self.instance_id, minimized=is_min)
         super().changeEvent(event)
 
     # Robust Edge Resizing & Window Dragging via EventFilter
@@ -885,6 +898,11 @@ class MacrowPanel(QWidget):
         on_right = x >= w - m
         on_top = y <= m
         on_bottom = y >= h - m
+
+        # Title bar area is dedicated to window dragging, not top-edge resize
+        if hasattr(self, "title_bar") and y <= self.title_bar.height() + 2:
+            if not (on_left or on_right):
+                return None
 
         if on_bottom and on_right:
             return "bottom_right"
@@ -961,6 +979,18 @@ class MacrowPanel(QWidget):
         """Intercept mouse events on container and scroll viewport for 100% reliable edge resizing."""
         ev_type = event.type()
 
+        # Prioritize active window dragging over child widget events
+        if self._is_dragging:
+            if ev_type == QEvent.Type.MouseMove:
+                global_pos = event.globalPosition().toPoint()
+                new_pos = global_pos - self._drag_start_pos
+                self.move(new_pos)
+                return True
+            elif ev_type == QEvent.Type.MouseButtonRelease:
+                self._is_dragging = False
+                self.cfg.update_instance_settings(self.instance_id, x=self.x(), y=self.y())
+                return True
+
         if ev_type in (QEvent.Type.MouseMove, QEvent.Type.MouseButtonPress, QEvent.Type.MouseButtonRelease):
             global_pos = event.globalPosition().toPoint()
             local_pt = self.mapFromGlobal(global_pos)
@@ -993,6 +1023,14 @@ class MacrowPanel(QWidget):
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
             pos = event.position().toPoint()
+
+            # Dragging title bar has priority over edge-resizing
+            if pos.y() <= self.title_bar.height() + 4 and not (pos.x() <= self.RESIZE_MARGIN or pos.x() >= self.width() - self.RESIZE_MARGIN):
+                self._is_dragging = True
+                self._drag_start_pos = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+                event.accept()
+                return
+
             mode = self._get_resize_mode(pos)
             if mode:
                 self._is_resizing = mode
@@ -1000,13 +1038,7 @@ class MacrowPanel(QWidget):
                 self._resize_start_geom = self.geometry()
                 event.accept()
                 return
-
-            # Allow dragging anywhere on title bar
-            if pos.y() <= self.title_bar.height() + 8:
-                self._is_dragging = True
-                self._drag_start_pos = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
-                event.accept()
-                return
+        super().mousePressEvent(event)
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
