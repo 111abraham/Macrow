@@ -917,7 +917,7 @@ class PropertyInspector(QWidget):
         layout.setSpacing(10)
 
         # Section header
-        lbl = QLabel("Smart Vision Element")
+        lbl = QLabel("Wait For Image (Visual Recognition)")
         lbl.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
         lbl.setStyleSheet("color: #10b981;")
         layout.addWidget(lbl)
@@ -1037,21 +1037,21 @@ class PropertyInspector(QWidget):
         row_act.addWidget(combo_act)
         layout.addLayout(row_act)
 
-        # Timeout for wait_image
-        if node.node_type == "wait_image":
-            row_tout = QHBoxLayout()
-            row_tout.addWidget(QLabel("Timeout (sec):"))
-            spin_tout = QDoubleSpinBox()
-            spin_tout.setRange(0.5, 300.0)
-            spin_tout.setValue(float(node.properties.get("timeout", 5.0)))
+        # Timeout (sec)
+        row_tout = QHBoxLayout()
+        row_tout.addWidget(QLabel("Timeout (sec):"))
+        spin_tout = QDoubleSpinBox()
+        spin_tout.setRange(0.1, 300.0)
+        spin_tout.setSingleStep(0.5)
+        spin_tout.setValue(float(node.properties.get("timeout", 5.0)))
 
-            def on_tout_change(val):
-                node.properties["timeout"] = val
-                node.update()
-                self.property_changed.emit()
+        def on_tout_change(val):
+            node.properties["timeout"] = val
+            node.update()
+            self.property_changed.emit()
 
-            spin_tout.valueChanged.connect(on_tout_change)
-            row_tout.addWidget(spin_tout)
-            layout.addLayout(row_tout)
+        spin_tout.valueChanged.connect(on_tout_change)
+        row_tout.addWidget(spin_tout)
+        layout.addLayout(row_tout)
 
         self.content_layout.addWidget(vbox)

@@ -83,13 +83,75 @@ gdi32.GetDIBits.argtypes = [
 ]
 
 
+def capture_desktop_composite_qimage(
+    region: Optional[Tuple[int, int, int, int]] = None
+) -> Tuple[Optional[QImage], int, int, int, int]:
+    """Captures desktop screen across all connected monitors using Qt.
+    Handles virtual multi-monitor desktop with negative coordinate offsets.
+    Returns (composite_qimage, offset_x, offset_y, width, height).
+    """
+    try:
+        from PyQt6.QtWidgets import QApplication
+        from PyQt6.QtGui import QGuiApplication, QPainter, QImage
+
+        app = QApplication.instance()
+        screens = QGuiApplication.screens() if app else []
+        if screens:
+            if region is not None:
+                rx, ry, rw, rh = region
+                primary = QGuiApplication.primaryScreen()
+                if primary and rw > 0 and rh > 0:
+                    pix = primary.grabWindow(0, rx, ry, rw, rh)
+                    qimg = pix.toImage().scaled(rw, rh).convertToFormat(QImage.Format.Format_ARGB32)
+                    return qimg, rx, ry, rw, rh
+
+            min_x = min(s.geometry().x() for s in screens)
+            min_y = min(s.geometry().y() for s in screens)
+            max_x = max(s.geometry().x() + s.geometry().width() for s in screens)
+            max_y = max(s.geometry().y() + s.geometry().height() for s in screens)
+            vw = max_x - min_x
+            vh = max_y - min_y
+
+            if vw > 0 and vh > 0:
+                comp = QImage(vw, vh, QImage.Format.Format_ARGB32)
+                comp.fill(0)
+                p = QPainter(comp)
+                for s in screens:
+                    geo = s.geometry()
+                    pix = s.grabWindow(0)
+                    p.drawImage(
+                        geo.x() - min_x,
+                        geo.y() - min_y,
+                        pix.toImage().scaled(geo.width(), geo.height()),
+                    )
+                p.end()
+                return comp, min_x, min_y, vw, vh
+    except Exception:
+        pass
+    return None, 0, 0, 0, 0
+
+
 def capture_screen_win32_bgra(
     region: Optional[Tuple[int, int, int, int]] = None
 ) -> Tuple[Optional[np.ndarray], int, int, int, int]:
-    """Captures desktop screen using Win32 GDI.
-    100% thread-safe to call from any background worker thread without Qt GUI crash.
+    """Captures desktop screen across all connected monitors.
     Returns (bgra_numpy_array, offset_x, offset_y, width, height).
     """
+    # 1. Try Qt multi-screen capture
+    qimg, qx, qy, qw, qh = capture_desktop_composite_qimage(region)
+    if qimg is not None and not qimg.isNull() and qw > 0 and qh > 0:
+        try:
+            qimg_argb = qimg.convertToFormat(QImage.Format.Format_ARGB32)
+            w, h = qimg_argb.width(), qimg_argb.height()
+            ptr = qimg_argb.constBits()
+            ptr.setsize(qimg_argb.sizeInBytes())
+            bpl = qimg_argb.bytesPerLine()
+            arr = np.frombuffer(ptr, dtype=np.uint8).reshape((h, bpl))[:, :w * 4].reshape((h, w, 4)).copy()
+            return arr, qx, qy, w, h
+        except Exception:
+            pass
+
+    # 2. Win32 GDI Fallback
     try:
         if region is not None:
             rx, ry, rw, rh = region
@@ -160,7 +222,7 @@ def bgra_to_gray(bgra: np.ndarray) -> np.ndarray:
 
 
 def qimage_to_numpy_gray(qimg: QImage) -> np.ndarray:
-    """Convert QImage to 2D numpy uint8 grayscale array."""
+    """Convert QImage to 2D numpy uint8 grayscale array safely."""
     if qimg.isNull():
         return np.zeros((0, 0), dtype=np.uint8)
 
@@ -172,9 +234,9 @@ def qimage_to_numpy_gray(qimg: QImage) -> np.ndarray:
     w, h = gray_img.width(), gray_img.height()
     bpl = gray_img.bytesPerLine()
     ptr = gray_img.constBits()
-    ptr.setsize(h * bpl)
-    arr = np.frombuffer(ptr, dtype=np.uint8).reshape((h, bpl))
-    return np.ascontiguousarray(arr[:, :w])
+    ptr.setsize(gray_img.sizeInBytes())
+    arr = np.frombuffer(ptr, dtype=np.uint8).reshape((h, bpl))[:, :w].copy()
+    return arr
 
 
 def load_image_as_qimage(image_path_or_qimg: Any) -> Optional[QImage]:
@@ -238,25 +300,18 @@ def match_template_numpy_fft(
     int_s = np.cumsum(np.cumsum(s_pad, axis=0), axis=1)
     int_s_sq = np.cumsum(np.cumsum(s_sq_pad, axis=0), axis=1)
 
-    y0 = np.arange(sh - th + 1)
-    y1 = y0 + th
-    x0 = np.arange(sw - tw + 1)
-    x1 = x0 + tw
-
-    yy0, xx0 = np.meshgrid(y0, x0, indexing="ij")
-    yy1, xx1 = np.meshgrid(y1, x1, indexing="ij")
-
+    # Fast 2D integral image slice (zero-copy, no huge meshgrid MemoryError on multi-monitor)
     sum_s = (
-        int_s[yy1, xx1]
-        - int_s[yy0, xx1]
-        - int_s[yy1, xx0]
-        + int_s[yy0, xx0]
+        int_s[th:sh + 1, tw:sw + 1]
+        - int_s[0:sh - th + 1, tw:sw + 1]
+        - int_s[th:sh + 1, 0:sw - tw + 1]
+        + int_s[0:sh - th + 1, 0:sw - tw + 1]
     )
     sum_s_sq = (
-        int_s_sq[yy1, xx1]
-        - int_s_sq[yy0, xx1]
-        - int_s_sq[yy1, xx0]
-        + int_s_sq[yy0, xx0]
+        int_s_sq[th:sh + 1, tw:sw + 1]
+        - int_s_sq[0:sh - th + 1, tw:sw + 1]
+        - int_s_sq[th:sh + 1, 0:sw - tw + 1]
+        + int_s_sq[0:sh - th + 1, 0:sw - tw + 1]
     )
 
     n_pixels = float(th * tw)
@@ -266,7 +321,8 @@ def match_template_numpy_fft(
     denom = np.sqrt(var_s * t_energy)
     flat_mask = (var_s < 1.0) | (denom < 1e-4)
 
-    ncc = np.zeros_like(corr)
+    # Initialize with -1.0 so flat areas default to no-correlation
+    ncc = np.full(corr.shape, -1.0, dtype=np.float32)
     np.divide(corr, denom, out=ncc, where=~flat_mask)
     ncc = np.nan_to_num(ncc, nan=-1.0, posinf=1.0, neginf=-1.0)
     ncc = np.clip(ncc, -1.0, 1.0)

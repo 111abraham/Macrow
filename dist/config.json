@@ -12,15 +12,5437 @@
   "active_position": "M1",
   "repeat_interval_ms": 100,
   "panel_opacity": 0.95,
-  "macros": {},
+  "macros": {
+    "Macro 1": {
+      "steps": [
+        {
+          "id": "186012e7",
+          "type": "wait_image",
+          "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261026_160319.png",
+          "confidence": 0.99,
+          "action": "none",
+          "button": "left",
+          "timeout": 5.0,
+          "found_next": "ac9eb50a",
+          "miss_next": "c97cdd82",
+          "dt": 150
+        },
+        {
+          "id": "ac9eb50a",
+          "type": "click",
+          "next": null,
+          "x": 1026,
+          "y": 211,
+          "button": "right",
+          "dt": 250
+        },
+        {
+          "id": "c97cdd82",
+          "type": "click",
+          "next": null,
+          "x": 2033,
+          "y": 226,
+          "button": "right",
+          "dt": 350
+        }
+      ],
+      "duration": 350,
+      "graph_data": {
+        "nodes": [
+          {
+            "id": "1e68eb73",
+            "class_name": "StartNodeItem",
+            "node_type": "start",
+            "title": "▶ Start",
+            "pos": [
+              19.984584069514398,
+              250.5457885437713
+            ],
+            "properties": {}
+          },
+          {
+            "id": "ac9eb50a",
+            "class_name": "ActionNodeItem",
+            "node_type": "click",
+            "title": "🖱 Mouse Click",
+            "pos": [
+              528.2172963156241,
+              -20.94654795734374
+            ],
+            "properties": {
+              "action_type": "click",
+              "x": 1026,
+              "y": 211,
+              "button": "right"
+            }
+          },
+          {
+            "id": "c97cdd82",
+            "class_name": "ActionNodeItem",
+            "node_type": "click",
+            "title": "🖱 Mouse Click",
+            "pos": [
+              534.4229191450222,
+              177.6333825833984
+            ],
+            "properties": {
+              "action_type": "click",
+              "x": 2033,
+              "y": 226,
+              "button": "right"
+            }
+          },
+          {
+            "id": "186012e7",
+            "class_name": "VisionNodeItem",
+            "node_type": "wait_image",
+            "title": "⏳ Wait For Image",
+            "pos": [
+              194.7690136683704,
+              -95.82218854272767
+            ],
+            "properties": {
+              "action_type": "wait_image",
+              "confidence": 0.99,
+              "action": "none",
+              "button": "left",
+              "timeout": 5.0,
+              "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261026_160319.png"
+            }
+          }
+        ],
+        "connections": [
+          {
+            "from_node": "1e68eb73",
+            "from_socket_idx": 0,
+            "to_node": "186012e7",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "186012e7",
+            "from_socket_idx": 0,
+            "to_node": "ac9eb50a",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "186012e7",
+            "from_socket_idx": 1,
+            "to_node": "c97cdd82",
+            "to_socket_idx": 0
+          }
+        ],
+        "groups": []
+      }
+    },
+    "Macro 2": {
+      "steps": [
+        {
+          "type": "move",
+          "x": 1557,
+          "y": 1215,
+          "dt": 0,
+          "id": "bb649b8f_p0",
+          "next": "bb649b8f_p1"
+        },
+        {
+          "type": "move",
+          "x": 1175,
+          "y": 1012,
+          "dt": 48,
+          "id": "bb649b8f_p1",
+          "next": "bb649b8f_p2"
+        },
+        {
+          "type": "move",
+          "x": 924,
+          "y": 864,
+          "dt": 96,
+          "id": "bb649b8f_p2",
+          "next": "bb649b8f_p3"
+        },
+        {
+          "type": "move",
+          "x": 731,
+          "y": 740,
+          "dt": 143,
+          "id": "bb649b8f_p3",
+          "next": "bb649b8f_p4"
+        },
+        {
+          "type": "move",
+          "x": 564,
+          "y": 628,
+          "dt": 184,
+          "id": "bb649b8f_p4",
+          "next": "bb649b8f_p5"
+        },
+        {
+          "type": "move",
+          "x": 411,
+          "y": 534,
+          "dt": 232,
+          "id": "bb649b8f_p5",
+          "next": "bb649b8f_p6"
+        },
+        {
+          "type": "move",
+          "x": 356,
+          "y": 482,
+          "dt": 279,
+          "id": "bb649b8f_p6",
+          "next": "bb649b8f_p7"
+        },
+        {
+          "type": "move",
+          "x": 334,
+          "y": 456,
+          "dt": 320,
+          "id": "bb649b8f_p7",
+          "next": "bb649b8f_p8"
+        },
+        {
+          "type": "move",
+          "x": 328,
+          "y": 431,
+          "dt": 368,
+          "id": "bb649b8f_p8",
+          "next": "bb649b8f_p9"
+        },
+        {
+          "type": "move",
+          "x": 337,
+          "y": 401,
+          "dt": 408,
+          "id": "bb649b8f_p9",
+          "next": "bb649b8f_p10"
+        },
+        {
+          "type": "move",
+          "x": 376,
+          "y": 315,
+          "dt": 448,
+          "id": "bb649b8f_p10",
+          "next": "bb649b8f_p11"
+        },
+        {
+          "type": "move",
+          "x": 386,
+          "y": 285,
+          "dt": 536,
+          "id": "bb649b8f_p11",
+          "next": "bb649b8f_p12"
+        },
+        {
+          "type": "move",
+          "x": 399,
+          "y": 258,
+          "dt": 584,
+          "id": "bb649b8f_p12",
+          "next": "bb649b8f_p13"
+        },
+        {
+          "type": "move",
+          "x": 404,
+          "y": 243,
+          "dt": 632,
+          "id": "bb649b8f_p13",
+          "direct_jump": false,
+          "path_points": [
+            {
+              "type": "move",
+              "x": 1557,
+              "y": 1215,
+              "dt": 247
+            },
+            {
+              "type": "move",
+              "x": 1175,
+              "y": 1012,
+              "dt": 295
+            },
+            {
+              "type": "move",
+              "x": 924,
+              "y": 864,
+              "dt": 343
+            },
+            {
+              "type": "move",
+              "x": 731,
+              "y": 740,
+              "dt": 390
+            },
+            {
+              "type": "move",
+              "x": 564,
+              "y": 628,
+              "dt": 431
+            },
+            {
+              "type": "move",
+              "x": 411,
+              "y": 534,
+              "dt": 479
+            },
+            {
+              "type": "move",
+              "x": 356,
+              "y": 482,
+              "dt": 526
+            },
+            {
+              "type": "move",
+              "x": 334,
+              "y": 456,
+              "dt": 567
+            },
+            {
+              "type": "move",
+              "x": 328,
+              "y": 431,
+              "dt": 615
+            },
+            {
+              "type": "move",
+              "x": 337,
+              "y": 401,
+              "dt": 655
+            },
+            {
+              "type": "move",
+              "x": 376,
+              "y": 315,
+              "dt": 695
+            },
+            {
+              "type": "move",
+              "x": 386,
+              "y": 285,
+              "dt": 783
+            },
+            {
+              "type": "move",
+              "x": 399,
+              "y": 258,
+              "dt": 831
+            },
+            {
+              "type": "move",
+              "x": 404,
+              "y": 243,
+              "dt": 879
+            }
+          ],
+          "next": "dd8bad86"
+        },
+        {
+          "id": "dd8bad86",
+          "type": "down",
+          "next": "a12ae288",
+          "x": 405,
+          "y": 243,
+          "button": "left",
+          "dt": 732
+        },
+        {
+          "type": "move",
+          "x": 407,
+          "y": 243,
+          "dt": 732,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p0",
+          "next": "a12ae288_p1"
+        },
+        {
+          "type": "move",
+          "x": 436,
+          "y": 282,
+          "dt": 755,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p1",
+          "next": "a12ae288_p2"
+        },
+        {
+          "type": "move",
+          "x": 463,
+          "y": 314,
+          "dt": 772,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p2",
+          "next": "a12ae288_p3"
+        },
+        {
+          "type": "move",
+          "x": 495,
+          "y": 357,
+          "dt": 788,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p3",
+          "next": "a12ae288_p4"
+        },
+        {
+          "type": "move",
+          "x": 530,
+          "y": 407,
+          "dt": 812,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p4",
+          "next": "a12ae288_p5"
+        },
+        {
+          "type": "move",
+          "x": 547,
+          "y": 438,
+          "dt": 836,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p5",
+          "next": "a12ae288_p6"
+        },
+        {
+          "type": "move",
+          "x": 554,
+          "y": 460,
+          "dt": 852,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p6",
+          "next": "a12ae288_p7"
+        },
+        {
+          "type": "move",
+          "x": 573,
+          "y": 497,
+          "dt": 876,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p7",
+          "next": "a12ae288_p8"
+        },
+        {
+          "type": "move",
+          "x": 589,
+          "y": 522,
+          "dt": 892,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p8",
+          "next": "a12ae288_p9"
+        },
+        {
+          "type": "move",
+          "x": 625,
+          "y": 559,
+          "dt": 916,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p9",
+          "next": "a12ae288_p10"
+        },
+        {
+          "type": "move",
+          "x": 656,
+          "y": 583,
+          "dt": 940,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p10",
+          "next": "a12ae288_p11"
+        },
+        {
+          "type": "move",
+          "x": 667,
+          "y": 595,
+          "dt": 956,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p11",
+          "next": "a12ae288_p12"
+        },
+        {
+          "type": "move",
+          "x": 703,
+          "y": 626,
+          "dt": 980,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p12",
+          "next": "a12ae288_p13"
+        },
+        {
+          "type": "move",
+          "x": 755,
+          "y": 660,
+          "dt": 1004,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p13",
+          "next": "a12ae288_p14"
+        },
+        {
+          "type": "move",
+          "x": 780,
+          "y": 684,
+          "dt": 1028,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p14",
+          "next": "a12ae288_p15"
+        },
+        {
+          "type": "move",
+          "x": 811,
+          "y": 705,
+          "dt": 1052,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p15",
+          "next": "a12ae288_p16"
+        },
+        {
+          "type": "move",
+          "x": 848,
+          "y": 733,
+          "dt": 1075,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p16",
+          "next": "a12ae288_p17"
+        },
+        {
+          "type": "move",
+          "x": 882,
+          "y": 757,
+          "dt": 1092,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p17",
+          "next": "a12ae288_p18"
+        },
+        {
+          "type": "move",
+          "x": 922,
+          "y": 788,
+          "dt": 1108,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p18",
+          "next": "a12ae288_p19"
+        },
+        {
+          "type": "move",
+          "x": 961,
+          "y": 811,
+          "dt": 1132,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p19",
+          "next": "a12ae288_p20"
+        },
+        {
+          "type": "move",
+          "x": 972,
+          "y": 821,
+          "dt": 1148,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p20",
+          "next": "a12ae288_p21"
+        },
+        {
+          "type": "move",
+          "x": 977,
+          "y": 826,
+          "dt": 1164,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p21",
+          "next": "a12ae288_p22"
+        },
+        {
+          "type": "move",
+          "x": 979,
+          "y": 828,
+          "dt": 1180,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p22",
+          "next": "a12ae288_p23"
+        },
+        {
+          "type": "move",
+          "x": 997,
+          "y": 847,
+          "dt": 1204,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p23",
+          "next": "a12ae288_p24"
+        },
+        {
+          "type": "move",
+          "x": 1020,
+          "y": 867,
+          "dt": 1220,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p24",
+          "next": "a12ae288_p25"
+        },
+        {
+          "type": "move",
+          "x": 1056,
+          "y": 890,
+          "dt": 1236,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p25",
+          "next": "a12ae288_p26"
+        },
+        {
+          "type": "move",
+          "x": 1074,
+          "y": 904,
+          "dt": 1260,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p26",
+          "next": "a12ae288_p27"
+        },
+        {
+          "type": "move",
+          "x": 1075,
+          "y": 906,
+          "dt": 1276,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p27",
+          "next": "a12ae288_p28"
+        },
+        {
+          "type": "move",
+          "x": 1076,
+          "y": 908,
+          "dt": 1300,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p28",
+          "next": "a12ae288_p29"
+        },
+        {
+          "type": "move",
+          "x": 1079,
+          "y": 920,
+          "dt": 1324,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p29",
+          "next": "a12ae288_p30"
+        },
+        {
+          "type": "move",
+          "x": 1091,
+          "y": 940,
+          "dt": 1340,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p30",
+          "next": "a12ae288_p31"
+        },
+        {
+          "type": "move",
+          "x": 1109,
+          "y": 965,
+          "dt": 1364,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p31",
+          "next": "a12ae288_p32"
+        },
+        {
+          "type": "move",
+          "x": 1117,
+          "y": 970,
+          "dt": 1388,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p32",
+          "next": "a12ae288_p33"
+        },
+        {
+          "type": "move",
+          "x": 1119,
+          "y": 972,
+          "dt": 1436,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p33",
+          "next": "a12ae288_p34"
+        },
+        {
+          "type": "move",
+          "x": 1123,
+          "y": 982,
+          "dt": 1452,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p34",
+          "next": "a12ae288_p35"
+        },
+        {
+          "type": "move",
+          "x": 1135,
+          "y": 1005,
+          "dt": 1468,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p35",
+          "next": "a12ae288_p36"
+        },
+        {
+          "type": "move",
+          "x": 1154,
+          "y": 1035,
+          "dt": 1492,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p36",
+          "next": "a12ae288_p37"
+        },
+        {
+          "type": "move",
+          "x": 1160,
+          "y": 1041,
+          "dt": 1508,
+          "buttons": [
+            "left"
+          ],
+          "id": "a12ae288_p37",
+          "direct_jump": false,
+          "path_points": [
+            {
+              "type": "move",
+              "x": 407,
+              "y": 243,
+              "dt": 975,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 436,
+              "y": 282,
+              "dt": 998,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 463,
+              "y": 314,
+              "dt": 1015,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 495,
+              "y": 357,
+              "dt": 1031,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 530,
+              "y": 407,
+              "dt": 1055,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 547,
+              "y": 438,
+              "dt": 1079,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 554,
+              "y": 460,
+              "dt": 1095,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 573,
+              "y": 497,
+              "dt": 1119,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 589,
+              "y": 522,
+              "dt": 1135,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 625,
+              "y": 559,
+              "dt": 1159,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 656,
+              "y": 583,
+              "dt": 1183,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 667,
+              "y": 595,
+              "dt": 1199,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 703,
+              "y": 626,
+              "dt": 1223,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 755,
+              "y": 660,
+              "dt": 1247,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 780,
+              "y": 684,
+              "dt": 1271,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 811,
+              "y": 705,
+              "dt": 1295,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 848,
+              "y": 733,
+              "dt": 1318,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 882,
+              "y": 757,
+              "dt": 1335,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 922,
+              "y": 788,
+              "dt": 1351,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 961,
+              "y": 811,
+              "dt": 1375,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 972,
+              "y": 821,
+              "dt": 1391,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 977,
+              "y": 826,
+              "dt": 1407,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 979,
+              "y": 828,
+              "dt": 1423,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 997,
+              "y": 847,
+              "dt": 1447,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 1020,
+              "y": 867,
+              "dt": 1463,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 1056,
+              "y": 890,
+              "dt": 1479,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 1074,
+              "y": 904,
+              "dt": 1503,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 1075,
+              "y": 906,
+              "dt": 1519,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 1076,
+              "y": 908,
+              "dt": 1543,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 1079,
+              "y": 920,
+              "dt": 1567,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 1091,
+              "y": 940,
+              "dt": 1583,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 1109,
+              "y": 965,
+              "dt": 1607,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 1117,
+              "y": 970,
+              "dt": 1631,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 1119,
+              "y": 972,
+              "dt": 1679,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 1123,
+              "y": 982,
+              "dt": 1695,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 1135,
+              "y": 1005,
+              "dt": 1711,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 1154,
+              "y": 1035,
+              "dt": 1735,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 1160,
+              "y": 1041,
+              "dt": 1751,
+              "buttons": [
+                "left"
+              ]
+            }
+          ],
+          "next": "fb8d90db"
+        },
+        {
+          "id": "fb8d90db",
+          "type": "up",
+          "next": "520b7b4d",
+          "x": 1162,
+          "y": 1045,
+          "button": "left",
+          "dt": 1608
+        },
+        {
+          "type": "move",
+          "x": 1162,
+          "y": 1045,
+          "dt": 1608,
+          "id": "520b7b4d_p0",
+          "next": "520b7b4d_p1"
+        },
+        {
+          "type": "move",
+          "x": 1136,
+          "y": 1001,
+          "dt": 1656,
+          "id": "520b7b4d_p1",
+          "next": "520b7b4d_p2"
+        },
+        {
+          "type": "move",
+          "x": 989,
+          "y": 876,
+          "dt": 1703,
+          "id": "520b7b4d_p2",
+          "next": "520b7b4d_p3"
+        },
+        {
+          "type": "move",
+          "x": 942,
+          "y": 847,
+          "dt": 1743,
+          "id": "520b7b4d_p3",
+          "next": "520b7b4d_p4"
+        },
+        {
+          "type": "move",
+          "x": 927,
+          "y": 836,
+          "dt": 1783,
+          "id": "520b7b4d_p4",
+          "next": "520b7b4d_p5"
+        },
+        {
+          "type": "move",
+          "x": 921,
+          "y": 819,
+          "dt": 1824,
+          "id": "520b7b4d_p5",
+          "next": "520b7b4d_p6"
+        },
+        {
+          "type": "move",
+          "x": 921,
+          "y": 775,
+          "dt": 1864,
+          "id": "520b7b4d_p6",
+          "next": "520b7b4d_p7"
+        },
+        {
+          "type": "move",
+          "x": 931,
+          "y": 705,
+          "dt": 1912,
+          "id": "520b7b4d_p7",
+          "next": "520b7b4d_p8"
+        },
+        {
+          "type": "move",
+          "x": 937,
+          "y": 654,
+          "dt": 1959,
+          "id": "520b7b4d_p8",
+          "next": "520b7b4d_p9"
+        },
+        {
+          "type": "move",
+          "x": 937,
+          "y": 602,
+          "dt": 2000,
+          "id": "520b7b4d_p9",
+          "next": "520b7b4d_p10"
+        },
+        {
+          "type": "move",
+          "x": 931,
+          "y": 589,
+          "dt": 2040,
+          "id": "520b7b4d_p10",
+          "next": "520b7b4d_p11"
+        },
+        {
+          "type": "move",
+          "x": 920,
+          "y": 580,
+          "dt": 2087,
+          "id": "520b7b4d_p11",
+          "direct_jump": false,
+          "path_points": [
+            {
+              "type": "move",
+              "x": 1162,
+              "y": 1045,
+              "dt": 2367
+            },
+            {
+              "type": "move",
+              "x": 1136,
+              "y": 1001,
+              "dt": 2415
+            },
+            {
+              "type": "move",
+              "x": 989,
+              "y": 876,
+              "dt": 2462
+            },
+            {
+              "type": "move",
+              "x": 942,
+              "y": 847,
+              "dt": 2502
+            },
+            {
+              "type": "move",
+              "x": 927,
+              "y": 836,
+              "dt": 2542
+            },
+            {
+              "type": "move",
+              "x": 921,
+              "y": 819,
+              "dt": 2583
+            },
+            {
+              "type": "move",
+              "x": 921,
+              "y": 775,
+              "dt": 2623
+            },
+            {
+              "type": "move",
+              "x": 931,
+              "y": 705,
+              "dt": 2671
+            },
+            {
+              "type": "move",
+              "x": 937,
+              "y": 654,
+              "dt": 2718
+            },
+            {
+              "type": "move",
+              "x": 937,
+              "y": 602,
+              "dt": 2759
+            },
+            {
+              "type": "move",
+              "x": 931,
+              "y": 589,
+              "dt": 2799
+            },
+            {
+              "type": "move",
+              "x": 920,
+              "y": 580,
+              "dt": 2846
+            }
+          ],
+          "next": "5d2a26c8"
+        },
+        {
+          "id": "5d2a26c8",
+          "type": "click",
+          "next": "0c1e65a0",
+          "x": 920,
+          "y": 580,
+          "button": "right",
+          "dt": 2187
+        },
+        {
+          "type": "move",
+          "x": 925,
+          "y": 589,
+          "dt": 2187,
+          "id": "0c1e65a0_p0",
+          "next": "0c1e65a0_p1"
+        },
+        {
+          "type": "move",
+          "x": 990,
+          "y": 650,
+          "dt": 2234,
+          "id": "0c1e65a0_p1",
+          "next": "0c1e65a0_p2"
+        },
+        {
+          "type": "move",
+          "x": 995,
+          "y": 664,
+          "dt": 2282,
+          "id": "0c1e65a0_p2",
+          "next": "0c1e65a0_p3"
+        },
+        {
+          "type": "move",
+          "x": 1001,
+          "y": 684,
+          "dt": 2329,
+          "id": "0c1e65a0_p3",
+          "next": "0c1e65a0_p4"
+        },
+        {
+          "type": "move",
+          "x": 1009,
+          "y": 701,
+          "dt": 2377,
+          "id": "0c1e65a0_p4",
+          "next": "0c1e65a0_p5"
+        },
+        {
+          "type": "move",
+          "x": 1010,
+          "y": 704,
+          "dt": 2433,
+          "id": "0c1e65a0_p5",
+          "next": "0c1e65a0_p6"
+        },
+        {
+          "type": "move",
+          "x": 1010,
+          "y": 705,
+          "dt": 2513,
+          "id": "0c1e65a0_p6",
+          "next": "0c1e65a0_p7"
+        },
+        {
+          "type": "move",
+          "x": 1010,
+          "y": 713,
+          "dt": 2561,
+          "id": "0c1e65a0_p7",
+          "next": "0c1e65a0_p8"
+        },
+        {
+          "type": "move",
+          "x": 1010,
+          "y": 723,
+          "dt": 2609,
+          "id": "0c1e65a0_p8",
+          "next": "0c1e65a0_p9"
+        },
+        {
+          "type": "move",
+          "x": 1012,
+          "y": 724,
+          "dt": 2689,
+          "id": "0c1e65a0_p9",
+          "next": "0c1e65a0_p10"
+        },
+        {
+          "type": "move",
+          "x": 1035,
+          "y": 710,
+          "dt": 2737,
+          "id": "0c1e65a0_p10",
+          "next": "0c1e65a0_p11"
+        },
+        {
+          "type": "move",
+          "x": 1042,
+          "y": 699,
+          "dt": 2777,
+          "id": "0c1e65a0_p11",
+          "next": "0c1e65a0_p12"
+        },
+        {
+          "type": "move",
+          "x": 1043,
+          "y": 696,
+          "dt": 2817,
+          "id": "0c1e65a0_p12",
+          "direct_jump": false,
+          "path_points": [
+            {
+              "type": "move",
+              "x": 925,
+              "y": 589,
+              "dt": 3024
+            },
+            {
+              "type": "move",
+              "x": 990,
+              "y": 650,
+              "dt": 3071
+            },
+            {
+              "type": "move",
+              "x": 995,
+              "y": 664,
+              "dt": 3119
+            },
+            {
+              "type": "move",
+              "x": 1001,
+              "y": 684,
+              "dt": 3166
+            },
+            {
+              "type": "move",
+              "x": 1009,
+              "y": 701,
+              "dt": 3214
+            },
+            {
+              "type": "move",
+              "x": 1010,
+              "y": 704,
+              "dt": 3270
+            },
+            {
+              "type": "move",
+              "x": 1010,
+              "y": 705,
+              "dt": 3350
+            },
+            {
+              "type": "move",
+              "x": 1010,
+              "y": 713,
+              "dt": 3398
+            },
+            {
+              "type": "move",
+              "x": 1010,
+              "y": 723,
+              "dt": 3446
+            },
+            {
+              "type": "move",
+              "x": 1012,
+              "y": 724,
+              "dt": 3526
+            },
+            {
+              "type": "move",
+              "x": 1035,
+              "y": 710,
+              "dt": 3574
+            },
+            {
+              "type": "move",
+              "x": 1042,
+              "y": 699,
+              "dt": 3614
+            },
+            {
+              "type": "move",
+              "x": 1043,
+              "y": 696,
+              "dt": 3654
+            }
+          ],
+          "next": "8af70682"
+        },
+        {
+          "id": "8af70682",
+          "type": "click",
+          "next": "d1d55506",
+          "x": 1044,
+          "y": 695,
+          "button": "left",
+          "dt": 2917
+        },
+        {
+          "type": "move",
+          "x": 1043,
+          "y": 694,
+          "dt": 2917,
+          "id": "d1d55506_p0",
+          "next": "d1d55506_p1"
+        },
+        {
+          "type": "move",
+          "x": 949,
+          "y": 698,
+          "dt": 2965,
+          "id": "d1d55506_p1",
+          "next": "d1d55506_p2"
+        },
+        {
+          "type": "move",
+          "x": 771,
+          "y": 715,
+          "dt": 3012,
+          "id": "d1d55506_p2",
+          "next": "d1d55506_p3"
+        },
+        {
+          "type": "move",
+          "x": 691,
+          "y": 726,
+          "dt": 3052,
+          "id": "d1d55506_p3",
+          "next": "d1d55506_p4"
+        },
+        {
+          "type": "move",
+          "x": 604,
+          "y": 735,
+          "dt": 3100,
+          "id": "d1d55506_p4",
+          "next": "d1d55506_p5"
+        },
+        {
+          "type": "move",
+          "x": 559,
+          "y": 735,
+          "dt": 3148,
+          "id": "d1d55506_p5",
+          "next": "d1d55506_p6"
+        },
+        {
+          "type": "move",
+          "x": 495,
+          "y": 719,
+          "dt": 3189,
+          "id": "d1d55506_p6",
+          "next": "d1d55506_p7"
+        },
+        {
+          "type": "move",
+          "x": 415,
+          "y": 703,
+          "dt": 3236,
+          "id": "d1d55506_p7",
+          "next": "d1d55506_p8"
+        },
+        {
+          "type": "move",
+          "x": 326,
+          "y": 690,
+          "dt": 3277,
+          "id": "d1d55506_p8",
+          "direct_jump": false,
+          "path_points": [
+            {
+              "type": "move",
+              "x": 1043,
+              "y": 694,
+              "dt": 4423
+            },
+            {
+              "type": "move",
+              "x": 949,
+              "y": 698,
+              "dt": 4471
+            },
+            {
+              "type": "move",
+              "x": 771,
+              "y": 715,
+              "dt": 4518
+            },
+            {
+              "type": "move",
+              "x": 691,
+              "y": 726,
+              "dt": 4558
+            },
+            {
+              "type": "move",
+              "x": 604,
+              "y": 735,
+              "dt": 4606
+            },
+            {
+              "type": "move",
+              "x": 559,
+              "y": 735,
+              "dt": 4654
+            },
+            {
+              "type": "move",
+              "x": 495,
+              "y": 719,
+              "dt": 4695
+            },
+            {
+              "type": "move",
+              "x": 415,
+              "y": 703,
+              "dt": 4742
+            },
+            {
+              "type": "move",
+              "x": 326,
+              "y": 690,
+              "dt": 4783
+            }
+          ],
+          "next": "3984d22b"
+        },
+        {
+          "id": "3984d22b",
+          "type": "down",
+          "next": "7735133a",
+          "x": 317,
+          "y": 687,
+          "button": "left",
+          "dt": 3377
+        },
+        {
+          "type": "move",
+          "x": 317,
+          "y": 686,
+          "dt": 3377,
+          "buttons": [
+            "left"
+          ],
+          "id": "7735133a_p0",
+          "next": "7735133a_p1"
+        },
+        {
+          "type": "move",
+          "x": 327,
+          "y": 657,
+          "dt": 3401,
+          "buttons": [
+            "left"
+          ],
+          "id": "7735133a_p1",
+          "next": "7735133a_p2"
+        },
+        {
+          "type": "move",
+          "x": 329,
+          "y": 644,
+          "dt": 3425,
+          "buttons": [
+            "left"
+          ],
+          "id": "7735133a_p2",
+          "next": "7735133a_p3"
+        },
+        {
+          "type": "move",
+          "x": 329,
+          "y": 632,
+          "dt": 3449,
+          "buttons": [
+            "left"
+          ],
+          "id": "7735133a_p3",
+          "next": "7735133a_p4"
+        },
+        {
+          "type": "move",
+          "x": 329,
+          "y": 624,
+          "dt": 3473,
+          "buttons": [
+            "left"
+          ],
+          "id": "7735133a_p4",
+          "next": "7735133a_p5"
+        },
+        {
+          "type": "move",
+          "x": 329,
+          "y": 618,
+          "dt": 3489,
+          "buttons": [
+            "left"
+          ],
+          "id": "7735133a_p5",
+          "next": "7735133a_p6"
+        },
+        {
+          "type": "move",
+          "x": 325,
+          "y": 601,
+          "dt": 3513,
+          "buttons": [
+            "left"
+          ],
+          "id": "7735133a_p6",
+          "next": "7735133a_p7"
+        },
+        {
+          "type": "move",
+          "x": 320,
+          "y": 575,
+          "dt": 3537,
+          "buttons": [
+            "left"
+          ],
+          "id": "7735133a_p7",
+          "next": "7735133a_p8"
+        },
+        {
+          "type": "move",
+          "x": 315,
+          "y": 565,
+          "dt": 3561,
+          "buttons": [
+            "left"
+          ],
+          "id": "7735133a_p8",
+          "next": "7735133a_p9"
+        },
+        {
+          "type": "move",
+          "x": 312,
+          "y": 563,
+          "dt": 3641,
+          "buttons": [
+            "left"
+          ],
+          "id": "7735133a_p9",
+          "next": "7735133a_p10"
+        },
+        {
+          "type": "move",
+          "x": 299,
+          "y": 563,
+          "dt": 3657,
+          "buttons": [
+            "left"
+          ],
+          "id": "7735133a_p10",
+          "next": "7735133a_p11"
+        },
+        {
+          "type": "move",
+          "x": 289,
+          "y": 563,
+          "dt": 3681,
+          "buttons": [
+            "left"
+          ],
+          "id": "7735133a_p11",
+          "next": "7735133a_p12"
+        },
+        {
+          "type": "move",
+          "x": 286,
+          "y": 563,
+          "dt": 3705,
+          "buttons": [
+            "left"
+          ],
+          "id": "7735133a_p12",
+          "next": "7735133a_p13"
+        },
+        {
+          "type": "move",
+          "x": 282,
+          "y": 563,
+          "dt": 3728,
+          "buttons": [
+            "left"
+          ],
+          "id": "7735133a_p13",
+          "next": "7735133a_p14"
+        },
+        {
+          "type": "move",
+          "x": 280,
+          "y": 564,
+          "dt": 3745,
+          "buttons": [
+            "left"
+          ],
+          "id": "7735133a_p14",
+          "next": "7735133a_p15"
+        },
+        {
+          "type": "move",
+          "x": 272,
+          "y": 566,
+          "dt": 3761,
+          "buttons": [
+            "left"
+          ],
+          "id": "7735133a_p15",
+          "next": "7735133a_p16"
+        },
+        {
+          "type": "move",
+          "x": 266,
+          "y": 566,
+          "dt": 3784,
+          "buttons": [
+            "left"
+          ],
+          "id": "7735133a_p16",
+          "next": "7735133a_p17"
+        },
+        {
+          "type": "move",
+          "x": 261,
+          "y": 567,
+          "dt": 3817,
+          "buttons": [
+            "left"
+          ],
+          "id": "7735133a_p17",
+          "next": "7735133a_p18"
+        },
+        {
+          "type": "move",
+          "x": 257,
+          "y": 567,
+          "dt": 3849,
+          "buttons": [
+            "left"
+          ],
+          "id": "7735133a_p18",
+          "next": "7735133a_p19"
+        },
+        {
+          "type": "move",
+          "x": 256,
+          "y": 567,
+          "dt": 3873,
+          "buttons": [
+            "left"
+          ],
+          "id": "7735133a_p19",
+          "next": "7735133a_p20"
+        },
+        {
+          "type": "move",
+          "x": 250,
+          "y": 567,
+          "dt": 3896,
+          "buttons": [
+            "left"
+          ],
+          "id": "7735133a_p20",
+          "next": "7735133a_p21"
+        },
+        {
+          "type": "move",
+          "x": 245,
+          "y": 569,
+          "dt": 3912,
+          "buttons": [
+            "left"
+          ],
+          "id": "7735133a_p21",
+          "next": "7735133a_p22"
+        },
+        {
+          "type": "move",
+          "x": 242,
+          "y": 570,
+          "dt": 3929,
+          "buttons": [
+            "left"
+          ],
+          "id": "7735133a_p22",
+          "next": "7735133a_p23"
+        },
+        {
+          "type": "move",
+          "x": 240,
+          "y": 571,
+          "dt": 3945,
+          "buttons": [
+            "left"
+          ],
+          "id": "7735133a_p23",
+          "next": "7735133a_p24"
+        },
+        {
+          "type": "move",
+          "x": 238,
+          "y": 572,
+          "dt": 3969,
+          "buttons": [
+            "left"
+          ],
+          "id": "7735133a_p24",
+          "direct_jump": false,
+          "path_points": [
+            {
+              "type": "move",
+              "x": 317,
+              "y": 686,
+              "dt": 5095,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 327,
+              "y": 657,
+              "dt": 5119,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 329,
+              "y": 644,
+              "dt": 5143,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 329,
+              "y": 632,
+              "dt": 5167,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 329,
+              "y": 624,
+              "dt": 5191,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 329,
+              "y": 618,
+              "dt": 5207,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 325,
+              "y": 601,
+              "dt": 5231,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 320,
+              "y": 575,
+              "dt": 5255,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 315,
+              "y": 565,
+              "dt": 5279,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 312,
+              "y": 563,
+              "dt": 5359,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 299,
+              "y": 563,
+              "dt": 5375,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 289,
+              "y": 563,
+              "dt": 5399,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 286,
+              "y": 563,
+              "dt": 5423,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 282,
+              "y": 563,
+              "dt": 5446,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 280,
+              "y": 564,
+              "dt": 5463,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 272,
+              "y": 566,
+              "dt": 5479,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 266,
+              "y": 566,
+              "dt": 5502,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 261,
+              "y": 567,
+              "dt": 5535,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 257,
+              "y": 567,
+              "dt": 5567,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 256,
+              "y": 567,
+              "dt": 5591,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 250,
+              "y": 567,
+              "dt": 5614,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 245,
+              "y": 569,
+              "dt": 5630,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 242,
+              "y": 570,
+              "dt": 5647,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 240,
+              "y": 571,
+              "dt": 5663,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 238,
+              "y": 572,
+              "dt": 5687,
+              "buttons": [
+                "left"
+              ]
+            }
+          ],
+          "next": "5629288f"
+        },
+        {
+          "id": "5629288f",
+          "type": "up",
+          "next": "e54d641c",
+          "x": 238,
+          "y": 572,
+          "button": "left",
+          "dt": 4069
+        },
+        {
+          "type": "move",
+          "x": 237,
+          "y": 574,
+          "dt": 4069,
+          "id": "e54d641c_p0",
+          "next": "e54d641c_p1"
+        },
+        {
+          "type": "move",
+          "x": 237,
+          "y": 597,
+          "dt": 4117,
+          "id": "e54d641c_p1",
+          "next": "e54d641c_p2"
+        },
+        {
+          "type": "move",
+          "x": 237,
+          "y": 621,
+          "dt": 4165,
+          "id": "e54d641c_p2",
+          "next": "e54d641c_p3"
+        },
+        {
+          "type": "move",
+          "x": 241,
+          "y": 630,
+          "dt": 4213,
+          "id": "e54d641c_p3",
+          "next": "e54d641c_p4"
+        },
+        {
+          "type": "move",
+          "x": 243,
+          "y": 637,
+          "dt": 4260,
+          "id": "e54d641c_p4",
+          "next": "e54d641c_p5"
+        },
+        {
+          "type": "move",
+          "x": 244,
+          "y": 639,
+          "dt": 4300,
+          "id": "e54d641c_p5",
+          "next": "e54d641c_p6"
+        },
+        {
+          "type": "move",
+          "x": 246,
+          "y": 642,
+          "dt": 4509,
+          "id": "e54d641c_p6",
+          "next": "e54d641c_p7"
+        },
+        {
+          "type": "move",
+          "x": 246,
+          "y": 631,
+          "dt": 4557,
+          "id": "e54d641c_p7",
+          "next": "e54d641c_p8"
+        },
+        {
+          "type": "move",
+          "x": 246,
+          "y": 629,
+          "dt": 4693,
+          "id": "e54d641c_p8",
+          "next": "e54d641c_p9"
+        },
+        {
+          "type": "move",
+          "x": 246,
+          "y": 639,
+          "dt": 4733,
+          "id": "e54d641c_p9",
+          "next": "e54d641c_p10"
+        },
+        {
+          "type": "move",
+          "x": 246,
+          "y": 650,
+          "dt": 4780,
+          "id": "e54d641c_p10",
+          "next": "e54d641c_p11"
+        },
+        {
+          "type": "move",
+          "x": 246,
+          "y": 654,
+          "dt": 4837,
+          "id": "e54d641c_p11",
+          "direct_jump": false,
+          "path_points": [
+            {
+              "type": "move",
+              "x": 237,
+              "y": 574,
+              "dt": 5815
+            },
+            {
+              "type": "move",
+              "x": 237,
+              "y": 597,
+              "dt": 5863
+            },
+            {
+              "type": "move",
+              "x": 237,
+              "y": 621,
+              "dt": 5911
+            },
+            {
+              "type": "move",
+              "x": 241,
+              "y": 630,
+              "dt": 5959
+            },
+            {
+              "type": "move",
+              "x": 243,
+              "y": 637,
+              "dt": 6006
+            },
+            {
+              "type": "move",
+              "x": 244,
+              "y": 639,
+              "dt": 6046
+            },
+            {
+              "type": "move",
+              "x": 246,
+              "y": 642,
+              "dt": 6255
+            },
+            {
+              "type": "move",
+              "x": 246,
+              "y": 631,
+              "dt": 6303
+            },
+            {
+              "type": "move",
+              "x": 246,
+              "y": 629,
+              "dt": 6439
+            },
+            {
+              "type": "move",
+              "x": 246,
+              "y": 639,
+              "dt": 6479
+            },
+            {
+              "type": "move",
+              "x": 246,
+              "y": 650,
+              "dt": 6526
+            },
+            {
+              "type": "move",
+              "x": 246,
+              "y": 654,
+              "dt": 6583
+            }
+          ],
+          "next": "db411529"
+        },
+        {
+          "id": "db411529",
+          "type": "down",
+          "next": "fec617f3",
+          "x": 246,
+          "y": 654,
+          "button": "left",
+          "dt": 4937
+        },
+        {
+          "type": "move",
+          "x": 246,
+          "y": 655,
+          "dt": 4937,
+          "buttons": [
+            "left"
+          ],
+          "id": "fec617f3_p0",
+          "next": "fec617f3_p1"
+        },
+        {
+          "type": "move",
+          "x": 257,
+          "y": 657,
+          "dt": 4961,
+          "buttons": [
+            "left"
+          ],
+          "id": "fec617f3_p1",
+          "next": "fec617f3_p2"
+        },
+        {
+          "type": "move",
+          "x": 270,
+          "y": 659,
+          "dt": 4986,
+          "buttons": [
+            "left"
+          ],
+          "id": "fec617f3_p2",
+          "next": "fec617f3_p3"
+        },
+        {
+          "type": "move",
+          "x": 278,
+          "y": 660,
+          "dt": 5010,
+          "buttons": [
+            "left"
+          ],
+          "id": "fec617f3_p3",
+          "next": "fec617f3_p4"
+        },
+        {
+          "type": "move",
+          "x": 289,
+          "y": 660,
+          "dt": 5032,
+          "buttons": [
+            "left"
+          ],
+          "id": "fec617f3_p4",
+          "next": "fec617f3_p5"
+        },
+        {
+          "type": "move",
+          "x": 303,
+          "y": 660,
+          "dt": 5049,
+          "buttons": [
+            "left"
+          ],
+          "id": "fec617f3_p5",
+          "next": "fec617f3_p6"
+        },
+        {
+          "type": "move",
+          "x": 318,
+          "y": 660,
+          "dt": 5073,
+          "buttons": [
+            "left"
+          ],
+          "id": "fec617f3_p6",
+          "next": "fec617f3_p7"
+        },
+        {
+          "type": "move",
+          "x": 331,
+          "y": 660,
+          "dt": 5096,
+          "buttons": [
+            "left"
+          ],
+          "id": "fec617f3_p7",
+          "next": "fec617f3_p8"
+        },
+        {
+          "type": "move",
+          "x": 336,
+          "y": 660,
+          "dt": 5120,
+          "buttons": [
+            "left"
+          ],
+          "id": "fec617f3_p8",
+          "next": "fec617f3_p9"
+        },
+        {
+          "type": "move",
+          "x": 343,
+          "y": 660,
+          "dt": 5137,
+          "buttons": [
+            "left"
+          ],
+          "id": "fec617f3_p9",
+          "next": "fec617f3_p10"
+        },
+        {
+          "type": "move",
+          "x": 353,
+          "y": 660,
+          "dt": 5161,
+          "buttons": [
+            "left"
+          ],
+          "id": "fec617f3_p10",
+          "next": "fec617f3_p11"
+        },
+        {
+          "type": "move",
+          "x": 361,
+          "y": 660,
+          "dt": 5186,
+          "buttons": [
+            "left"
+          ],
+          "id": "fec617f3_p11",
+          "next": "fec617f3_p12"
+        },
+        {
+          "type": "move",
+          "x": 369,
+          "y": 660,
+          "dt": 5209,
+          "buttons": [
+            "left"
+          ],
+          "id": "fec617f3_p12",
+          "next": "fec617f3_p13"
+        },
+        {
+          "type": "move",
+          "x": 374,
+          "y": 659,
+          "dt": 5240,
+          "buttons": [
+            "left"
+          ],
+          "id": "fec617f3_p13",
+          "next": "fec617f3_p14"
+        },
+        {
+          "type": "move",
+          "x": 375,
+          "y": 659,
+          "dt": 5257,
+          "buttons": [
+            "left"
+          ],
+          "id": "fec617f3_p14",
+          "next": "fec617f3_p15"
+        },
+        {
+          "type": "move",
+          "x": 377,
+          "y": 659,
+          "dt": 5273,
+          "buttons": [
+            "left"
+          ],
+          "id": "fec617f3_p15",
+          "next": "fec617f3_p16"
+        },
+        {
+          "type": "move",
+          "x": 382,
+          "y": 659,
+          "dt": 5297,
+          "buttons": [
+            "left"
+          ],
+          "id": "fec617f3_p16",
+          "direct_jump": false,
+          "path_points": [
+            {
+              "type": "move",
+              "x": 246,
+              "y": 655,
+              "dt": 6679,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 257,
+              "y": 657,
+              "dt": 6703,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 270,
+              "y": 659,
+              "dt": 6728,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 278,
+              "y": 660,
+              "dt": 6752,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 289,
+              "y": 660,
+              "dt": 6774,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 303,
+              "y": 660,
+              "dt": 6791,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 318,
+              "y": 660,
+              "dt": 6815,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 331,
+              "y": 660,
+              "dt": 6838,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 336,
+              "y": 660,
+              "dt": 6862,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 343,
+              "y": 660,
+              "dt": 6879,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 353,
+              "y": 660,
+              "dt": 6903,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 361,
+              "y": 660,
+              "dt": 6928,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 369,
+              "y": 660,
+              "dt": 6951,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 374,
+              "y": 659,
+              "dt": 6982,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 375,
+              "y": 659,
+              "dt": 6999,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 377,
+              "y": 659,
+              "dt": 7015,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 382,
+              "y": 659,
+              "dt": 7039,
+              "buttons": [
+                "left"
+              ]
+            }
+          ],
+          "next": "de9e2418"
+        },
+        {
+          "id": "de9e2418",
+          "type": "up",
+          "next": "3a143fcc",
+          "x": 382,
+          "y": 659,
+          "button": "left",
+          "dt": 5397
+        },
+        {
+          "type": "move",
+          "x": 383,
+          "y": 657,
+          "dt": 5397,
+          "id": "3a143fcc_p0",
+          "next": "3a143fcc_p1"
+        },
+        {
+          "type": "move",
+          "x": 353,
+          "y": 641,
+          "dt": 5446,
+          "id": "3a143fcc_p1",
+          "next": "3a143fcc_p2"
+        },
+        {
+          "type": "move",
+          "x": 316,
+          "y": 623,
+          "dt": 5494,
+          "id": "3a143fcc_p2",
+          "next": "3a143fcc_p3"
+        },
+        {
+          "type": "move",
+          "x": 295,
+          "y": 606,
+          "dt": 5541,
+          "id": "3a143fcc_p3",
+          "next": "3a143fcc_p4"
+        },
+        {
+          "type": "move",
+          "x": 287,
+          "y": 598,
+          "dt": 5582,
+          "id": "3a143fcc_p4",
+          "next": "3a143fcc_p5"
+        },
+        {
+          "type": "move",
+          "x": 277,
+          "y": 585,
+          "dt": 5629,
+          "id": "3a143fcc_p5",
+          "next": "3a143fcc_p6"
+        },
+        {
+          "type": "move",
+          "x": 271,
+          "y": 571,
+          "dt": 5685,
+          "id": "3a143fcc_p6",
+          "next": "3a143fcc_p7"
+        },
+        {
+          "type": "move",
+          "x": 263,
+          "y": 554,
+          "dt": 5725,
+          "id": "3a143fcc_p7",
+          "next": "3a143fcc_p8"
+        },
+        {
+          "type": "move",
+          "x": 260,
+          "y": 551,
+          "dt": 5862,
+          "id": "3a143fcc_p8",
+          "next": "3a143fcc_p9"
+        },
+        {
+          "type": "move",
+          "x": 254,
+          "y": 551,
+          "dt": 5926,
+          "id": "3a143fcc_p9",
+          "next": "3a143fcc_p10"
+        },
+        {
+          "type": "move",
+          "x": 254,
+          "y": 552,
+          "dt": 5982,
+          "id": "3a143fcc_p10",
+          "direct_jump": false,
+          "path_points": [
+            {
+              "type": "move",
+              "x": 383,
+              "y": 657,
+              "dt": 7166
+            },
+            {
+              "type": "move",
+              "x": 353,
+              "y": 641,
+              "dt": 7215
+            },
+            {
+              "type": "move",
+              "x": 316,
+              "y": 623,
+              "dt": 7263
+            },
+            {
+              "type": "move",
+              "x": 295,
+              "y": 606,
+              "dt": 7310
+            },
+            {
+              "type": "move",
+              "x": 287,
+              "y": 598,
+              "dt": 7351
+            },
+            {
+              "type": "move",
+              "x": 277,
+              "y": 585,
+              "dt": 7398
+            },
+            {
+              "type": "move",
+              "x": 271,
+              "y": 571,
+              "dt": 7454
+            },
+            {
+              "type": "move",
+              "x": 263,
+              "y": 554,
+              "dt": 7494
+            },
+            {
+              "type": "move",
+              "x": 260,
+              "y": 551,
+              "dt": 7631
+            },
+            {
+              "type": "move",
+              "x": 254,
+              "y": 551,
+              "dt": 7695
+            },
+            {
+              "type": "move",
+              "x": 254,
+              "y": 552,
+              "dt": 7751
+            }
+          ],
+          "next": "d2331bfc"
+        },
+        {
+          "id": "d2331bfc",
+          "type": "down",
+          "next": "eac9cc61",
+          "x": 254,
+          "y": 552,
+          "button": "left",
+          "dt": 6082
+        },
+        {
+          "type": "move",
+          "x": 254,
+          "y": 556,
+          "dt": 6082,
+          "buttons": [
+            "left"
+          ],
+          "id": "eac9cc61_p0",
+          "next": "eac9cc61_p1"
+        },
+        {
+          "type": "move",
+          "x": 254,
+          "y": 564,
+          "dt": 6106,
+          "buttons": [
+            "left"
+          ],
+          "id": "eac9cc61_p1",
+          "next": "eac9cc61_p2"
+        },
+        {
+          "type": "move",
+          "x": 254,
+          "y": 573,
+          "dt": 6129,
+          "buttons": [
+            "left"
+          ],
+          "id": "eac9cc61_p2",
+          "next": "eac9cc61_p3"
+        },
+        {
+          "type": "move",
+          "x": 254,
+          "y": 579,
+          "dt": 6146,
+          "buttons": [
+            "left"
+          ],
+          "id": "eac9cc61_p3",
+          "next": "eac9cc61_p4"
+        },
+        {
+          "type": "move",
+          "x": 254,
+          "y": 587,
+          "dt": 6170,
+          "buttons": [
+            "left"
+          ],
+          "id": "eac9cc61_p4",
+          "next": "eac9cc61_p5"
+        },
+        {
+          "type": "move",
+          "x": 254,
+          "y": 602,
+          "dt": 6193,
+          "buttons": [
+            "left"
+          ],
+          "id": "eac9cc61_p5",
+          "next": "eac9cc61_p6"
+        },
+        {
+          "type": "move",
+          "x": 252,
+          "y": 616,
+          "dt": 6210,
+          "buttons": [
+            "left"
+          ],
+          "id": "eac9cc61_p6",
+          "next": "eac9cc61_p7"
+        },
+        {
+          "type": "move",
+          "x": 250,
+          "y": 625,
+          "dt": 6226,
+          "buttons": [
+            "left"
+          ],
+          "id": "eac9cc61_p7",
+          "next": "eac9cc61_p8"
+        },
+        {
+          "type": "move",
+          "x": 248,
+          "y": 634,
+          "dt": 6242,
+          "buttons": [
+            "left"
+          ],
+          "id": "eac9cc61_p8",
+          "next": "eac9cc61_p9"
+        },
+        {
+          "type": "move",
+          "x": 248,
+          "y": 640,
+          "dt": 6266,
+          "buttons": [
+            "left"
+          ],
+          "id": "eac9cc61_p9",
+          "next": "eac9cc61_p10"
+        },
+        {
+          "type": "move",
+          "x": 247,
+          "y": 643,
+          "dt": 6282,
+          "buttons": [
+            "left"
+          ],
+          "id": "eac9cc61_p10",
+          "next": "eac9cc61_p11"
+        },
+        {
+          "type": "move",
+          "x": 246,
+          "y": 647,
+          "dt": 6306,
+          "buttons": [
+            "left"
+          ],
+          "id": "eac9cc61_p11",
+          "next": "eac9cc61_p12"
+        },
+        {
+          "type": "move",
+          "x": 246,
+          "y": 650,
+          "dt": 6330,
+          "buttons": [
+            "left"
+          ],
+          "id": "eac9cc61_p12",
+          "next": "eac9cc61_p13"
+        },
+        {
+          "type": "move",
+          "x": 245,
+          "y": 656,
+          "dt": 6354,
+          "buttons": [
+            "left"
+          ],
+          "id": "eac9cc61_p13",
+          "next": "eac9cc61_p14"
+        },
+        {
+          "type": "move",
+          "x": 245,
+          "y": 661,
+          "dt": 6371,
+          "buttons": [
+            "left"
+          ],
+          "id": "eac9cc61_p14",
+          "next": "eac9cc61_p15"
+        },
+        {
+          "type": "move",
+          "x": 242,
+          "y": 667,
+          "dt": 6402,
+          "buttons": [
+            "left"
+          ],
+          "id": "eac9cc61_p15",
+          "direct_jump": false,
+          "path_points": [
+            {
+              "type": "move",
+              "x": 254,
+              "y": 556,
+              "dt": 7775,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 254,
+              "y": 564,
+              "dt": 7799,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 254,
+              "y": 573,
+              "dt": 7822,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 254,
+              "y": 579,
+              "dt": 7839,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 254,
+              "y": 587,
+              "dt": 7863,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 254,
+              "y": 602,
+              "dt": 7886,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 252,
+              "y": 616,
+              "dt": 7903,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 250,
+              "y": 625,
+              "dt": 7919,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 248,
+              "y": 634,
+              "dt": 7935,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 248,
+              "y": 640,
+              "dt": 7959,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 247,
+              "y": 643,
+              "dt": 7975,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 246,
+              "y": 647,
+              "dt": 7999,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 246,
+              "y": 650,
+              "dt": 8023,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 245,
+              "y": 656,
+              "dt": 8047,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 245,
+              "y": 661,
+              "dt": 8064,
+              "buttons": [
+                "left"
+              ]
+            },
+            {
+              "type": "move",
+              "x": 242,
+              "y": 667,
+              "dt": 8095,
+              "buttons": [
+                "left"
+              ]
+            }
+          ],
+          "next": "f26a7b29"
+        },
+        {
+          "id": "f26a7b29",
+          "type": "up",
+          "next": "b2c4fd9e",
+          "x": 242,
+          "y": 667,
+          "button": "left",
+          "dt": 6502
+        },
+        {
+          "type": "move",
+          "x": 245,
+          "y": 668,
+          "dt": 6502,
+          "id": "b2c4fd9e_p0",
+          "next": "b2c4fd9e_p1"
+        },
+        {
+          "type": "move",
+          "x": 275,
+          "y": 668,
+          "dt": 6550,
+          "id": "b2c4fd9e_p1",
+          "next": "b2c4fd9e_p2"
+        },
+        {
+          "type": "move",
+          "x": 303,
+          "y": 668,
+          "dt": 6590,
+          "id": "b2c4fd9e_p2",
+          "next": "b2c4fd9e_p3"
+        },
+        {
+          "type": "move",
+          "x": 383,
+          "y": 664,
+          "dt": 6630,
+          "id": "b2c4fd9e_p3",
+          "next": "b2c4fd9e_p4"
+        },
+        {
+          "type": "move",
+          "x": 558,
+          "y": 655,
+          "dt": 6678,
+          "id": "b2c4fd9e_p4",
+          "next": "b2c4fd9e_p5"
+        },
+        {
+          "type": "move",
+          "x": 583,
+          "y": 651,
+          "dt": 6725,
+          "id": "b2c4fd9e_p5",
+          "next": "b2c4fd9e_p6"
+        },
+        {
+          "type": "move",
+          "x": 594,
+          "y": 648,
+          "dt": 6766,
+          "id": "b2c4fd9e_p6",
+          "next": "b2c4fd9e_p7"
+        },
+        {
+          "type": "move",
+          "x": 611,
+          "y": 645,
+          "dt": 6806,
+          "id": "b2c4fd9e_p7",
+          "next": "b2c4fd9e_p8"
+        },
+        {
+          "type": "move",
+          "x": 618,
+          "y": 644,
+          "dt": 6862,
+          "id": "b2c4fd9e_p8",
+          "next": "b2c4fd9e_p9"
+        },
+        {
+          "type": "move",
+          "x": 625,
+          "y": 643,
+          "dt": 6910,
+          "id": "b2c4fd9e_p9",
+          "direct_jump": false,
+          "path_points": [
+            {
+              "type": "move",
+              "x": 245,
+              "y": 668,
+              "dt": 8495
+            },
+            {
+              "type": "move",
+              "x": 275,
+              "y": 668,
+              "dt": 8543
+            },
+            {
+              "type": "move",
+              "x": 303,
+              "y": 668,
+              "dt": 8583
+            },
+            {
+              "type": "move",
+              "x": 383,
+              "y": 664,
+              "dt": 8623
+            },
+            {
+              "type": "move",
+              "x": 558,
+              "y": 655,
+              "dt": 8671
+            },
+            {
+              "type": "move",
+              "x": 583,
+              "y": 651,
+              "dt": 8718
+            },
+            {
+              "type": "move",
+              "x": 594,
+              "y": 648,
+              "dt": 8759
+            },
+            {
+              "type": "move",
+              "x": 611,
+              "y": 645,
+              "dt": 8799
+            },
+            {
+              "type": "move",
+              "x": 618,
+              "y": 644,
+              "dt": 8855
+            },
+            {
+              "type": "move",
+              "x": 625,
+              "y": 643,
+              "dt": 8903
+            }
+          ],
+          "next": "7754158a"
+        },
+        {
+          "id": "7754158a",
+          "type": "click",
+          "next": "9d2af4c2",
+          "x": 626,
+          "y": 643,
+          "button": "left",
+          "dt": 7010
+        },
+        {
+          "type": "move",
+          "x": 627,
+          "y": 643,
+          "dt": 7010,
+          "id": "9d2af4c2_p0",
+          "next": "9d2af4c2_p1"
+        },
+        {
+          "type": "move",
+          "x": 692,
+          "y": 670,
+          "dt": 7058,
+          "id": "9d2af4c2_p1",
+          "next": "9d2af4c2_p2"
+        },
+        {
+          "type": "move",
+          "x": 955,
+          "y": 770,
+          "dt": 7106,
+          "id": "9d2af4c2_p2",
+          "next": "9d2af4c2_p3"
+        },
+        {
+          "type": "move",
+          "x": 1178,
+          "y": 877,
+          "dt": 7153,
+          "id": "9d2af4c2_p3",
+          "next": "9d2af4c2_p4"
+        },
+        {
+          "type": "move",
+          "x": 1321,
+          "y": 959,
+          "dt": 7201,
+          "id": "9d2af4c2_p4",
+          "next": "9d2af4c2_p5"
+        },
+        {
+          "type": "move",
+          "x": 1487,
+          "y": 1047,
+          "dt": 7249,
+          "id": "9d2af4c2_p5",
+          "next": "9d2af4c2_p6"
+        },
+        {
+          "type": "move",
+          "x": 1581,
+          "y": 1116,
+          "dt": 7297,
+          "id": "9d2af4c2_p6",
+          "direct_jump": false,
+          "path_points": [
+            {
+              "type": "move",
+              "x": 627,
+              "y": 643,
+              "dt": 9295
+            },
+            {
+              "type": "move",
+              "x": 692,
+              "y": 670,
+              "dt": 9343
+            },
+            {
+              "type": "move",
+              "x": 955,
+              "y": 770,
+              "dt": 9391
+            },
+            {
+              "type": "move",
+              "x": 1178,
+              "y": 877,
+              "dt": 9438
+            },
+            {
+              "type": "move",
+              "x": 1321,
+              "y": 959,
+              "dt": 9486
+            },
+            {
+              "type": "move",
+              "x": 1487,
+              "y": 1047,
+              "dt": 9534
+            },
+            {
+              "type": "move",
+              "x": 1581,
+              "y": 1116,
+              "dt": 9582
+            }
+          ],
+          "next": null
+        }
+      ],
+      "duration": 7297,
+      "graph_data": {
+        "nodes": [
+          {
+            "id": "9745a02b",
+            "class_name": "StartNodeItem",
+            "node_type": "start",
+            "title": "▶ Start",
+            "pos": [
+              60.0,
+              200.0
+            ],
+            "properties": {}
+          },
+          {
+            "id": "bb649b8f",
+            "class_name": "ActionNodeItem",
+            "node_type": "move",
+            "title": "🏹 Mouse Move",
+            "pos": [
+              240.0,
+              200.0
+            ],
+            "properties": {
+              "type": "move",
+              "x": 404,
+              "y": 243,
+              "dt": 879,
+              "path_points": [
+                {
+                  "type": "move",
+                  "x": 1557,
+                  "y": 1215,
+                  "dt": 247
+                },
+                {
+                  "type": "move",
+                  "x": 1175,
+                  "y": 1012,
+                  "dt": 295
+                },
+                {
+                  "type": "move",
+                  "x": 924,
+                  "y": 864,
+                  "dt": 343
+                },
+                {
+                  "type": "move",
+                  "x": 731,
+                  "y": 740,
+                  "dt": 390
+                },
+                {
+                  "type": "move",
+                  "x": 564,
+                  "y": 628,
+                  "dt": 431
+                },
+                {
+                  "type": "move",
+                  "x": 411,
+                  "y": 534,
+                  "dt": 479
+                },
+                {
+                  "type": "move",
+                  "x": 356,
+                  "y": 482,
+                  "dt": 526
+                },
+                {
+                  "type": "move",
+                  "x": 334,
+                  "y": 456,
+                  "dt": 567
+                },
+                {
+                  "type": "move",
+                  "x": 328,
+                  "y": 431,
+                  "dt": 615
+                },
+                {
+                  "type": "move",
+                  "x": 337,
+                  "y": 401,
+                  "dt": 655
+                },
+                {
+                  "type": "move",
+                  "x": 376,
+                  "y": 315,
+                  "dt": 695
+                },
+                {
+                  "type": "move",
+                  "x": 386,
+                  "y": 285,
+                  "dt": 783
+                },
+                {
+                  "type": "move",
+                  "x": 399,
+                  "y": 258,
+                  "dt": 831
+                },
+                {
+                  "type": "move",
+                  "x": 404,
+                  "y": 243,
+                  "dt": 879
+                }
+              ],
+              "direct_jump": false,
+              "action_type": "move"
+            }
+          },
+          {
+            "id": "dd8bad86",
+            "class_name": "ActionNodeItem",
+            "node_type": "down",
+            "title": "🖱 Mouse Down (Hold)",
+            "pos": [
+              480.0,
+              200.0
+            ],
+            "properties": {
+              "type": "down",
+              "x": 405,
+              "y": 243,
+              "button": "left",
+              "dt": 951,
+              "action_type": "down"
+            }
+          },
+          {
+            "id": "a12ae288",
+            "class_name": "ActionNodeItem",
+            "node_type": "move",
+            "title": "🏹 Mouse Move",
+            "pos": [
+              720.0,
+              200.0
+            ],
+            "properties": {
+              "type": "move",
+              "x": 1160,
+              "y": 1041,
+              "dt": 1751,
+              "buttons": [
+                "left"
+              ],
+              "path_points": [
+                {
+                  "type": "move",
+                  "x": 407,
+                  "y": 243,
+                  "dt": 975,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 436,
+                  "y": 282,
+                  "dt": 998,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 463,
+                  "y": 314,
+                  "dt": 1015,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 495,
+                  "y": 357,
+                  "dt": 1031,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 530,
+                  "y": 407,
+                  "dt": 1055,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 547,
+                  "y": 438,
+                  "dt": 1079,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 554,
+                  "y": 460,
+                  "dt": 1095,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 573,
+                  "y": 497,
+                  "dt": 1119,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 589,
+                  "y": 522,
+                  "dt": 1135,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 625,
+                  "y": 559,
+                  "dt": 1159,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 656,
+                  "y": 583,
+                  "dt": 1183,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 667,
+                  "y": 595,
+                  "dt": 1199,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 703,
+                  "y": 626,
+                  "dt": 1223,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 755,
+                  "y": 660,
+                  "dt": 1247,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 780,
+                  "y": 684,
+                  "dt": 1271,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 811,
+                  "y": 705,
+                  "dt": 1295,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 848,
+                  "y": 733,
+                  "dt": 1318,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 882,
+                  "y": 757,
+                  "dt": 1335,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 922,
+                  "y": 788,
+                  "dt": 1351,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 961,
+                  "y": 811,
+                  "dt": 1375,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 972,
+                  "y": 821,
+                  "dt": 1391,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 977,
+                  "y": 826,
+                  "dt": 1407,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 979,
+                  "y": 828,
+                  "dt": 1423,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 997,
+                  "y": 847,
+                  "dt": 1447,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 1020,
+                  "y": 867,
+                  "dt": 1463,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 1056,
+                  "y": 890,
+                  "dt": 1479,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 1074,
+                  "y": 904,
+                  "dt": 1503,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 1075,
+                  "y": 906,
+                  "dt": 1519,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 1076,
+                  "y": 908,
+                  "dt": 1543,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 1079,
+                  "y": 920,
+                  "dt": 1567,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 1091,
+                  "y": 940,
+                  "dt": 1583,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 1109,
+                  "y": 965,
+                  "dt": 1607,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 1117,
+                  "y": 970,
+                  "dt": 1631,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 1119,
+                  "y": 972,
+                  "dt": 1679,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 1123,
+                  "y": 982,
+                  "dt": 1695,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 1135,
+                  "y": 1005,
+                  "dt": 1711,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 1154,
+                  "y": 1035,
+                  "dt": 1735,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 1160,
+                  "y": 1041,
+                  "dt": 1751,
+                  "buttons": [
+                    "left"
+                  ]
+                }
+              ],
+              "direct_jump": false,
+              "action_type": "move"
+            }
+          },
+          {
+            "id": "fb8d90db",
+            "class_name": "ActionNodeItem",
+            "node_type": "up",
+            "title": "🖱 Mouse Up (Release)",
+            "pos": [
+              960.0,
+              200.0
+            ],
+            "properties": {
+              "type": "up",
+              "x": 1162,
+              "y": 1045,
+              "button": "left",
+              "dt": 2095,
+              "is_click": false,
+              "is_dblclick": false,
+              "action_type": "up"
+            }
+          },
+          {
+            "id": "520b7b4d",
+            "class_name": "ActionNodeItem",
+            "node_type": "move",
+            "title": "🏹 Mouse Move",
+            "pos": [
+              1200.0,
+              200.0
+            ],
+            "properties": {
+              "type": "move",
+              "x": 920,
+              "y": 580,
+              "dt": 2846,
+              "path_points": [
+                {
+                  "type": "move",
+                  "x": 1162,
+                  "y": 1045,
+                  "dt": 2367
+                },
+                {
+                  "type": "move",
+                  "x": 1136,
+                  "y": 1001,
+                  "dt": 2415
+                },
+                {
+                  "type": "move",
+                  "x": 989,
+                  "y": 876,
+                  "dt": 2462
+                },
+                {
+                  "type": "move",
+                  "x": 942,
+                  "y": 847,
+                  "dt": 2502
+                },
+                {
+                  "type": "move",
+                  "x": 927,
+                  "y": 836,
+                  "dt": 2542
+                },
+                {
+                  "type": "move",
+                  "x": 921,
+                  "y": 819,
+                  "dt": 2583
+                },
+                {
+                  "type": "move",
+                  "x": 921,
+                  "y": 775,
+                  "dt": 2623
+                },
+                {
+                  "type": "move",
+                  "x": 931,
+                  "y": 705,
+                  "dt": 2671
+                },
+                {
+                  "type": "move",
+                  "x": 937,
+                  "y": 654,
+                  "dt": 2718
+                },
+                {
+                  "type": "move",
+                  "x": 937,
+                  "y": 602,
+                  "dt": 2759
+                },
+                {
+                  "type": "move",
+                  "x": 931,
+                  "y": 589,
+                  "dt": 2799
+                },
+                {
+                  "type": "move",
+                  "x": 920,
+                  "y": 580,
+                  "dt": 2846
+                }
+              ],
+              "direct_jump": false,
+              "action_type": "move"
+            }
+          },
+          {
+            "id": "5d2a26c8",
+            "class_name": "ActionNodeItem",
+            "node_type": "click",
+            "title": "🖱 Mouse Click",
+            "pos": [
+              1440.0,
+              200.0
+            ],
+            "properties": {
+              "type": "click",
+              "x": 920,
+              "y": 580,
+              "button": "right",
+              "dt": 2896,
+              "action_type": "click"
+            }
+          },
+          {
+            "id": "0c1e65a0",
+            "class_name": "ActionNodeItem",
+            "node_type": "move",
+            "title": "🏹 Mouse Move",
+            "pos": [
+              1680.0,
+              200.0
+            ],
+            "properties": {
+              "type": "move",
+              "x": 1043,
+              "y": 696,
+              "dt": 3654,
+              "path_points": [
+                {
+                  "type": "move",
+                  "x": 925,
+                  "y": 589,
+                  "dt": 3024
+                },
+                {
+                  "type": "move",
+                  "x": 990,
+                  "y": 650,
+                  "dt": 3071
+                },
+                {
+                  "type": "move",
+                  "x": 995,
+                  "y": 664,
+                  "dt": 3119
+                },
+                {
+                  "type": "move",
+                  "x": 1001,
+                  "y": 684,
+                  "dt": 3166
+                },
+                {
+                  "type": "move",
+                  "x": 1009,
+                  "y": 701,
+                  "dt": 3214
+                },
+                {
+                  "type": "move",
+                  "x": 1010,
+                  "y": 704,
+                  "dt": 3270
+                },
+                {
+                  "type": "move",
+                  "x": 1010,
+                  "y": 705,
+                  "dt": 3350
+                },
+                {
+                  "type": "move",
+                  "x": 1010,
+                  "y": 713,
+                  "dt": 3398
+                },
+                {
+                  "type": "move",
+                  "x": 1010,
+                  "y": 723,
+                  "dt": 3446
+                },
+                {
+                  "type": "move",
+                  "x": 1012,
+                  "y": 724,
+                  "dt": 3526
+                },
+                {
+                  "type": "move",
+                  "x": 1035,
+                  "y": 710,
+                  "dt": 3574
+                },
+                {
+                  "type": "move",
+                  "x": 1042,
+                  "y": 699,
+                  "dt": 3614
+                },
+                {
+                  "type": "move",
+                  "x": 1043,
+                  "y": 696,
+                  "dt": 3654
+                }
+              ],
+              "direct_jump": false,
+              "action_type": "move"
+            }
+          },
+          {
+            "id": "8af70682",
+            "class_name": "ActionNodeItem",
+            "node_type": "click",
+            "title": "🖱 Mouse Click",
+            "pos": [
+              1920.0,
+              200.0
+            ],
+            "properties": {
+              "type": "click",
+              "x": 1044,
+              "y": 695,
+              "button": "left",
+              "dt": 3870,
+              "action_type": "click"
+            }
+          },
+          {
+            "id": "d1d55506",
+            "class_name": "ActionNodeItem",
+            "node_type": "move",
+            "title": "🏹 Mouse Move",
+            "pos": [
+              2160.0,
+              200.0
+            ],
+            "properties": {
+              "type": "move",
+              "x": 326,
+              "y": 690,
+              "dt": 4783,
+              "path_points": [
+                {
+                  "type": "move",
+                  "x": 1043,
+                  "y": 694,
+                  "dt": 4423
+                },
+                {
+                  "type": "move",
+                  "x": 949,
+                  "y": 698,
+                  "dt": 4471
+                },
+                {
+                  "type": "move",
+                  "x": 771,
+                  "y": 715,
+                  "dt": 4518
+                },
+                {
+                  "type": "move",
+                  "x": 691,
+                  "y": 726,
+                  "dt": 4558
+                },
+                {
+                  "type": "move",
+                  "x": 604,
+                  "y": 735,
+                  "dt": 4606
+                },
+                {
+                  "type": "move",
+                  "x": 559,
+                  "y": 735,
+                  "dt": 4654
+                },
+                {
+                  "type": "move",
+                  "x": 495,
+                  "y": 719,
+                  "dt": 4695
+                },
+                {
+                  "type": "move",
+                  "x": 415,
+                  "y": 703,
+                  "dt": 4742
+                },
+                {
+                  "type": "move",
+                  "x": 326,
+                  "y": 690,
+                  "dt": 4783
+                }
+              ],
+              "direct_jump": false,
+              "action_type": "move"
+            }
+          },
+          {
+            "id": "3984d22b",
+            "class_name": "ActionNodeItem",
+            "node_type": "down",
+            "title": "🖱 Mouse Down (Hold)",
+            "pos": [
+              2400.0,
+              200.0
+            ],
+            "properties": {
+              "type": "down",
+              "x": 317,
+              "y": 687,
+              "button": "left",
+              "dt": 5023,
+              "action_type": "down"
+            }
+          },
+          {
+            "id": "7735133a",
+            "class_name": "ActionNodeItem",
+            "node_type": "move",
+            "title": "🏹 Mouse Move",
+            "pos": [
+              2640.0,
+              200.0
+            ],
+            "properties": {
+              "type": "move",
+              "x": 238,
+              "y": 572,
+              "dt": 5687,
+              "buttons": [
+                "left"
+              ],
+              "path_points": [
+                {
+                  "type": "move",
+                  "x": 317,
+                  "y": 686,
+                  "dt": 5095,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 327,
+                  "y": 657,
+                  "dt": 5119,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 329,
+                  "y": 644,
+                  "dt": 5143,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 329,
+                  "y": 632,
+                  "dt": 5167,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 329,
+                  "y": 624,
+                  "dt": 5191,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 329,
+                  "y": 618,
+                  "dt": 5207,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 325,
+                  "y": 601,
+                  "dt": 5231,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 320,
+                  "y": 575,
+                  "dt": 5255,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 315,
+                  "y": 565,
+                  "dt": 5279,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 312,
+                  "y": 563,
+                  "dt": 5359,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 299,
+                  "y": 563,
+                  "dt": 5375,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 289,
+                  "y": 563,
+                  "dt": 5399,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 286,
+                  "y": 563,
+                  "dt": 5423,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 282,
+                  "y": 563,
+                  "dt": 5446,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 280,
+                  "y": 564,
+                  "dt": 5463,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 272,
+                  "y": 566,
+                  "dt": 5479,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 266,
+                  "y": 566,
+                  "dt": 5502,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 261,
+                  "y": 567,
+                  "dt": 5535,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 257,
+                  "y": 567,
+                  "dt": 5567,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 256,
+                  "y": 567,
+                  "dt": 5591,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 250,
+                  "y": 567,
+                  "dt": 5614,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 245,
+                  "y": 569,
+                  "dt": 5630,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 242,
+                  "y": 570,
+                  "dt": 5647,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 240,
+                  "y": 571,
+                  "dt": 5663,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 238,
+                  "y": 572,
+                  "dt": 5687,
+                  "buttons": [
+                    "left"
+                  ]
+                }
+              ],
+              "direct_jump": false,
+              "action_type": "move"
+            }
+          },
+          {
+            "id": "5629288f",
+            "class_name": "ActionNodeItem",
+            "node_type": "up",
+            "title": "🖱 Mouse Up (Release)",
+            "pos": [
+              2880.0,
+              200.0
+            ],
+            "properties": {
+              "type": "up",
+              "x": 238,
+              "y": 572,
+              "button": "left",
+              "dt": 5743,
+              "is_click": false,
+              "is_dblclick": false,
+              "action_type": "up"
+            }
+          },
+          {
+            "id": "e54d641c",
+            "class_name": "ActionNodeItem",
+            "node_type": "move",
+            "title": "🏹 Mouse Move",
+            "pos": [
+              3120.0,
+              200.0
+            ],
+            "properties": {
+              "type": "move",
+              "x": 246,
+              "y": 654,
+              "dt": 6583,
+              "path_points": [
+                {
+                  "type": "move",
+                  "x": 237,
+                  "y": 574,
+                  "dt": 5815
+                },
+                {
+                  "type": "move",
+                  "x": 237,
+                  "y": 597,
+                  "dt": 5863
+                },
+                {
+                  "type": "move",
+                  "x": 237,
+                  "y": 621,
+                  "dt": 5911
+                },
+                {
+                  "type": "move",
+                  "x": 241,
+                  "y": 630,
+                  "dt": 5959
+                },
+                {
+                  "type": "move",
+                  "x": 243,
+                  "y": 637,
+                  "dt": 6006
+                },
+                {
+                  "type": "move",
+                  "x": 244,
+                  "y": 639,
+                  "dt": 6046
+                },
+                {
+                  "type": "move",
+                  "x": 246,
+                  "y": 642,
+                  "dt": 6255
+                },
+                {
+                  "type": "move",
+                  "x": 246,
+                  "y": 631,
+                  "dt": 6303
+                },
+                {
+                  "type": "move",
+                  "x": 246,
+                  "y": 629,
+                  "dt": 6439
+                },
+                {
+                  "type": "move",
+                  "x": 246,
+                  "y": 639,
+                  "dt": 6479
+                },
+                {
+                  "type": "move",
+                  "x": 246,
+                  "y": 650,
+                  "dt": 6526
+                },
+                {
+                  "type": "move",
+                  "x": 246,
+                  "y": 654,
+                  "dt": 6583
+                }
+              ],
+              "direct_jump": false,
+              "action_type": "move"
+            }
+          },
+          {
+            "id": "db411529",
+            "class_name": "ActionNodeItem",
+            "node_type": "down",
+            "title": "🖱 Mouse Down (Hold)",
+            "pos": [
+              3360.0,
+              200.0
+            ],
+            "properties": {
+              "type": "down",
+              "x": 246,
+              "y": 654,
+              "button": "left",
+              "dt": 6639,
+              "action_type": "down"
+            }
+          },
+          {
+            "id": "fec617f3",
+            "class_name": "ActionNodeItem",
+            "node_type": "move",
+            "title": "🏹 Mouse Move",
+            "pos": [
+              3600.0,
+              200.0
+            ],
+            "properties": {
+              "type": "move",
+              "x": 382,
+              "y": 659,
+              "dt": 7039,
+              "buttons": [
+                "left"
+              ],
+              "path_points": [
+                {
+                  "type": "move",
+                  "x": 246,
+                  "y": 655,
+                  "dt": 6679,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 257,
+                  "y": 657,
+                  "dt": 6703,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 270,
+                  "y": 659,
+                  "dt": 6728,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 278,
+                  "y": 660,
+                  "dt": 6752,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 289,
+                  "y": 660,
+                  "dt": 6774,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 303,
+                  "y": 660,
+                  "dt": 6791,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 318,
+                  "y": 660,
+                  "dt": 6815,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 331,
+                  "y": 660,
+                  "dt": 6838,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 336,
+                  "y": 660,
+                  "dt": 6862,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 343,
+                  "y": 660,
+                  "dt": 6879,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 353,
+                  "y": 660,
+                  "dt": 6903,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 361,
+                  "y": 660,
+                  "dt": 6928,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 369,
+                  "y": 660,
+                  "dt": 6951,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 374,
+                  "y": 659,
+                  "dt": 6982,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 375,
+                  "y": 659,
+                  "dt": 6999,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 377,
+                  "y": 659,
+                  "dt": 7015,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 382,
+                  "y": 659,
+                  "dt": 7039,
+                  "buttons": [
+                    "left"
+                  ]
+                }
+              ],
+              "direct_jump": false,
+              "action_type": "move"
+            }
+          },
+          {
+            "id": "de9e2418",
+            "class_name": "ActionNodeItem",
+            "node_type": "up",
+            "title": "🖱 Mouse Up (Release)",
+            "pos": [
+              3840.0,
+              200.0
+            ],
+            "properties": {
+              "type": "up",
+              "x": 382,
+              "y": 659,
+              "button": "left",
+              "dt": 7127,
+              "is_click": false,
+              "is_dblclick": false,
+              "action_type": "up"
+            }
+          },
+          {
+            "id": "3a143fcc",
+            "class_name": "ActionNodeItem",
+            "node_type": "move",
+            "title": "🏹 Mouse Move",
+            "pos": [
+              4080.0,
+              200.0
+            ],
+            "properties": {
+              "type": "move",
+              "x": 254,
+              "y": 552,
+              "dt": 7751,
+              "path_points": [
+                {
+                  "type": "move",
+                  "x": 383,
+                  "y": 657,
+                  "dt": 7166
+                },
+                {
+                  "type": "move",
+                  "x": 353,
+                  "y": 641,
+                  "dt": 7215
+                },
+                {
+                  "type": "move",
+                  "x": 316,
+                  "y": 623,
+                  "dt": 7263
+                },
+                {
+                  "type": "move",
+                  "x": 295,
+                  "y": 606,
+                  "dt": 7310
+                },
+                {
+                  "type": "move",
+                  "x": 287,
+                  "y": 598,
+                  "dt": 7351
+                },
+                {
+                  "type": "move",
+                  "x": 277,
+                  "y": 585,
+                  "dt": 7398
+                },
+                {
+                  "type": "move",
+                  "x": 271,
+                  "y": 571,
+                  "dt": 7454
+                },
+                {
+                  "type": "move",
+                  "x": 263,
+                  "y": 554,
+                  "dt": 7494
+                },
+                {
+                  "type": "move",
+                  "x": 260,
+                  "y": 551,
+                  "dt": 7631
+                },
+                {
+                  "type": "move",
+                  "x": 254,
+                  "y": 551,
+                  "dt": 7695
+                },
+                {
+                  "type": "move",
+                  "x": 254,
+                  "y": 552,
+                  "dt": 7751
+                }
+              ],
+              "direct_jump": false,
+              "action_type": "move"
+            }
+          },
+          {
+            "id": "d2331bfc",
+            "class_name": "ActionNodeItem",
+            "node_type": "down",
+            "title": "🖱 Mouse Down (Hold)",
+            "pos": [
+              4320.0,
+              200.0
+            ],
+            "properties": {
+              "type": "down",
+              "x": 254,
+              "y": 552,
+              "button": "left",
+              "dt": 7753,
+              "action_type": "down"
+            }
+          },
+          {
+            "id": "eac9cc61",
+            "class_name": "ActionNodeItem",
+            "node_type": "move",
+            "title": "🏹 Mouse Move",
+            "pos": [
+              4560.0,
+              200.0
+            ],
+            "properties": {
+              "type": "move",
+              "x": 242,
+              "y": 667,
+              "dt": 8095,
+              "buttons": [
+                "left"
+              ],
+              "path_points": [
+                {
+                  "type": "move",
+                  "x": 254,
+                  "y": 556,
+                  "dt": 7775,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 254,
+                  "y": 564,
+                  "dt": 7799,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 254,
+                  "y": 573,
+                  "dt": 7822,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 254,
+                  "y": 579,
+                  "dt": 7839,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 254,
+                  "y": 587,
+                  "dt": 7863,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 254,
+                  "y": 602,
+                  "dt": 7886,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 252,
+                  "y": 616,
+                  "dt": 7903,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 250,
+                  "y": 625,
+                  "dt": 7919,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 248,
+                  "y": 634,
+                  "dt": 7935,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 248,
+                  "y": 640,
+                  "dt": 7959,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 247,
+                  "y": 643,
+                  "dt": 7975,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 246,
+                  "y": 647,
+                  "dt": 7999,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 246,
+                  "y": 650,
+                  "dt": 8023,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 245,
+                  "y": 656,
+                  "dt": 8047,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 245,
+                  "y": 661,
+                  "dt": 8064,
+                  "buttons": [
+                    "left"
+                  ]
+                },
+                {
+                  "type": "move",
+                  "x": 242,
+                  "y": 667,
+                  "dt": 8095,
+                  "buttons": [
+                    "left"
+                  ]
+                }
+              ],
+              "direct_jump": false,
+              "action_type": "move"
+            }
+          },
+          {
+            "id": "f26a7b29",
+            "class_name": "ActionNodeItem",
+            "node_type": "up",
+            "title": "🖱 Mouse Up (Release)",
+            "pos": [
+              4800.0,
+              200.0
+            ],
+            "properties": {
+              "type": "up",
+              "x": 242,
+              "y": 667,
+              "button": "left",
+              "dt": 8327,
+              "is_click": false,
+              "is_dblclick": false,
+              "action_type": "up"
+            }
+          },
+          {
+            "id": "b2c4fd9e",
+            "class_name": "ActionNodeItem",
+            "node_type": "move",
+            "title": "🏹 Mouse Move",
+            "pos": [
+              5040.0,
+              200.0
+            ],
+            "properties": {
+              "type": "move",
+              "x": 625,
+              "y": 643,
+              "dt": 8903,
+              "path_points": [
+                {
+                  "type": "move",
+                  "x": 245,
+                  "y": 668,
+                  "dt": 8495
+                },
+                {
+                  "type": "move",
+                  "x": 275,
+                  "y": 668,
+                  "dt": 8543
+                },
+                {
+                  "type": "move",
+                  "x": 303,
+                  "y": 668,
+                  "dt": 8583
+                },
+                {
+                  "type": "move",
+                  "x": 383,
+                  "y": 664,
+                  "dt": 8623
+                },
+                {
+                  "type": "move",
+                  "x": 558,
+                  "y": 655,
+                  "dt": 8671
+                },
+                {
+                  "type": "move",
+                  "x": 583,
+                  "y": 651,
+                  "dt": 8718
+                },
+                {
+                  "type": "move",
+                  "x": 594,
+                  "y": 648,
+                  "dt": 8759
+                },
+                {
+                  "type": "move",
+                  "x": 611,
+                  "y": 645,
+                  "dt": 8799
+                },
+                {
+                  "type": "move",
+                  "x": 618,
+                  "y": 644,
+                  "dt": 8855
+                },
+                {
+                  "type": "move",
+                  "x": 625,
+                  "y": 643,
+                  "dt": 8903
+                }
+              ],
+              "direct_jump": false,
+              "action_type": "move"
+            }
+          },
+          {
+            "id": "7754158a",
+            "class_name": "ActionNodeItem",
+            "node_type": "click",
+            "title": "🖱 Mouse Click",
+            "pos": [
+              5280.0,
+              200.0
+            ],
+            "properties": {
+              "type": "click",
+              "x": 626,
+              "y": 643,
+              "button": "left",
+              "dt": 9071,
+              "action_type": "click"
+            }
+          },
+          {
+            "id": "9d2af4c2",
+            "class_name": "ActionNodeItem",
+            "node_type": "move",
+            "title": "🏹 Mouse Move",
+            "pos": [
+              5520.0,
+              200.0
+            ],
+            "properties": {
+              "type": "move",
+              "x": 1581,
+              "y": 1116,
+              "dt": 9582,
+              "path_points": [
+                {
+                  "type": "move",
+                  "x": 627,
+                  "y": 643,
+                  "dt": 9295
+                },
+                {
+                  "type": "move",
+                  "x": 692,
+                  "y": 670,
+                  "dt": 9343
+                },
+                {
+                  "type": "move",
+                  "x": 955,
+                  "y": 770,
+                  "dt": 9391
+                },
+                {
+                  "type": "move",
+                  "x": 1178,
+                  "y": 877,
+                  "dt": 9438
+                },
+                {
+                  "type": "move",
+                  "x": 1321,
+                  "y": 959,
+                  "dt": 9486
+                },
+                {
+                  "type": "move",
+                  "x": 1487,
+                  "y": 1047,
+                  "dt": 9534
+                },
+                {
+                  "type": "move",
+                  "x": 1581,
+                  "y": 1116,
+                  "dt": 9582
+                }
+              ],
+              "direct_jump": false,
+              "action_type": "move"
+            }
+          }
+        ],
+        "connections": [
+          {
+            "from_node": "9745a02b",
+            "from_socket_idx": 0,
+            "to_node": "bb649b8f",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "bb649b8f",
+            "from_socket_idx": 0,
+            "to_node": "dd8bad86",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "dd8bad86",
+            "from_socket_idx": 0,
+            "to_node": "a12ae288",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "a12ae288",
+            "from_socket_idx": 0,
+            "to_node": "fb8d90db",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "fb8d90db",
+            "from_socket_idx": 0,
+            "to_node": "520b7b4d",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "520b7b4d",
+            "from_socket_idx": 0,
+            "to_node": "5d2a26c8",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "5d2a26c8",
+            "from_socket_idx": 0,
+            "to_node": "0c1e65a0",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "0c1e65a0",
+            "from_socket_idx": 0,
+            "to_node": "8af70682",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "8af70682",
+            "from_socket_idx": 0,
+            "to_node": "d1d55506",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "d1d55506",
+            "from_socket_idx": 0,
+            "to_node": "3984d22b",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "3984d22b",
+            "from_socket_idx": 0,
+            "to_node": "7735133a",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "7735133a",
+            "from_socket_idx": 0,
+            "to_node": "5629288f",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "5629288f",
+            "from_socket_idx": 0,
+            "to_node": "e54d641c",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "e54d641c",
+            "from_socket_idx": 0,
+            "to_node": "db411529",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "db411529",
+            "from_socket_idx": 0,
+            "to_node": "fec617f3",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "fec617f3",
+            "from_socket_idx": 0,
+            "to_node": "de9e2418",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "de9e2418",
+            "from_socket_idx": 0,
+            "to_node": "3a143fcc",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "3a143fcc",
+            "from_socket_idx": 0,
+            "to_node": "d2331bfc",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "d2331bfc",
+            "from_socket_idx": 0,
+            "to_node": "eac9cc61",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "eac9cc61",
+            "from_socket_idx": 0,
+            "to_node": "f26a7b29",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "f26a7b29",
+            "from_socket_idx": 0,
+            "to_node": "b2c4fd9e",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "b2c4fd9e",
+            "from_socket_idx": 0,
+            "to_node": "7754158a",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "7754158a",
+            "from_socket_idx": 0,
+            "to_node": "9d2af4c2",
+            "to_socket_idx": 0
+          }
+        ],
+        "groups": []
+      }
+    }
+  },
   "instances": {
     "1": {
-      "x": 120,
-      "y": 120,
+      "x": 1270,
+      "y": 532,
       "minimized": false,
-      "selected_macro": null,
+      "selected_macro": "Macro 2",
       "speed": 1.0,
-      "repeat": false
+      "repeat": false,
+      "width": 700,
+      "height": 685
     }
   },
   "hotkeys": {
@@ -28,5 +5450,8 @@
     "record_toggle": "Ctrl+F9",
     "play_toggle": "Ctrl+F8",
     "stop_playback": "Ctrl+F7"
+  },
+  "editor_settings": {
+    "default_direct_move": true
   }
 }

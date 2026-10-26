@@ -159,8 +159,7 @@ class MacroNodeEditorWindow(QMainWindow):
         add_menu.addSeparator()
 
         # Vision AI
-        add_menu.addAction("👁 Smart Find Image (AI Screen)", lambda: self._add_vision_node("find_image"))
-        add_menu.addAction("⏳ Wait For Image (AI Screen)", lambda: self._add_vision_node("wait_image"))
+        add_menu.addAction("⏱ Wait For Image (AI Screen)", lambda: self._add_vision_node("wait_image"))
         add_menu.addSeparator()
 
         # Control Flow
@@ -424,11 +423,11 @@ class MacroNodeEditorWindow(QMainWindow):
             else:
                 # Add a new Vision Node with this template
                 center = self.view.mapToScene(self.view.viewport().rect().center())
-                node = VisionNodeItem("find_image", properties={"template": filepath})
+                node = VisionNodeItem("wait_image", properties={"template": filepath, "timeout": 5.0})
                 self.scene.add_node(node, center)
                 self.scene.clearSelection()
                 node.setSelected(True)
-                self.status_bar.showMessage("Created new Smart Find Image node from snippet.")
+                self.status_bar.showMessage("Created new Wait For Image node from snippet.")
 
         snipper.snippet_captured.connect(on_snip_done)
         snipper.rejected.connect(lambda: (self.showNormal(), self.activateWindow()))

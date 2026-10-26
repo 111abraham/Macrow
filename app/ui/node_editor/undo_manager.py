@@ -96,7 +96,7 @@ def deserialize_scene(scene: NodeScene, data: Dict[str, Any]):
         elif cls is ActionNodeItem:
             node = ActionNodeItem(action_type=node_type, properties=props)
         elif cls is VisionNodeItem:
-            node = VisionNodeItem(vision_type=node_type, properties=props)
+            node = VisionNodeItem(vision_type="wait_image", properties=props)
         else:
             node = cls(properties=props)
 

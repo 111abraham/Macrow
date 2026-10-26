@@ -101,7 +101,7 @@ class TestNodeEditor(unittest.TestCase):
         self.assertEqual(compiled[1]["duration"], 500)
         self.assertEqual(compiled[2]["type"], "type")
         self.assertEqual(compiled[2]["value"], "hello world")
-        self.assertEqual(compiled[3]["type"], "find_image")
+        self.assertEqual(compiled[3]["type"], "wait_image")
         self.assertEqual(compiled[3]["template"], "btn.png")
 
     def test_essential_logic_nodes(self):

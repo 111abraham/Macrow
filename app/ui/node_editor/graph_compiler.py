@@ -112,8 +112,8 @@ def macro_to_graph(
         st_type = step.get("type", "click")
 
         node: BaseNodeItem
-        if st_type in ("find_image", "wait_image"):
-            node = VisionNodeItem(vision_type=st_type, properties=step)
+        if st_type in ("find_image", "wait_image", "wait", "waitforimage"):
+            node = VisionNodeItem(vision_type="wait_image", properties=step)
         elif st_type == "if_condition":
             node = IfConditionNodeItem(properties=step)
         elif st_type == "math_op":
@@ -236,7 +236,7 @@ def graph_to_macro(scene: NodeScene) -> List[Dict[str, Any]]:
         step: Dict[str, Any] = {"id": node_id, "type": action_type}
 
         if isinstance(node, VisionNodeItem):
-            step["type"] = action_type
+            step["type"] = "wait_image"
             step["template"] = props.get("template", "")
             step["confidence"] = float(props.get("confidence", 0.85))
             step["action"] = props.get("action", "click")

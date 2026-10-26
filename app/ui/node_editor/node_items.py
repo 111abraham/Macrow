@@ -268,19 +268,18 @@ class VisionNodeItem(BaseNodeItem):
 
     def __init__(
         self,
-        vision_type: str = "find_image",  # 'find_image' or 'wait_image'
+        vision_type: str = "wait_image",
         properties: Optional[Dict[str, Any]] = None,
         parent=None,
     ):
-        title = "👁 Smart Find Image" if vision_type == "find_image" else "⏳ Wait For Image"
         super().__init__(
-            title=title,
-            node_type=vision_type,
+            title="⏱ Wait For Image",
+            node_type="wait_image",
             color=QColor(16, 185, 129),  # Emerald
             parent=parent,
         )
         self.properties = properties or {}
-        self.properties.setdefault("action_type", vision_type)
+        self.properties.setdefault("action_type", "wait_image")
         self.properties.setdefault("confidence", 0.85)
         self.properties.setdefault("action", "click")
         self.properties.setdefault("button", "left")
@@ -293,13 +292,13 @@ class VisionNodeItem(BaseNodeItem):
         self.thumbnail_pixmap: Optional[QPixmap] = None
         self._load_thumbnail()
 
-        # Sockets: 1 Input, 2 Outputs (Success branch, Failure branch!)
+        # Sockets: 1 Input, 2 Outputs (Found branch, Miss branch)
         self.add_input_socket(name="In")
         self.socket_success = self.add_output_socket(
             name="Found", color=QColor(16, 185, 129)  # Green
         )
         self.socket_fail = self.add_output_socket(
-            name="Not Found", color=QColor(244, 63, 94)  # Rose red
+            name="Miss", color=QColor(244, 63, 94)  # Rose red
         )
 
     def _load_thumbnail(self):
@@ -322,9 +321,10 @@ class VisionNodeItem(BaseNodeItem):
 
     def get_summary_text(self) -> str:
         conf = int(self.properties.get("confidence", 0.85) * 100)
-        act = self.properties.get("action", "click").capitalize()
-        btn = self.properties.get("button", "left").capitalize()
-        return f"Match: ≥{conf}%  •  {act} ({btn})"
+        act = str(self.properties.get("action", "click")).capitalize()
+        btn = str(self.properties.get("button", "left")).capitalize()
+        tout = float(self.properties.get("timeout", 5.0))
+        return f"Wait: {tout:g}s  •  ≥{conf}%  •  {act} ({btn})"
 
     def paint(self, painter: QPainter, option, widget=None):
         super().paint(painter, option, widget)

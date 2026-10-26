@@ -355,7 +355,7 @@ class NodeScene(QGraphicsScene):
             if cls is ActionNodeItem:
                 node = ActionNodeItem(action_type=ntype, properties=props)
             elif cls is VisionNodeItem:
-                node = VisionNodeItem(vision_type=ntype, properties=props)
+                node = VisionNodeItem(vision_type="wait_image", properties=props)
             elif cls is StartNodeItem:
                 continue
             else:
