@@ -34,11 +34,22 @@ class TestUIPanel(unittest.TestCase):
     def test_panel_initialization(self):
         self.assertIsNotNone(self.panel.title_lbl)
         self.assertEqual(self.panel.title_lbl.text(), "Macrow")
+        self.assertIsNotNone(self.panel.help_btn)
+        self.assertEqual(self.panel.help_btn.text(), "?")
         self.assertIsNotNone(self.panel.opacity_slider)
         self.assertIsNotNone(self.panel.record_btn)
         self.assertIsNotNone(self.panel.play_btn)
         self.assertIsNotNone(self.panel.repeat_count_spin)
         self.assertEqual(self.panel.repeat_count_spin.value(), 1)
+
+    def test_shortcuts_help_menu(self):
+        menu = self.panel._build_shortcuts_menu()
+        self.assertIsNotNone(menu)
+        action_texts = [a.text() for a in menu.actions()]
+        self.assertTrue(any("Record" in t for t in action_texts))
+        self.assertTrue(any("Play" in t for t in action_texts))
+        self.assertTrue(any("Save" in t for t in action_texts))
+        self.assertTrue(any("Undo" in t for t in action_texts))
 
     def test_repeat_x_times_and_loop_toggle(self):
         # Setting custom repeat count

@@ -23,6 +23,7 @@ from PyQt6.QtWidgets import (
     QApplication,
     QSizeGrip,
     QSizePolicy,
+    QMenu,
 )
 from PyQt6.QtCore import Qt, QTimer, QPoint, pyqtSignal, QObject, QEvent
 from PyQt6.QtGui import QIcon, QCursor, QGuiApplication
@@ -212,7 +213,7 @@ class MacrowPanel(QWidget):
         self.icon_lbl.setPixmap(get_app_pixmap(18))
         layout.addWidget(self.icon_lbl)
 
-        title_text = "Macrow" if self.instance_id == "1" else f"Macrow #{self.instance_id}"
+        title_text = "Macrow"
         self.title_lbl = QLabel(title_text)
         self.title_lbl.setObjectName("AppTitle")
         layout.addWidget(self.title_lbl)
@@ -224,12 +225,12 @@ class MacrowPanel(QWidget):
 
         layout.addStretch()
 
-        # New instance button
-        self.new_win_btn = QPushButton("+")
-        self.new_win_btn.setObjectName("TitleBtn")
-        self.new_win_btn.setToolTip("Open another independent Macrow instance window")
-        self.new_win_btn.clicked.connect(self.new_window_requested.emit)
-        layout.addWidget(self.new_win_btn)
+        # Shortcuts dropdown button (replaces '+' button)
+        self.help_btn = QPushButton("?")
+        self.help_btn.setObjectName("TitleBtn")
+        self.help_btn.setToolTip("Keyboard Shortcuts & Help (?)")
+        self.help_btn.clicked.connect(self._show_shortcuts_menu)
+        layout.addWidget(self.help_btn)
 
         # Minimize to taskbar button
         self.min_btn = QPushButton("—")
@@ -247,6 +248,89 @@ class MacrowPanel(QWidget):
         layout.addWidget(self.close_btn)
 
         return bar
+
+    def _build_shortcuts_menu(self) -> QMenu:
+        menu = QMenu(self)
+        menu.setStyleSheet("""
+            QMenu {
+                background-color: #18181b;
+                border: 1px solid #3f3f46;
+                border-radius: 6px;
+                padding: 4px;
+                color: #e4e4e7;
+                font-family: 'Segoe UI', -apple-system, sans-serif;
+                font-size: 11px;
+            }
+            QMenu::item {
+                padding: 5px 22px 5px 12px;
+                border-radius: 4px;
+            }
+            QMenu::item:selected {
+                background-color: #27272a;
+                color: #38bdf8;
+            }
+            QMenu::separator {
+                height: 1px;
+                background-color: #27272a;
+                margin: 4px 6px;
+            }
+            QMenu::section {
+                padding: 4px 10px;
+                font-weight: 700;
+                font-size: 10px;
+                color: #38bdf8;
+                letter-spacing: 0.5px;
+            }
+        """)
+
+        # Section: Global & Macro Controls
+        menu.addSection("GLOBAL & MACRO SHORTCUTS")
+
+        act_rec = menu.addAction("● Record Macro (Start / Stop)\tF9 / Ctrl+F9")
+        act_rec.triggered.connect(self.toggle_recording)
+
+        act_play = menu.addAction("▶ Play / Pause Macro\tF8 / Ctrl+F8")
+        act_play.triggered.connect(lambda: self.toggle_pause() if self.player.is_playing() else self.start_playback())
+
+        act_stop = menu.addAction("⏹ Stop Playback\tF7 / Ctrl+F7")
+        act_stop.triggered.connect(self.stop_playback)
+
+        act_halt = menu.addAction("🛑 Emergency Stop\tAlt+S / F12")
+        act_halt.triggered.connect(self.stop_playback)
+
+        act_kill = menu.addAction("⚡ Safety Kill Switch\tCtrl+Alt+Esc")
+        act_kill.triggered.connect(self.stop_playback)
+
+        menu.addSeparator()
+
+        # Section: Node Graph Editor
+        menu.addSection("NODE GRAPH EDITOR SHORTCUTS")
+
+        menu.addAction("💾 Save & Apply\tCtrl+S")
+        menu.addAction("↩ Undo\tCtrl+Z")
+        menu.addAction("↪ Redo\tCtrl+Y")
+        menu.addAction("📋 Copy Nodes\tCtrl+C")
+        menu.addAction("📄 Paste Nodes\tCtrl+V")
+        menu.addAction("⚡ Duplicate Drag\tAlt + Drag")
+        menu.addAction("✂ Cut Wire (Knife)\tY + Drag")
+        menu.addAction("🔌 Unplug Wire\tClick Input")
+        menu.addAction("🗑 Delete Selected\tDelete / Backspace")
+        menu.addAction("❌ Cancel / Dismiss\tEscape")
+
+        menu.addSeparator()
+
+        act_editor = menu.addAction("⚙ Open Node Graph Editor...")
+        act_editor.triggered.connect(self._on_customize_macro)
+
+        return menu
+
+    def _show_shortcuts_menu(self):
+        menu = self._build_shortcuts_menu()
+        btn_pos = self.help_btn.mapToGlobal(QPoint(0, self.help_btn.height() + 2))
+        menu_width = menu.sizeHint().width()
+        x = btn_pos.x() + self.help_btn.width() - menu_width
+        y = btn_pos.y()
+        menu.exec(QPoint(x, y))
 
     def _create_footer_bar(self):
         bar = QFrame(self)
@@ -297,17 +381,6 @@ class MacrowPanel(QWidget):
         layout.setContentsMargins(6, 6, 6, 6)
         layout.setSpacing(6)
 
-        hdr_row = QHBoxLayout()
-        hdr_lbl = QLabel("MACRO RECORDER")
-        hdr_lbl.setStyleSheet("font-weight: 700; font-size: 10px; color: #38bdf8; letter-spacing: 0.5px;")
-        hdr_row.addWidget(hdr_lbl)
-        hdr_row.addStretch()
-
-        shortcut_lbl = QLabel("Ctrl+F9")
-        shortcut_lbl.setStyleSheet("font-size: 9px; color: #71717a;")
-        hdr_row.addWidget(shortcut_lbl)
-        layout.addLayout(hdr_row)
-
         row = QHBoxLayout()
         self.record_btn = QPushButton("● Record Macro")
         self.record_btn.setObjectName("RecordBtn")
@@ -327,17 +400,6 @@ class MacrowPanel(QWidget):
         layout = QVBoxLayout(box)
         layout.setContentsMargins(6, 6, 6, 6)
         layout.setSpacing(6)
-
-        hdr_row = QHBoxLayout()
-        hdr_lbl = QLabel("MACRO PLAYBACK")
-        hdr_lbl.setStyleSheet("font-weight: 700; font-size: 10px; color: #38bdf8; letter-spacing: 0.5px;")
-        hdr_row.addWidget(hdr_lbl)
-        hdr_row.addStretch()
-
-        shortcut_lbl = QLabel("Ctrl+F8 Play/Pause")
-        shortcut_lbl.setStyleSheet("font-size: 9px; color: #71717a;")
-        hdr_row.addWidget(shortcut_lbl)
-        layout.addLayout(hdr_row)
 
         # Macro selector row
         sel_row = QHBoxLayout()
