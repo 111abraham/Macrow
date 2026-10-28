@@ -317,8 +317,16 @@ def graph_to_macro(scene: NodeScene) -> List[Dict[str, Any]]:
             if action_type == "move":
                 direct_jump = bool(props.get("direct_jump", True))
                 path_points = props.get("path_points", [])
-                target_x = int(props.get("x", 0))
-                target_y = int(props.get("y", 0))
+                raw_x = props.get("x", 0)
+                raw_y = props.get("y", 0)
+                try:
+                    target_x = int(raw_x)
+                except (ValueError, TypeError):
+                    target_x = str(raw_x)
+                try:
+                    target_y = int(raw_y)
+                except (ValueError, TypeError):
+                    target_y = str(raw_y)
 
                 if direct_jump or not path_points or len(path_points) <= 1:
                     current_dt += 50
@@ -358,8 +366,16 @@ def graph_to_macro(scene: NodeScene) -> List[Dict[str, Any]]:
                 continue
 
             elif action_type in ("click", "dblclick", "down", "up"):
-                step["x"] = int(props.get("x", 0))
-                step["y"] = int(props.get("y", 0))
+                raw_x = props.get("x", 0)
+                raw_y = props.get("y", 0)
+                try:
+                    step["x"] = int(raw_x)
+                except (ValueError, TypeError):
+                    step["x"] = str(raw_x)
+                try:
+                    step["y"] = int(raw_y)
+                except (ValueError, TypeError):
+                    step["y"] = str(raw_y)
                 step["button"] = props.get("button", "left")
                 current_dt += 100
                 step["dt"] = current_dt
@@ -424,6 +440,7 @@ def graph_to_macro(scene: NodeScene) -> List[Dict[str, Any]]:
         elif isinstance(node, HotkeyNodeItem):
             step["type"] = "hotkey"
             step["combo"] = props.get("combo", "Ctrl+C")
+            step["cad_action"] = props.get("cad_action", "taskmgr")
             step["next"] = get_target_id(0)
             current_dt += 100
             step["dt"] = current_dt

@@ -30,6 +30,7 @@ from app.ui.node_editor.inspector import PropertyInspector
 from app.ui.node_editor.graph_compiler import macro_to_graph, graph_to_macro
 from app.ui.node_editor.node_items import (
     BaseNodeItem,
+    StartNodeItem,
     ActionNodeItem,
     VisionNodeItem,
     IfConditionNodeItem,
@@ -174,6 +175,17 @@ class MacroNodeEditorWindow(QMainWindow):
         self.snip_btn.setToolTip("Snip image from screen for visual recognition")
         self.snip_btn.clicked.connect(self._quick_snip)
         toolbar.addWidget(self.snip_btn)
+
+        # Examples / Presets Dropdown
+        self.examples_btn = QPushButton("📚 Examples ▾")
+        self.examples_btn.setToolTip("Load working example node setups to test and explore")
+        ex_menu = QMenu(self)
+        ex_menu.addAction("🔁 1. Auto-Clicker Loop (5x with Delay)", lambda: self._load_example_preset("auto_clicker"))
+        ex_menu.addAction("🎯 2. Loop Until Image Found (Breakout)", lambda: self._load_example_preset("loop_until_image"))
+        ex_menu.addAction("🔢 3. Coordinate Step with Math ($y = $y + 50)", lambda: self._load_example_preset("math_grid"))
+        ex_menu.addAction("🎨 4. Pixel Color Polling (Wait until Green)", lambda: self._load_example_preset("pixel_polling"))
+        self.examples_btn.setMenu(ex_menu)
+        toolbar.addWidget(self.examples_btn)
 
         # Spacer
         spacer = QWidget()
@@ -452,6 +464,125 @@ class MacroNodeEditorWindow(QMainWindow):
         self.scene.clearSelection()
         node.setSelected(True)
         self.status_bar.showMessage(f"Added {node.title} node.")
+
+    def _load_example_preset(self, preset_key: str, confirm: bool = True):
+        """Loads a fully wired working example graph illustrating repeat zone and other node patterns."""
+        if confirm:
+            reply = QMessageBox.question(
+                self,
+                "Load Example Preset?",
+                "Loading this example will populate your node graph with a working setup. Would you like to proceed?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.Yes,
+            )
+            if reply != QMessageBox.StandardButton.Yes:
+                return
+
+        self.scene.clear()
+        self.scene.nodes.clear()
+        self.scene.connections.clear()
+        self.scene.groups.clear()
+
+        start = StartNodeItem()
+        self.scene.add_node(start, QPointF(50, 150))
+
+        if preset_key == "auto_clicker":
+            # Example 1: Simple Repeat Zone (5x) auto-clicker
+            loop = LoopNodeItem(properties={"count": 5, "infinite": False, "var_name": "i"})
+            self.scene.add_node(loop, QPointF(280, 120))
+
+            click = ActionNodeItem("click", {"x": 500, "y": 300, "button": "left"})
+            self.scene.add_node(click, QPointF(400, 180))
+
+            delay = ActionNodeItem("delay", {"duration": 250})
+            self.scene.add_node(delay, QPointF(640, 180))
+
+            stop = StopNodeItem()
+            self.scene.add_node(stop, QPointF(920, 320))
+
+            self.scene.add_connection(start.output_sockets[0], loop.input_sockets[0])
+            self.scene.add_connection(loop.output_sockets[0], click.input_sockets[0])
+            self.scene.add_connection(click.output_sockets[0], delay.input_sockets[0])
+            self.scene.add_connection(loop.output_sockets[1], stop.input_sockets[0])
+
+        elif preset_key == "loop_until_image":
+            # Example 2: Loop Until Image Found (Breakout)
+            loop = LoopNodeItem(properties={"count": 10, "infinite": True, "var_name": "i"})
+            self.scene.add_node(loop, QPointF(280, 120))
+
+            scroll = ActionNodeItem("wheel", {"deltaY": -300})
+            self.scene.add_node(scroll, QPointF(400, 180))
+
+            delay = ActionNodeItem("delay", {"duration": 500})
+            self.scene.add_node(delay, QPointF(640, 180))
+
+            vision = VisionNodeItem("wait_image", {"template": "", "confidence": 0.85, "timeout": 1.0, "break_loop_on_found": True})
+            self.scene.add_node(vision, QPointF(880, 180))
+
+            click_found = ActionNodeItem("click", {"x": 960, "y": 540, "button": "left"})
+            self.scene.add_node(click_found, QPointF(1180, 340))
+
+            self.scene.add_connection(start.output_sockets[0], loop.input_sockets[0])
+            self.scene.add_connection(loop.output_sockets[0], scroll.input_sockets[0])
+            self.scene.add_connection(scroll.output_sockets[0], delay.input_sockets[0])
+            self.scene.add_connection(delay.output_sockets[0], vision.input_sockets[0])
+            self.scene.add_connection(loop.output_sockets[1], click_found.input_sockets[0])
+
+        elif preset_key == "math_grid":
+            # Example 3: Loop with Math ($y coordinate increment)
+            init_math = MathNodeItem(properties={"var_name": "y", "op": "set", "val_a": "200"})
+            self.scene.add_node(init_math, QPointF(250, 150))
+
+            loop = LoopNodeItem(properties={"count": 4, "infinite": False, "var_name": "row"})
+            self.scene.add_node(loop, QPointF(480, 120))
+
+            click = ActionNodeItem("click", {"x": 500, "y": "$y", "button": "left"})
+            self.scene.add_node(click, QPointF(600, 180))
+
+            delay = ActionNodeItem("delay", {"duration": 200})
+            self.scene.add_node(delay, QPointF(840, 180))
+
+            step_math = MathNodeItem(properties={"var_name": "y", "op": "+", "val_a": "$y", "val_b": "60"})
+            self.scene.add_node(step_math, QPointF(1080, 180))
+
+            stop = StopNodeItem()
+            self.scene.add_node(stop, QPointF(1340, 340))
+
+            self.scene.add_connection(start.output_sockets[0], init_math.input_sockets[0])
+            self.scene.add_connection(init_math.output_sockets[0], loop.input_sockets[0])
+            self.scene.add_connection(loop.output_sockets[0], click.input_sockets[0])
+            self.scene.add_connection(click.output_sockets[0], delay.input_sockets[0])
+            self.scene.add_connection(delay.output_sockets[0], step_math.input_sockets[0])
+            self.scene.add_connection(loop.output_sockets[1], stop.input_sockets[0])
+
+        elif preset_key == "pixel_polling":
+            # Example 4: Loop with Pixel Color Check (Poll until green)
+            loop = LoopNodeItem(properties={"count": 100, "infinite": True, "var_name": "attempt"})
+            self.scene.add_node(loop, QPointF(280, 120))
+
+            pix_chk = PixelColorNodeItem(properties={"x": 500, "y": 300, "color": "#10B981", "tolerance": 15})
+            self.scene.add_node(pix_chk, QPointF(400, 180))
+
+            delay_retry = ActionNodeItem("delay", {"duration": 500})
+            self.scene.add_node(delay_retry, QPointF(660, 260))
+
+            click_done = ActionNodeItem("click", {"x": 500, "y": 300, "button": "left"})
+            self.scene.add_node(click_done, QPointF(920, 340))
+
+            self.scene.add_connection(start.output_sockets[0], loop.input_sockets[0])
+            self.scene.add_connection(loop.output_sockets[0], pix_chk.input_sockets[0])
+            # Match (socket 0) connects to post-loop action
+            self.scene.add_connection(pix_chk.output_sockets[0], click_done.input_sockets[0])
+            # Mismatch (socket 1) loops through delay_retry
+            self.scene.add_connection(pix_chk.output_sockets[1], delay_retry.input_sockets[0])
+            self.scene.add_connection(loop.output_sockets[1], click_done.input_sockets[0])
+
+        self.scene.update_loop_bounds()
+        self.undo_manager.push_state()
+        self._has_unsaved_changes = True
+        self._update_undo_redo_ui()
+        self.view.reset_view()
+        self.status_bar.showMessage(f"Loaded example preset '{preset_key}'. Ready to inspect and run.")
 
     def _quick_eye_dropper(self):
         self.showMinimized()

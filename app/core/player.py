@@ -302,6 +302,24 @@ class MacroPlayer:
 
             curr_step = step_map.get(next_id)
 
+    def _resolve_coord(self, val, default=None):
+        if val is None:
+            return default
+        if isinstance(val, (int, float)):
+            return int(val)
+        val_str = str(val).strip()
+        if val_str.startswith("$"):
+            k = val_str.lstrip("$")
+            res = self.variables.get(k, self.variables.get(val_str, default))
+            try:
+                return int(float(res))
+            except (ValueError, TypeError):
+                return default
+        try:
+            return int(float(val_str))
+        except (ValueError, TypeError):
+            return default
+
     def _execute_step(self, step):
         if step.get("_unplugged", False):
             return False
@@ -309,8 +327,10 @@ class MacroPlayer:
             return True
 
         st_type = step.get("type", "")
-        x = step.get("x")
-        y = step.get("y")
+        raw_x = step.get("x")
+        raw_y = step.get("y")
+        x = self._resolve_coord(raw_x, None) if raw_x is not None else None
+        y = self._resolve_coord(raw_y, None) if raw_y is not None else None
         btn = step.get("button", "left")
 
         # Notify visual indicator if coordinate action
@@ -513,8 +533,9 @@ class MacroPlayer:
 
         elif st_type == "hotkey":
             combo = step.get("combo", "")
+            cad_action = step.get("cad_action", "taskmgr")
             if combo:
-                self.simulator.hotkey(combo)
+                self.simulator.hotkey(combo, cad_action=cad_action)
             return True
 
         elif st_type == "stop_playback":

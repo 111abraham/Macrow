@@ -230,17 +230,33 @@ class InputSimulator:
             if char_delay > 0:
                 time.sleep(char_delay)
 
-    def hotkey(self, combo_str, hold_delay=0.03):
+    def hotkey(self, combo_str, hold_delay=0.03, cad_action="taskmgr"):
         """Execute a key combination like 'Ctrl+C', 'Alt+Tab', 'Enter', 'Ctrl+Shift+Esc', 'Ctrl+Alt+Delete'."""
         norm = combo_str.lower().replace(" ", "")
         if norm in ("ctrl+alt+del", "ctrl+alt+delete", "control+alt+del", "control+alt+delete"):
-            # Attempt official Windows Secure Attention Sequence via sas.dll
-            try:
-                sas_lib = ctypes.windll.LoadLibrary("sas.dll")
-                if hasattr(sas_lib, "SendSAS"):
-                    sas_lib.SendSAS(False)
-            except Exception:
-                pass
+            if cad_action == "lock":
+                user32.LockWorkStation()
+                return
+            elif cad_action == "sas":
+                # Attempt official Windows Secure Attention Sequence via sas.dll
+                try:
+                    sas_lib = ctypes.windll.LoadLibrary("sas.dll")
+                    if hasattr(sas_lib, "SendSAS"):
+                        sas_lib.SendSAS(False)
+                        return
+                except Exception:
+                    pass
+            else:
+                # Default "taskmgr": directly and reliably launch Windows Task Manager
+                try:
+                    import subprocess
+                    subprocess.Popen(["taskmgr.exe"], shell=True)
+                    return
+                except Exception:
+                    pass
+                # Fallback to direct Ctrl+Shift+Esc
+                self.hotkey("Ctrl+Shift+Esc", hold_delay=hold_delay)
+                return
 
         vk_map = {
             "ctrl": 0x11, "control": 0x11, "lctrl": 0xA2, "rctrl": 0xA3,

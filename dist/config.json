@@ -3019,32 +3019,41 @@
     "Macro 3": {
       "steps": [
         {
-          "id": "56321fe9",
-          "type": "pixel_color",
-          "x": -1636,
-          "y": 235,
-          "color": "#FFDC7A",
-          "tolerance": 15,
-          "found_next": "d8546b1c",
-          "miss_next": "464204f7",
-          "dt": 20
+          "id": "fb084931",
+          "type": "loop_count",
+          "count": 5,
+          "infinite": true,
+          "var_name": "i",
+          "body_next": "432647e0",
+          "next": "234fff65",
+          "dt": 10
         },
         {
-          "id": "d8546b1c",
+          "id": "432647e0",
           "type": "click",
-          "next": null,
-          "x": -1974,
-          "y": 325,
-          "button": "right",
-          "dt": 120
+          "next": "2130804c",
+          "x": 0,
+          "y": 0,
+          "button": "left",
+          "dt": 110
         },
         {
-          "id": "464204f7",
+          "id": "234fff65",
           "type": "click",
           "next": null,
-          "x": -767,
-          "y": 116,
+          "x": -1440,
+          "y": 1269,
           "button": "right",
+          "dt": 210
+        },
+        {
+          "id": "2130804c",
+          "type": "if_condition",
+          "var_a": "$i",
+          "operator": "==",
+          "val_b": "5",
+          "found_next": "fb084931",
+          "miss_next": null,
           "dt": 220
         }
       ],
@@ -3057,82 +3066,812 @@
             "node_type": "start",
             "title": "▶ Start",
             "pos": [
-              -141.40724207074936,
-              -51.817640228973374
+              -428.2606400390077,
+              47.95745471650778
             ],
             "bypassed": false,
             "properties": {}
           },
           {
-            "id": "56321fe9",
-            "class_name": "PixelColorNodeItem",
-            "node_type": "pixel_color",
-            "title": "🎨 Pixel Color Check",
+            "id": "fb084931",
+            "class_name": "LoopNodeItem",
+            "node_type": "loop_count",
+            "title": "🔁 Repeat Zone (Loop)",
             "pos": [
-              89.30947696920134,
-              -93.44447561125065
+              -171.18592822222553,
+              65.94824261623441
             ],
             "bypassed": false,
             "properties": {
-              "action_type": "pixel_color",
-              "x": -1636,
-              "y": 235,
-              "color": "#FFDC7A",
-              "tolerance": 15
+              "action_type": "loop_count",
+              "infinite": true,
+              "count": 5,
+              "var_name": "i"
             }
           },
           {
-            "id": "d8546b1c",
+            "id": "2130804c",
+            "class_name": "IfConditionNodeItem",
+            "node_type": "if_condition",
+            "title": "🔀 If / Compare",
+            "pos": [
+              196.80819947504955,
+              120.21148776950639
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "if_condition",
+              "var_a": "$i",
+              "operator": "==",
+              "val_b": "5"
+            }
+          },
+          {
+            "id": "432647e0",
             "class_name": "ActionNodeItem",
             "node_type": "click",
             "title": "🖱 Mouse Click",
             "pos": [
-              346.8206212781147,
-              -179.98271308310325
+              -47.28044346656009,
+              118.5470698429283
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "click"
+            }
+          },
+          {
+            "id": "234fff65",
+            "class_name": "ActionNodeItem",
+            "node_type": "click",
+            "title": "🖱 Mouse Click",
+            "pos": [
+              596.1705685079187,
+              330.8787363371439
             ],
             "bypassed": false,
             "properties": {
               "action_type": "click",
               "button": "right",
-              "x": -1974,
-              "y": 325
-            }
-          },
-          {
-            "id": "464204f7",
-            "class_name": "ActionNodeItem",
-            "node_type": "click",
-            "title": "🖱 Mouse Click",
-            "pos": [
-              370.0967255703962,
-              9.262134858490157
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "click",
-              "button": "right",
-              "x": -767,
-              "y": 116
+              "x": -1440,
+              "y": 1269
             }
           }
         ],
         "connections": [
           {
+            "from_node": "fb084931",
+            "from_socket_idx": 0,
+            "to_node": "432647e0",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "432647e0",
+            "from_socket_idx": 0,
+            "to_node": "2130804c",
+            "to_socket_idx": 0
+          },
+          {
             "from_node": "6a1f4a39",
             "from_socket_idx": 0,
-            "to_node": "56321fe9",
+            "to_node": "fb084931",
             "to_socket_idx": 0
           },
           {
-            "from_node": "56321fe9",
-            "from_socket_idx": 0,
-            "to_node": "d8546b1c",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "56321fe9",
+            "from_node": "fb084931",
             "from_socket_idx": 1,
-            "to_node": "464204f7",
+            "to_node": "234fff65",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "2130804c",
+            "from_socket_idx": 0,
+            "to_node": "fb084931",
+            "to_socket_idx": 1
+          }
+        ],
+        "groups": []
+      }
+    },
+    "Example 1 - Auto-Clicker Loop": {
+      "steps": [
+        {
+          "id": "0e083d43",
+          "type": "loop_count",
+          "count": 5,
+          "infinite": false,
+          "var_name": "i",
+          "body_next": "65fcd505",
+          "next": "86d49586",
+          "dt": 10
+        },
+        {
+          "id": "65fcd505",
+          "type": "click",
+          "next": "af43a51a",
+          "x": 500,
+          "y": 300,
+          "button": "left",
+          "dt": 110
+        },
+        {
+          "id": "86d49586",
+          "type": "stop_playback",
+          "dt": 120
+        },
+        {
+          "id": "af43a51a",
+          "type": "delay",
+          "next": "0e083d43",
+          "duration": 250,
+          "dt": 370
+        }
+      ],
+      "duration": 370,
+      "graph_data": {
+        "nodes": [
+          {
+            "id": "e2a31afe",
+            "class_name": "StartNodeItem",
+            "node_type": "start",
+            "title": "▶ Start",
+            "pos": [
+              50.0,
+              150.0
+            ],
+            "bypassed": false,
+            "properties": {}
+          },
+          {
+            "id": "0e083d43",
+            "class_name": "LoopNodeItem",
+            "node_type": "loop_count",
+            "title": "🔁 Repeat Zone (Loop)",
+            "pos": [
+              280.0,
+              120.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "count": 5,
+              "infinite": false,
+              "var_name": "i",
+              "action_type": "loop_count"
+            }
+          },
+          {
+            "id": "65fcd505",
+            "class_name": "ActionNodeItem",
+            "node_type": "click",
+            "title": "🖱 Mouse Click",
+            "pos": [
+              400.0,
+              180.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "x": 500,
+              "y": 300,
+              "button": "left",
+              "action_type": "click"
+            }
+          },
+          {
+            "id": "af43a51a",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              640.0,
+              180.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "duration": 250,
+              "action_type": "delay"
+            }
+          },
+          {
+            "id": "86d49586",
+            "class_name": "StopNodeItem",
+            "node_type": "stop_playback",
+            "title": "⏹ Stop Playback",
+            "pos": [
+              920.0,
+              320.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "stop_playback"
+            }
+          }
+        ],
+        "connections": [
+          {
+            "from_node": "e2a31afe",
+            "from_socket_idx": 0,
+            "to_node": "0e083d43",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "0e083d43",
+            "from_socket_idx": 0,
+            "to_node": "65fcd505",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "65fcd505",
+            "from_socket_idx": 0,
+            "to_node": "af43a51a",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "0e083d43",
+            "from_socket_idx": 1,
+            "to_node": "86d49586",
+            "to_socket_idx": 0
+          }
+        ],
+        "groups": []
+      }
+    },
+    "Example 2 - Loop Until Image Found": {
+      "steps": [
+        {
+          "id": "b28b6c1f",
+          "type": "loop_count",
+          "count": 10,
+          "infinite": true,
+          "var_name": "i",
+          "body_next": "7f3bacd7",
+          "next": "ef214e6b",
+          "dt": 10
+        },
+        {
+          "id": "7f3bacd7",
+          "type": "wheel",
+          "next": "91564455",
+          "deltaY": -300,
+          "deltaX": 0,
+          "dt": 90
+        },
+        {
+          "id": "ef214e6b",
+          "type": "click",
+          "next": null,
+          "x": 960,
+          "y": 540,
+          "button": "left",
+          "dt": 190
+        },
+        {
+          "id": "91564455",
+          "type": "delay",
+          "next": "c5411bd6",
+          "duration": 500,
+          "dt": 690
+        },
+        {
+          "id": "c5411bd6",
+          "type": "wait_image",
+          "template": "",
+          "confidence": 0.85,
+          "action": "none",
+          "button": "left",
+          "timeout": 1.0,
+          "break_loop_on_found": true,
+          "found_next": "ef214e6b",
+          "miss_next": "b28b6c1f",
+          "dt": 840,
+          "next": "b28b6c1f"
+        }
+      ],
+      "duration": 840,
+      "graph_data": {
+        "nodes": [
+          {
+            "id": "e20e9ce7",
+            "class_name": "StartNodeItem",
+            "node_type": "start",
+            "title": "▶ Start",
+            "pos": [
+              50.0,
+              150.0
+            ],
+            "bypassed": false,
+            "properties": {}
+          },
+          {
+            "id": "b28b6c1f",
+            "class_name": "LoopNodeItem",
+            "node_type": "loop_count",
+            "title": "🔁 Repeat Zone (Loop)",
+            "pos": [
+              280.0,
+              120.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "count": 10,
+              "infinite": true,
+              "var_name": "i",
+              "action_type": "loop_count"
+            }
+          },
+          {
+            "id": "7f3bacd7",
+            "class_name": "ActionNodeItem",
+            "node_type": "wheel",
+            "title": "📜 Mouse Wheel",
+            "pos": [
+              400.0,
+              180.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "deltaY": -300,
+              "action_type": "wheel"
+            }
+          },
+          {
+            "id": "91564455",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              640.0,
+              180.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "duration": 500,
+              "action_type": "delay"
+            }
+          },
+          {
+            "id": "c5411bd6",
+            "class_name": "VisionNodeItem",
+            "node_type": "wait_image",
+            "title": "⏱ Wait For Image",
+            "pos": [
+              880.0,
+              180.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "template": "",
+              "confidence": 0.85,
+              "timeout": 1.0,
+              "break_loop_on_found": true,
+              "action_type": "wait_image",
+              "action": "none",
+              "button": "left"
+            }
+          },
+          {
+            "id": "ef214e6b",
+            "class_name": "ActionNodeItem",
+            "node_type": "click",
+            "title": "🖱 Mouse Click",
+            "pos": [
+              1180.0,
+              340.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "x": 960,
+              "y": 540,
+              "button": "left",
+              "action_type": "click"
+            }
+          }
+        ],
+        "connections": [
+          {
+            "from_node": "e20e9ce7",
+            "from_socket_idx": 0,
+            "to_node": "b28b6c1f",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "b28b6c1f",
+            "from_socket_idx": 0,
+            "to_node": "7f3bacd7",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "7f3bacd7",
+            "from_socket_idx": 0,
+            "to_node": "91564455",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "91564455",
+            "from_socket_idx": 0,
+            "to_node": "c5411bd6",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "b28b6c1f",
+            "from_socket_idx": 1,
+            "to_node": "ef214e6b",
+            "to_socket_idx": 0
+          }
+        ],
+        "groups": []
+      }
+    },
+    "Example 3 - Coordinate Math Loop": {
+      "steps": [
+        {
+          "id": "ee990667",
+          "type": "math_op",
+          "var_name": "y",
+          "operation": "increment",
+          "value": "1",
+          "min_val": 100,
+          "max_val": 1000,
+          "next": "d952a1f1",
+          "dt": 10
+        },
+        {
+          "id": "d952a1f1",
+          "type": "loop_count",
+          "count": 4,
+          "infinite": false,
+          "var_name": "row",
+          "body_next": "c7611a3f",
+          "next": "bc788a27",
+          "dt": 20
+        },
+        {
+          "id": "c7611a3f",
+          "type": "click",
+          "next": "740ab865",
+          "x": 500,
+          "y": "$y",
+          "button": "left",
+          "dt": 120
+        },
+        {
+          "id": "bc788a27",
+          "type": "stop_playback",
+          "dt": 130
+        },
+        {
+          "id": "740ab865",
+          "type": "delay",
+          "next": "cfa39384",
+          "duration": 200,
+          "dt": 330
+        },
+        {
+          "id": "cfa39384",
+          "type": "math_op",
+          "var_name": "y",
+          "operation": "increment",
+          "value": "1",
+          "min_val": 100,
+          "max_val": 1000,
+          "next": "d952a1f1",
+          "dt": 340
+        }
+      ],
+      "duration": 340,
+      "graph_data": {
+        "nodes": [
+          {
+            "id": "2f3a3952",
+            "class_name": "StartNodeItem",
+            "node_type": "start",
+            "title": "▶ Start",
+            "pos": [
+              50.0,
+              150.0
+            ],
+            "bypassed": false,
+            "properties": {}
+          },
+          {
+            "id": "ee990667",
+            "class_name": "MathNodeItem",
+            "node_type": "math_op",
+            "title": "🔢 Math / Variable",
+            "pos": [
+              250.0,
+              150.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "var_name": "y",
+              "op": "set",
+              "val_a": "200",
+              "action_type": "math_op",
+              "operation": "increment",
+              "value": "1",
+              "min_val": 100,
+              "max_val": 1000
+            }
+          },
+          {
+            "id": "d952a1f1",
+            "class_name": "LoopNodeItem",
+            "node_type": "loop_count",
+            "title": "🔁 Repeat Zone (Loop)",
+            "pos": [
+              480.0,
+              120.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "count": 4,
+              "infinite": false,
+              "var_name": "row",
+              "action_type": "loop_count"
+            }
+          },
+          {
+            "id": "c7611a3f",
+            "class_name": "ActionNodeItem",
+            "node_type": "click",
+            "title": "🖱 Mouse Click",
+            "pos": [
+              600.0,
+              180.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "x": 500,
+              "y": "$y",
+              "button": "left",
+              "action_type": "click"
+            }
+          },
+          {
+            "id": "740ab865",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              840.0,
+              180.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "duration": 200,
+              "action_type": "delay"
+            }
+          },
+          {
+            "id": "cfa39384",
+            "class_name": "MathNodeItem",
+            "node_type": "math_op",
+            "title": "🔢 Math / Variable",
+            "pos": [
+              1080.0,
+              180.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "var_name": "y",
+              "op": "+",
+              "val_a": "$y",
+              "val_b": "60",
+              "action_type": "math_op",
+              "operation": "increment",
+              "value": "1",
+              "min_val": 100,
+              "max_val": 1000
+            }
+          },
+          {
+            "id": "bc788a27",
+            "class_name": "StopNodeItem",
+            "node_type": "stop_playback",
+            "title": "⏹ Stop Playback",
+            "pos": [
+              1340.0,
+              340.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "stop_playback"
+            }
+          }
+        ],
+        "connections": [
+          {
+            "from_node": "2f3a3952",
+            "from_socket_idx": 0,
+            "to_node": "ee990667",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "ee990667",
+            "from_socket_idx": 0,
+            "to_node": "d952a1f1",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "d952a1f1",
+            "from_socket_idx": 0,
+            "to_node": "c7611a3f",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "c7611a3f",
+            "from_socket_idx": 0,
+            "to_node": "740ab865",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "740ab865",
+            "from_socket_idx": 0,
+            "to_node": "cfa39384",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "d952a1f1",
+            "from_socket_idx": 1,
+            "to_node": "bc788a27",
+            "to_socket_idx": 0
+          }
+        ],
+        "groups": []
+      }
+    },
+    "Example 4 - Pixel Color Polling": {
+      "steps": [
+        {
+          "id": "ea1af5fe",
+          "type": "loop_count",
+          "count": 100,
+          "infinite": true,
+          "var_name": "attempt",
+          "body_next": "681f9c4e",
+          "next": "4f5379f9",
+          "dt": 10
+        },
+        {
+          "id": "681f9c4e",
+          "type": "pixel_color",
+          "x": 500,
+          "y": 300,
+          "color": "#10B981",
+          "tolerance": 15,
+          "found_next": "4f5379f9",
+          "miss_next": "4d531eda",
+          "dt": 30
+        },
+        {
+          "id": "4f5379f9",
+          "type": "click",
+          "next": "ea1af5fe",
+          "x": 500,
+          "y": 300,
+          "button": "left",
+          "dt": 130
+        },
+        {
+          "id": "4d531eda",
+          "type": "delay",
+          "next": null,
+          "duration": 500,
+          "dt": 630
+        }
+      ],
+      "duration": 630,
+      "graph_data": {
+        "nodes": [
+          {
+            "id": "85b7c9f2",
+            "class_name": "StartNodeItem",
+            "node_type": "start",
+            "title": "▶ Start",
+            "pos": [
+              50.0,
+              150.0
+            ],
+            "bypassed": false,
+            "properties": {}
+          },
+          {
+            "id": "ea1af5fe",
+            "class_name": "LoopNodeItem",
+            "node_type": "loop_count",
+            "title": "🔁 Repeat Zone (Loop)",
+            "pos": [
+              280.0,
+              120.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "count": 100,
+              "infinite": true,
+              "var_name": "attempt",
+              "action_type": "loop_count"
+            }
+          },
+          {
+            "id": "681f9c4e",
+            "class_name": "PixelColorNodeItem",
+            "node_type": "pixel_color",
+            "title": "🎨 Pixel Color Check",
+            "pos": [
+              400.0,
+              180.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "x": 500,
+              "y": 300,
+              "color": "#10B981",
+              "tolerance": 15,
+              "action_type": "pixel_color"
+            }
+          },
+          {
+            "id": "4d531eda",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              660.0,
+              260.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "duration": 500,
+              "action_type": "delay"
+            }
+          },
+          {
+            "id": "4f5379f9",
+            "class_name": "ActionNodeItem",
+            "node_type": "click",
+            "title": "🖱 Mouse Click",
+            "pos": [
+              920.0,
+              340.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "x": 500,
+              "y": 300,
+              "button": "left",
+              "action_type": "click"
+            }
+          }
+        ],
+        "connections": [
+          {
+            "from_node": "85b7c9f2",
+            "from_socket_idx": 0,
+            "to_node": "ea1af5fe",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "ea1af5fe",
+            "from_socket_idx": 0,
+            "to_node": "681f9c4e",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "681f9c4e",
+            "from_socket_idx": 0,
+            "to_node": "4f5379f9",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "681f9c4e",
+            "from_socket_idx": 1,
+            "to_node": "4d531eda",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "ea1af5fe",
+            "from_socket_idx": 1,
+            "to_node": "4f5379f9",
             "to_socket_idx": 0
           }
         ],
@@ -3142,8 +3881,8 @@
   },
   "instances": {
     "1": {
-      "x": 1413,
-      "y": 339,
+      "x": 1445,
+      "y": 494,
       "minimized": false,
       "selected_macro": "Macro 3",
       "speed": 1.01,

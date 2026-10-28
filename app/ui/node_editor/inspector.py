@@ -1054,13 +1054,43 @@ class PropertyInspector(QWidget):
 
         edit_combo = QLineEdit(node.properties.get("combo", "Ctrl+C"))
 
+        cad_frame = QFrame()
+        cad_frame.setStyleSheet("background: #0f172a; border: 1px solid #475569; border-radius: 6px; padding: 6px;")
+        cad_layout = QVBoxLayout(cad_frame)
+        cad_layout.setSpacing(6)
+
         lbl_cad_note = QLabel(
-            "ℹ️ <b>Windows SAS Note:</b> Windows strictly protects <i>Ctrl+Alt+Delete</i> as a secure system sequence. "
-            "Macrow triggers <code>SendSAS</code> and extended key injection. To open Task Manager directly, prefer <b>Ctrl+Shift+Esc</b>."
+            "ℹ️ <b>Windows OS Security Restriction:</b><br/>"
+            "Windows protects <i>Ctrl+Alt+Delete</i> (SAS). Standard applications are blocked from sending synthetic raw keystrokes. "
+            "Choose your intended action below:"
         )
         lbl_cad_note.setWordWrap(True)
-        lbl_cad_note.setStyleSheet("color: #cbd5e1; background: #334155; padding: 6px; border-radius: 4px; font-size: 11px;")
-        lbl_cad_note.setVisible("delete" in str(node.properties.get("combo", "")).lower() and "ctrl" in str(node.properties.get("combo", "")).lower() and "alt" in str(node.properties.get("combo", "")).lower())
+        lbl_cad_note.setStyleSheet("color: #cbd5e1; font-size: 11px;")
+        cad_layout.addWidget(lbl_cad_note)
+
+        cad_layout.addWidget(QLabel("Action to Execute:"))
+        combo_cad_action = QComboBox()
+        combo_cad_action.addItem("🚀 Open Task Manager (Recommended)", "taskmgr")
+        combo_cad_action.addItem("🔒 Lock Computer / Workstation", "lock")
+        combo_cad_action.addItem("🛡️ Security Attention Sequence (SendSAS)", "sas")
+
+        curr_cad_act = node.properties.get("cad_action", "taskmgr")
+        idx_act = combo_cad_action.findData(curr_cad_act)
+        if idx_act >= 0:
+            combo_cad_action.setCurrentIndex(idx_act)
+
+        def on_cad_action_changed(idx):
+            act_val = combo_cad_action.itemData(idx)
+            node.properties["cad_action"] = act_val
+            node.update()
+            self.property_changed.emit()
+
+        combo_cad_action.currentIndexChanged.connect(on_cad_action_changed)
+        cad_layout.addWidget(combo_cad_action)
+
+        init_norm = str(node.properties.get("combo", "")).lower().replace(" ", "")
+        is_cad_init = "ctrl" in init_norm and "alt" in init_norm and ("del" in init_norm or "delete" in init_norm)
+        cad_frame.setVisible(is_cad_init)
 
         def on_preset_selected(idx):
             if idx < len(presets) - 1:
@@ -1073,13 +1103,13 @@ class PropertyInspector(QWidget):
 
         layout.addWidget(QLabel("Key Combination:"))
         layout.addWidget(edit_combo)
-        layout.addWidget(lbl_cad_note)
+        layout.addWidget(cad_frame)
 
         def on_combo_changed(txt):
             node.properties["combo"] = txt
             norm = txt.lower().replace(" ", "")
             is_cad = "ctrl" in norm and "alt" in norm and ("del" in norm or "delete" in norm)
-            lbl_cad_note.setVisible(is_cad)
+            cad_frame.setVisible(is_cad)
             node.update()
             self.property_changed.emit()
 
