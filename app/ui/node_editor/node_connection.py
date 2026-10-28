@@ -24,6 +24,7 @@ class NodeConnection(QGraphicsPathItem):
         self.start_socket = start_socket
         self.end_socket = end_socket
         self.target_pos: Optional[QPointF] = None  # Used while dragging new wire
+        self.is_drop_target: bool = False  # Set to True when hovering node over wire to auto-insert
 
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
         self.setZValue(-1)  # Behind nodes
@@ -80,16 +81,25 @@ class NodeConnection(QGraphicsPathItem):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         is_sel = self.isSelected()
-        col = self.selected_color if is_sel else (self.start_socket.color if self.start_socket else self.color)
-        pen_width = 3.0 if is_sel else 2.2
+        is_highlighted = getattr(self, "is_drop_target", False)
 
-        # Outer subtle glow if selected
-        if is_sel:
-            glow_pen = QPen(QColor(col.red(), col.green(), col.blue(), 90), pen_width + 4.0)
+        if is_highlighted:
+            glow_pen = QPen(QColor(245, 158, 11, 150), 8.0)
             painter.setPen(glow_pen)
             painter.drawPath(self.path())
+            col = QColor(251, 191, 36)  # Amber gold
+            pen_width = 3.2
+            pen_style = Qt.PenStyle.DashLine
+        else:
+            col = self.selected_color if is_sel else (self.start_socket.color if self.start_socket else self.color)
+            pen_width = 3.0 if is_sel else 2.2
+            pen_style = Qt.PenStyle.SolidLine
+            if is_sel:
+                glow_pen = QPen(QColor(col.red(), col.green(), col.blue(), 90), pen_width + 4.0)
+                painter.setPen(glow_pen)
+                painter.drawPath(self.path())
 
-        painter.setPen(QPen(col, pen_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+        painter.setPen(QPen(col, pen_width, pen_style, Qt.PenCapStyle.RoundCap))
         painter.drawPath(self.path())
 
     def clean_up(self):

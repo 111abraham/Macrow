@@ -197,8 +197,12 @@ def macro_to_graph(
                 if n_id and n_id in node_id_map:
                     target_node = node_id_map[n_id]
                     out_idx = 1 if isinstance(node, LoopNodeItem) else 0
-                    if len(node.output_sockets) > out_idx and len(target_node.input_sockets) > 0:
-                        scene.add_connection(node.output_sockets[out_idx], target_node.input_sockets[0])
+                    in_idx = 0
+                    if isinstance(target_node, LoopNodeItem) and len(target_node.input_sockets) > 1:
+                        if target_node.input_sockets[0].connections:
+                            in_idx = 1
+                    if len(node.output_sockets) > out_idx and len(target_node.input_sockets) > in_idx:
+                        scene.add_connection(node.output_sockets[out_idx], target_node.input_sockets[in_idx])
 
 
 def graph_to_macro(scene: NodeScene) -> List[Dict[str, Any]]:

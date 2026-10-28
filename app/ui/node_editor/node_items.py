@@ -98,11 +98,15 @@ class BaseNodeItem(QGraphicsItem):
             sy = self.header_height + (self.height - self.header_height) * (i + 1) / (n_out + 1)
             sock.setPos(self.width, sy)
 
+    def update_connected_wires(self):
+        """Update all bezier curve connection wires attached to this node's sockets."""
+        for sock in self.input_sockets + self.output_sockets:
+            sock.update_connections()
+
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
             # Update all connected wires when node moves
-            for sock in self.input_sockets + self.output_sockets:
-                sock.update_connections()
+            self.update_connected_wires()
         return super().itemChange(change, value)
 
     def get_summary_text(self) -> str:
@@ -645,10 +649,11 @@ class LoopNodeItem(BaseNodeItem):
         if "bypassed" in self.properties:
             self.bypassed = bool(self.properties["bypassed"])
 
-        self.width = 190.0
-        self.height = 95.0
+        self.width = 205.0
+        self.height = 100.0
 
-        self.add_input_socket(name="In")
+        self.socket_in = self.add_input_socket(name="In", color=QColor(56, 189, 248))
+        self.socket_repeat = self.add_input_socket(name="Loop In", color=QColor(168, 85, 247))
         self.socket_body = self.add_output_socket(name="Body", color=QColor(16, 185, 129))
         self.socket_done = self.add_output_socket(name="Done", color=QColor(6, 182, 212))
 
@@ -660,6 +665,22 @@ class LoopNodeItem(BaseNodeItem):
     def paint(self, painter: QPainter, option, widget=None):
         super().paint(painter, option, widget)
         painter.setFont(QFont("Segoe UI", 7, QFont.Weight.Bold))
+
+        # Left input socket labels
+        painter.setPen(QColor(56, 189, 248))
+        painter.drawText(
+            QRectF(14, self.header_height + 4, 60, 16),
+            Qt.AlignmentFlag.AlignLeft,
+            "→ In",
+        )
+        painter.setPen(QColor(168, 85, 247))
+        painter.drawText(
+            QRectF(14, self.height - 20, 60, 16),
+            Qt.AlignmentFlag.AlignLeft,
+            "← Loop In",
+        )
+
+        # Right output socket labels
         painter.setPen(QColor(16, 185, 129))
         painter.drawText(
             QRectF(self.width - 55, self.header_height + 4, 45, 16),

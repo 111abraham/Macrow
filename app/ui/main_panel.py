@@ -306,9 +306,15 @@ class MacrowPanel(QWidget):
         # Section: Node Graph Editor
         menu.addSection("NODE GRAPH EDITOR SHORTCUTS")
 
+        menu.addAction("⚡ Quick Add Node\tTab")
         menu.addAction("🎯 Center / Frame View\tR")
         menu.addAction("☑ Select All Nodes\tCtrl+A")
         menu.addAction("🚫 Bypass / Mute Node(s)\tB")
+        menu.addAction("↔ Align Branch (R/L)\tA + Drag")
+        menu.addAction("➡ Move Branch Right\tCtrl + Drag")
+        menu.addAction("⬅ Move Branch Left\tShift + Drag")
+        menu.addAction("💥 Shake to Disconnect\tShake Left/Right")
+        menu.addAction("🔗 Auto-Insert Node\tDrop onto Wire")
         menu.addAction("💾 Save & Apply\tCtrl+S")
         menu.addAction("↩ Undo Canvas\tCtrl+Z")
         menu.addAction("↪ Redo Canvas\tCtrl+Y")
@@ -316,10 +322,10 @@ class MacrowPanel(QWidget):
         menu.addAction("📄 Paste Nodes\tCtrl+V")
         menu.addAction("⚡ Duplicate Drag\tAlt + Drag")
         menu.addAction("✂ Cut Wire (Knife)\tY + Drag")
-        menu.addAction("🔌 Unplug Wire\tClick Input")
+        menu.addAction("🔌 Unplug Wire\tClick Input Socket")
         menu.addAction("✋ Pan Canvas\tRight / Middle Drag")
         menu.addAction("🔍 Zoom In / Out\tMouse Wheel")
-        menu.addAction("🗑 Delete Selected\tDelete / Backspace")
+        menu.addAction("🗑 Delete Selected (Auto-Heal)\tDelete / Backspace")
         menu.addAction("❌ Cancel / Dismiss\tEscape")
 
         menu.addSeparator()

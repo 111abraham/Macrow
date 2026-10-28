@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import math
-from PyQt6.QtCore import Qt, QRectF, QPointF
+import time
+from typing import Optional, List
+from PyQt6.QtCore import Qt, QRectF, QPointF, QPoint
 from PyQt6.QtGui import (
     QPainter,
     QColor,
@@ -14,15 +16,28 @@ from PyQt6.QtGui import (
     QMouseEvent,
     QPainterPath,
     QPainterPathStroker,
+    QCursor,
 )
 from PyQt6.QtWidgets import (
     QGraphicsView,
     QRubberBand,
     QApplication,
+    QMenu,
 )
 
 from app.ui.node_editor.node_scene import NodeScene
-from app.ui.node_editor.node_items import BaseNodeItem, StartNodeItem
+from app.ui.node_editor.node_items import (
+    BaseNodeItem,
+    StartNodeItem,
+    ActionNodeItem,
+    VisionNodeItem,
+    IfConditionNodeItem,
+    MathNodeItem,
+    PixelColorNodeItem,
+    HotkeyNodeItem,
+    LoopNodeItem,
+    StopNodeItem,
+)
 from app.ui.node_editor.node_connection import NodeConnection
 
 
@@ -58,7 +73,139 @@ class NodeView(QGraphicsView):
         self._y_key_held = False
         self._is_cutting = False
         self._cut_path_points: list[QPointF] = []
+
+        # Houdini-style workflow states:
+        # 1. A + Drag align anchor
+        self._a_key_held = False
+        self._a_align_node: Optional[BaseNodeItem] = None
+        self._a_align_start_scene_pos: Optional[QPointF] = None
+
+        # 2. Ctrl / Shift branch dragging
+        self._branch_drag_nodes: List[BaseNodeItem] = []
+        self._branch_drag_prev_scene_pos: Optional[QPointF] = None
+
+        # 3. Shake to disconnect tracker
+        self._dragged_node: Optional[BaseNodeItem] = None
+        self._shake_samples: List[tuple[float, float, float]] = []
+        self._shake_triggered: bool = False
+
+        # 4. Wire drop candidate
+        self._hovered_wire: Optional[NodeConnection] = None
+
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+
+    def _get_node_at(self, pos: QPoint) -> Optional[BaseNodeItem]:
+        item = self.itemAt(pos)
+        curr = item
+        while curr:
+            if isinstance(curr, BaseNodeItem):
+                return curr
+            curr = curr.parentItem()
+        return None
+
+    def _get_downstream_nodes(self, start_node: BaseNodeItem) -> List[BaseNodeItem]:
+        visited = set()
+        queue = [start_node]
+        result = []
+        while queue:
+            curr = queue.pop(0)
+            if curr in visited:
+                continue
+            visited.add(curr)
+            result.append(curr)
+            for sock in curr.output_sockets:
+                for conn in sock.connections:
+                    if conn.end_socket and conn.end_socket.node and conn.end_socket.node not in visited:
+                        queue.append(conn.end_socket.node)
+        return result
+
+    def _get_upstream_nodes(self, start_node: BaseNodeItem) -> List[BaseNodeItem]:
+        visited = set()
+        queue = [start_node]
+        result = []
+        while queue:
+            curr = queue.pop(0)
+            if curr in visited:
+                continue
+            visited.add(curr)
+            result.append(curr)
+            for sock in curr.input_sockets:
+                for conn in sock.connections:
+                    if conn.start_socket and conn.start_socket.node and conn.start_socket.node not in visited:
+                        queue.append(conn.start_socket.node)
+        return result
+
+    def _find_wire_under_node(self, node: BaseNodeItem) -> Optional[NodeConnection]:
+        node_rect = node.sceneBoundingRect()
+        for conn in self.node_scene.connections:
+            if conn.start_socket and conn.end_socket:
+                if conn.start_socket.node != node and conn.end_socket.node != node:
+                    if conn.path().intersects(node_rect) or conn.shape().intersects(node_rect):
+                        return conn
+        return None
+
+    def _show_quick_add_menu(self, global_pos: QPoint, scene_pos: QPointF):
+        menu = QMenu(self)
+        menu.setStyleSheet("""
+            QMenu {
+                background-color: #18181b;
+                border: 1px solid #3f3f46;
+                border-radius: 6px;
+                padding: 4px;
+                color: #e4e4e7;
+                font-family: 'Segoe UI', -apple-system, sans-serif;
+                font-size: 11px;
+            }
+            QMenu::item {
+                padding: 5px 22px 5px 12px;
+                border-radius: 4px;
+            }
+            QMenu::item:selected {
+                background-color: #27272a;
+                color: #38bdf8;
+            }
+            QMenu::separator {
+                height: 1px;
+                background-color: #27272a;
+                margin: 4px 6px;
+            }
+            QMenu::section {
+                padding: 4px 10px;
+                font-weight: 700;
+                font-size: 10px;
+                color: #38bdf8;
+                letter-spacing: 0.5px;
+            }
+        """)
+
+        def add_node_item(node_instance):
+            self.node_scene.clearSelection()
+            self.node_scene.add_node(node_instance, scene_pos)
+            node_instance.setSelected(True)
+            self.node_scene.scene_modified.emit()
+
+        menu.addSection("MOUSE ACTIONS")
+        menu.addAction("🖱 Mouse Click", lambda: add_node_item(ActionNodeItem("click")))
+        menu.addAction("🖱 Double Click", lambda: add_node_item(ActionNodeItem("dblclick")))
+        menu.addAction("🏹 Mouse Move", lambda: add_node_item(ActionNodeItem("move")))
+        menu.addAction("📜 Mouse Wheel Scroll", lambda: add_node_item(ActionNodeItem("wheel")))
+        menu.addAction("⏳ Delay / Wait", lambda: add_node_item(ActionNodeItem("delay")))
+        menu.addAction("🔤 Type Text", lambda: add_node_item(ActionNodeItem("type")))
+        menu.addAction("⌨ Key Combo (Hotkey)", lambda: add_node_item(HotkeyNodeItem()))
+
+        menu.addSeparator()
+        menu.addSection("LOGIC & CONDITIONS")
+        menu.addAction("🔀 If / Compare Condition", lambda: add_node_item(IfConditionNodeItem()))
+        menu.addAction("🎨 Pixel Color Check", lambda: add_node_item(PixelColorNodeItem()))
+        menu.addAction("🔁 Loop (N Times)", lambda: add_node_item(LoopNodeItem()))
+        menu.addAction("🔢 Math / Variable", lambda: add_node_item(MathNodeItem()))
+
+        menu.addSeparator()
+        menu.addSection("VISION AI & CONTROL")
+        menu.addAction("⏱ Wait For Image (AI Screen)", lambda: add_node_item(VisionNodeItem()))
+        menu.addAction("⏹ Stop Playback", lambda: add_node_item(StopNodeItem()))
+
+        menu.exec(global_pos)
 
     def drawBackground(self, painter: QPainter, rect: QRectF):
         # Fill deep dark background
@@ -107,6 +254,37 @@ class NodeView(QGraphicsView):
             self.scale(zoom_factor, zoom_factor)
         event.accept()
 
+    def focusNextPrevChild(self, next: bool) -> bool:
+        """Prevent Tab key from switching widget focus away from the canvas."""
+        return False
+
+    def _trigger_shake_disconnect(self, node: BaseNodeItem):
+        """Disconnects all wires connected to node. If inline, heals connections between upstream and downstream."""
+        incoming = [
+            c.start_socket for sock in node.input_sockets for c in sock.connections
+            if c.start_socket and c.start_socket.node != node
+        ]
+        outgoing = [
+            c.end_socket for sock in node.output_sockets for c in sock.connections
+            if c.end_socket and c.end_socket.node != node
+        ]
+
+        # Disconnect all existing connections on node
+        to_remove = []
+        for sock in node.input_sockets + node.output_sockets:
+            for conn in list(sock.connections):
+                if conn not in to_remove:
+                    to_remove.append(conn)
+        for conn in to_remove:
+            self.node_scene.remove_connection(conn)
+
+        # Heal inline connection between predecessor and successor
+        for in_sock, out_sock in zip(incoming, outgoing):
+            if in_sock and out_sock:
+                self.node_scene.add_connection(in_sock, out_sock)
+
+        self.node_scene.scene_modified.emit()
+
     def mousePressEvent(self, event: QMouseEvent):
         # 1. Knife Tool: Y held + Left Click starts cutting wire trail
         if event.button() == Qt.MouseButton.LeftButton and self._y_key_held:
@@ -121,15 +299,7 @@ class NodeView(QGraphicsView):
         # If clicked on a node: Duplicate selected node(s) in-place and drag duplicates!
         # If clicked on empty canvas: Canvas panning
         if event.button() == Qt.MouseButton.LeftButton and (event.modifiers() & Qt.KeyboardModifier.AltModifier):
-            item = self.itemAt(event.pos())
-            target_node = None
-            curr = item
-            while curr:
-                if isinstance(curr, BaseNodeItem):
-                    target_node = curr
-                    break
-                curr = curr.parentItem()
-
+            target_node = self._get_node_at(event.pos())
             if target_node and not isinstance(target_node, StartNodeItem):
                 if not target_node.isSelected():
                     self.node_scene.clearSelection()
@@ -152,6 +322,50 @@ class NodeView(QGraphicsView):
             self.setCursor(Qt.CursorShape.ClosedHandCursor)
             event.accept()
             return
+
+        # 4. Check interaction with sockets first (wires, unplugging)
+        from app.ui.node_editor.node_socket import NodeSocketItem
+        raw_item = self.itemAt(event.pos())
+        if isinstance(raw_item, NodeSocketItem):
+            super().mousePressEvent(event)
+            return
+
+        # 5. Houdini Gestures on Nodes:
+        if event.button() == Qt.MouseButton.LeftButton:
+            target_node = self._get_node_at(event.pos())
+            if target_node:
+                # A + Drag: Align branch horizontally
+                if self._a_key_held:
+                    self._a_align_node = target_node
+                    self._a_align_start_scene_pos = self.mapToScene(event.pos())
+                    event.accept()
+                    return
+
+                # Ctrl + Drag: Move downstream branch (all nodes connected to right)
+                if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+                    self._branch_drag_nodes = self._get_downstream_nodes(target_node)
+                    self._branch_drag_prev_scene_pos = self.mapToScene(event.pos())
+                    self.node_scene.clearSelection()
+                    for n in self._branch_drag_nodes:
+                        n.setSelected(True)
+                    event.accept()
+                    return
+
+                # Shift + Drag: Move upstream branch (all nodes connected to left)
+                if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
+                    self._branch_drag_nodes = self._get_upstream_nodes(target_node)
+                    self._branch_drag_prev_scene_pos = self.mapToScene(event.pos())
+                    self.node_scene.clearSelection()
+                    for n in self._branch_drag_nodes:
+                        n.setSelected(True)
+                    event.accept()
+                    return
+
+                # Normal node drag: track for shake disconnect and wire auto-insert
+                self._dragged_node = target_node
+                now = time.time()
+                self._shake_samples = [(now, target_node.pos().x(), target_node.pos().y())]
+                self._shake_triggered = False
 
         super().mousePressEvent(event)
 
@@ -191,7 +405,68 @@ class NodeView(QGraphicsView):
             event.accept()
             return
 
+        # Houdini A + Drag alignment in progress
+        if self._a_align_node:
+            event.accept()
+            return
+
+        # Houdini Ctrl / Shift branch dragging
+        if self._branch_drag_nodes and self._branch_drag_prev_scene_pos:
+            cur_scene_pos = self.mapToScene(event.pos())
+            delta = cur_scene_pos - self._branch_drag_prev_scene_pos
+            self._branch_drag_prev_scene_pos = cur_scene_pos
+            for n in self._branch_drag_nodes:
+                n.setPos(n.pos() + delta)
+                n.update_connected_wires()
+            event.accept()
+            return
+
         super().mouseMoveEvent(event)
+
+        # Shake detection and wire drop target detection during node drag
+        if self._dragged_node and not self._is_cutting and not self._is_panning:
+            now = time.time()
+            cur_pos = self._dragged_node.pos()
+            self._shake_samples = [s for s in self._shake_samples if now - s[0] <= 0.45]
+            self._shake_samples.append((now, cur_pos.x(), cur_pos.y()))
+
+            # Shake detection: check for rapid horizontal oscillations (>= 3 reversals, >= 70px travel)
+            if not self._shake_triggered and len(self._shake_samples) >= 5:
+                reversals = 0
+                prev_dir = 0
+                total_travel = 0.0
+                for i in range(1, len(self._shake_samples)):
+                    dx = self._shake_samples[i][1] - self._shake_samples[i - 1][1]
+                    total_travel += abs(dx)
+                    if abs(dx) > 8.0:
+                        cur_dir = 1 if dx > 0 else -1
+                        if prev_dir != 0 and cur_dir != prev_dir:
+                            reversals += 1
+                        prev_dir = cur_dir
+
+                if reversals >= 3 and total_travel >= 70.0:
+                    self._trigger_shake_disconnect(self._dragged_node)
+                    self._shake_triggered = True
+
+            # Wire hover detection for inserting node into a wire:
+            # Check if this node is unconnected on its primary in/out sockets
+            has_in_conn = any(len(s.connections) > 0 for s in self._dragged_node.input_sockets)
+            has_out_conn = any(len(s.connections) > 0 for s in self._dragged_node.output_sockets)
+            if not has_in_conn and not has_out_conn:
+                candidate = self._find_wire_under_node(self._dragged_node)
+                if candidate != self._hovered_wire:
+                    if self._hovered_wire:
+                        self._hovered_wire.is_drop_target = False
+                        self._hovered_wire.update()
+                    self._hovered_wire = candidate
+                    if self._hovered_wire:
+                        self._hovered_wire.is_drop_target = True
+                        self._hovered_wire.update()
+            else:
+                if self._hovered_wire:
+                    self._hovered_wire.is_drop_target = False
+                    self._hovered_wire.update()
+                    self._hovered_wire = None
 
     def mouseReleaseEvent(self, event: QMouseEvent):
         if self._is_cutting and event.button() == Qt.MouseButton.LeftButton:
@@ -209,11 +484,106 @@ class NodeView(QGraphicsView):
             event.accept()
             return
 
+        # Houdini A + Drag alignment commit
+        if self._a_align_node and self._a_align_start_scene_pos:
+            cur_scene_pos = self.mapToScene(event.pos())
+            dx = cur_scene_pos.x() - self._a_align_start_scene_pos.x()
+            anchor = self._a_align_node
+            anchor_y = anchor.pos().y()
+            anchor_x = anchor.pos().x()
+            anchor_w = anchor.width
+
+            if dx > 25.0:
+                # Right drag: Align downstream connected nodes
+                downstream = self._get_downstream_nodes(anchor)
+                others = [n for n in downstream if n != anchor]
+                others.sort(key=lambda n: n.pos().x())
+                curr_x = anchor_x + anchor_w + 50.0
+                for n in others:
+                    n.setPos(curr_x, anchor_y)
+                    n.update_connected_wires()
+                    curr_x += n.width + 50.0
+                self.node_scene.scene_modified.emit()
+            elif dx < -25.0:
+                # Left drag: Align upstream connected nodes
+                upstream = self._get_upstream_nodes(anchor)
+                others = [n for n in upstream if n != anchor]
+                others.sort(key=lambda n: n.pos().x(), reverse=True)
+                curr_right = anchor_x - 50.0
+                for n in others:
+                    target_x = curr_right - n.width
+                    n.setPos(target_x, anchor_y)
+                    n.update_connected_wires()
+                    curr_right = target_x - 50.0
+                self.node_scene.scene_modified.emit()
+
+            self._a_align_node = None
+            self._a_align_start_scene_pos = None
+            event.accept()
+            return
+
+        # Houdini branch drag release
+        if self._branch_drag_nodes:
+            self._branch_drag_nodes = []
+            self._branch_drag_prev_scene_pos = None
+            self.node_scene.scene_modified.emit()
+            event.accept()
+            return
+
+        # Houdini Wire Splice on node drop
+        if self._hovered_wire and self._dragged_node:
+            wire = self._hovered_wire
+            wire.is_drop_target = False
+            wire.update()
+            self._hovered_wire = None
+
+            src_sock = wire.start_socket
+            dst_sock = wire.end_socket
+            dst_node = dst_sock.node if dst_sock else None
+
+            if src_sock and dst_sock and self._dragged_node.input_sockets and self._dragged_node.output_sockets:
+                self.node_scene.remove_connection(wire)
+                self.node_scene.add_connection(src_sock, self._dragged_node.input_sockets[0])
+                self.node_scene.add_connection(self._dragged_node.output_sockets[0], dst_sock)
+
+                # Push destination node and all downstream nodes right to avoid overlap
+                if dst_node:
+                    node_right = self._dragged_node.pos().x() + self._dragged_node.width + 50.0
+                    shift_x = max(self._dragged_node.width + 50.0, node_right - dst_node.pos().x())
+                    downstream = self._get_downstream_nodes(dst_node)
+                    for d_node in downstream:
+                        d_node.setPos(d_node.pos().x() + shift_x, d_node.pos().y())
+                        d_node.update_connected_wires()
+
+                self.node_scene.scene_modified.emit()
+
+        if self._hovered_wire:
+            self._hovered_wire.is_drop_target = False
+            self._hovered_wire.update()
+            self._hovered_wire = None
+
+        self._dragged_node = None
+        self._shake_samples.clear()
+        self._shake_triggered = False
+
         super().mouseReleaseEvent(event)
         if event.button() == Qt.MouseButton.LeftButton:
             self.node_scene.scene_modified.emit()
 
     def keyPressEvent(self, event: QKeyEvent):
+        # Tab: Quick Add Node popup menu under cursor
+        if event.key() == Qt.Key.Key_Tab:
+            global_pos = QCursor.pos()
+            view_pos = self.mapFromGlobal(global_pos)
+            scene_pos = self.mapToScene(view_pos)
+            self._show_quick_add_menu(global_pos, scene_pos)
+            event.accept()
+            return
+
+        # A key alone: Track held state for A + Drag alignment
+        if event.key() == Qt.Key.Key_A and not (event.modifiers() & Qt.KeyboardModifier.ControlModifier):
+            self._a_key_held = True
+
         # R key: Frame selected node(s) in middle (or all nodes if none selected)
         if event.key() == Qt.Key.Key_R and not event.modifiers():
             self.frame_selected()
@@ -273,6 +643,9 @@ class NodeView(QGraphicsView):
         super().keyPressEvent(event)
 
     def keyReleaseEvent(self, event: QKeyEvent):
+        if event.key() == Qt.Key.Key_A:
+            self._a_key_held = False
+
         if event.key() == Qt.Key.Key_Y:
             self._y_key_held = False
             if not self._is_cutting:

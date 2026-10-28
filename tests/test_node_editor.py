@@ -759,6 +759,182 @@ class TestNodeEditor(unittest.TestCase):
         self.assertEqual(step["x"], 640)
         self.assertEqual(step["y"], 480)
 
+    def test_loop_node_dual_input_sockets(self):
+        """Test LoopNodeItem has two explicit inputs (In and Loop In) and two outputs (Body and Done)."""
+        loop = LoopNodeItem()
+        self.scene.add_node(loop, QPointF(100, 100))
+        self.assertEqual(len(loop.input_sockets), 2)
+        self.assertEqual(len(loop.output_sockets), 2)
+        # Sockets: input_sockets[0] = In, input_sockets[1] = Loop In
+        self.assertIn("In", loop.input_sockets[0].name)
+        self.assertIn("Loop", loop.input_sockets[1].name)
+        self.assertIn("Body", loop.output_sockets[0].name)
+        self.assertIn("Done", loop.output_sockets[1].name)
+
+    def test_auto_heal_on_node_delete(self):
+        """Test deleting an inline node automatically heals the connection across predecessor and successor."""
+        node_a = ActionNodeItem("click", {"x": 100, "y": 100})
+        node_b = ActionNodeItem("delay", {"duration": 500})
+        node_c = ActionNodeItem("type", {"value": "test"})
+
+        self.scene.add_node(node_a, QPointF(50, 100))
+        self.scene.add_node(node_b, QPointF(250, 100))
+        self.scene.add_node(node_c, QPointF(450, 100))
+
+        # A -> B -> C
+        self.scene.add_connection(node_a.output_sockets[0], node_b.input_sockets[0])
+        self.scene.add_connection(node_b.output_sockets[0], node_c.input_sockets[0])
+        self.assertEqual(len(self.scene.connections), 2)
+
+        # Select only B and delete
+        self.scene.clearSelection()
+        node_b.setSelected(True)
+        self.scene.delete_selected()
+
+        # B should be gone
+        self.assertNotIn(node_b, self.scene.nodes)
+        # Wire should have auto-healed: A -> C
+        self.assertEqual(len(self.scene.connections), 1)
+        remaining_conn = self.scene.connections[0]
+        self.assertEqual(remaining_conn.start_socket.node, node_a)
+        self.assertEqual(remaining_conn.end_socket.node, node_c)
+
+    def test_shake_to_disconnect_and_heal(self):
+        """Test shaking an inline node disconnects it and heals predecessor -> successor."""
+        view = NodeView(self.scene)
+
+        node_a = ActionNodeItem("click", {"x": 100, "y": 100})
+        node_b = ActionNodeItem("delay", {"duration": 300})
+        node_c = ActionNodeItem("click", {"x": 200, "y": 200})
+
+        self.scene.add_node(node_a, QPointF(50, 100))
+        self.scene.add_node(node_b, QPointF(250, 100))
+        self.scene.add_node(node_c, QPointF(450, 100))
+
+        self.scene.add_connection(node_a.output_sockets[0], node_b.input_sockets[0])
+        self.scene.add_connection(node_b.output_sockets[0], node_c.input_sockets[0])
+        self.assertEqual(len(self.scene.connections), 2)
+
+        # Trigger shake disconnect on node_b
+        view._trigger_shake_disconnect(node_b)
+
+        # Node B should now have 0 connections
+        self.assertEqual(len(node_b.input_sockets[0].connections), 0)
+        self.assertEqual(len(node_b.output_sockets[0].connections), 0)
+
+        # Predecessor A should now be healed directly to successor C
+        self.assertEqual(len(self.scene.connections), 1)
+        healed_conn = self.scene.connections[0]
+        self.assertEqual(healed_conn.start_socket.node, node_a)
+        self.assertEqual(healed_conn.end_socket.node, node_c)
+
+    def test_houdini_wire_drop_auto_insert(self):
+        """Test dropping an unconnected node onto an existing wire splices wire and pushes downstream right."""
+        view = NodeView(self.scene)
+
+        node_a = ActionNodeItem("click", {"x": 10, "y": 10})
+        node_c = ActionNodeItem("type", {"value": "done"})
+        self.scene.add_node(node_a, QPointF(0, 100))
+        self.scene.add_node(node_c, QPointF(300, 100))
+
+        wire = self.scene.add_connection(node_a.output_sockets[0], node_c.input_sockets[0])
+        self.assertEqual(len(self.scene.connections), 1)
+
+        # Create new unattached node positioned between A and C
+        node_b = ActionNodeItem("delay", {"duration": 200})
+        self.scene.add_node(node_b, QPointF(150, 100))
+
+        # Simulate hover and release onto wire
+        view._hovered_wire = wire
+        view._dragged_node = node_b
+
+        # Simulate release
+        from PyQt6.QtGui import QMouseEvent
+        from PyQt6.QtCore import QEvent, QPoint
+        rel_ev = QMouseEvent(
+            QEvent.Type.MouseButtonRelease,
+            QPointF(150, 100),
+            QPointF(150, 100),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        view.mouseReleaseEvent(rel_ev)
+
+        # Now wire should be spliced: A -> B -> C (2 connections)
+        self.assertEqual(len(self.scene.connections), 2)
+        self.assertEqual(node_b.input_sockets[0].connections[0].start_socket.node, node_a)
+        self.assertEqual(node_b.output_sockets[0].connections[0].end_socket.node, node_c)
+
+        # Node C should have been pushed to the right to avoid overlapping node B
+        self.assertGreater(node_c.pos().x(), node_b.pos().x() + node_b.width)
+
+    def test_houdini_a_drag_alignment(self):
+        """Test A + Drag aligns downstream branch when dragged right, and upstream branch when dragged left."""
+        view = NodeView(self.scene)
+
+        node_a = ActionNodeItem("click", {"x": 10, "y": 10})
+        node_b = ActionNodeItem("delay", {"duration": 100})
+        node_c = ActionNodeItem("type", {"value": "c"})
+
+        # Scatter nodes with irregular Y coordinates
+        self.scene.add_node(node_a, QPointF(50, 200))
+        self.scene.add_node(node_b, QPointF(200, 350))
+        self.scene.add_node(node_c, QPointF(400, 50))
+
+        self.scene.add_connection(node_a.output_sockets[0], node_b.input_sockets[0])
+        self.scene.add_connection(node_b.output_sockets[0], node_c.input_sockets[0])
+
+        # Test A + Drag Right on node_a:
+        view._a_key_held = True
+        view._a_align_node = node_a
+        view._a_align_start_scene_pos = QPointF(50, 200)
+
+        # Release with dx = +100 (dragged right)
+        from PyQt6.QtGui import QMouseEvent
+        from PyQt6.QtCore import QEvent
+        rel_ev = QMouseEvent(
+            QEvent.Type.MouseButtonRelease,
+            QPointF(150, 200),
+            QPointF(150, 200),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        view.mouseReleaseEvent(rel_ev)
+
+        # Node B and Node C should now be horizontally aligned to Node A's Y coordinate (200)
+        self.assertEqual(node_a.pos().y(), 200)
+        self.assertEqual(node_b.pos().y(), 200)
+        self.assertEqual(node_c.pos().y(), 200)
+        # And spaced neatly left to right
+        self.assertLess(node_a.pos().x(), node_b.pos().x())
+        self.assertLess(node_b.pos().x(), node_c.pos().x())
+
+    def test_branch_traversal_methods(self):
+        """Test _get_downstream_nodes and _get_upstream_nodes."""
+        view = NodeView(self.scene)
+
+        node_1 = ActionNodeItem("click")
+        node_2 = ActionNodeItem("delay")
+        node_3 = ActionNodeItem("type")
+
+        self.scene.add_node(node_1, QPointF(0, 0))
+        self.scene.add_node(node_2, QPointF(200, 0))
+        self.scene.add_node(node_3, QPointF(400, 0))
+
+        self.scene.add_connection(node_1.output_sockets[0], node_2.input_sockets[0])
+        self.scene.add_connection(node_2.output_sockets[0], node_3.input_sockets[0])
+
+        downstream_1 = view._get_downstream_nodes(node_1)
+        self.assertEqual(downstream_1, [node_1, node_2, node_3])
+
+        downstream_2 = view._get_downstream_nodes(node_2)
+        self.assertEqual(downstream_2, [node_2, node_3])
+
+        upstream_3 = view._get_upstream_nodes(node_3)
+        self.assertEqual(upstream_3, [node_3, node_2, node_1])
+
 
 if __name__ == "__main__":
     unittest.main()

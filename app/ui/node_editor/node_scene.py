@@ -432,8 +432,25 @@ class NodeScene(QGraphicsScene):
         return len(selected_nodes)
 
     def delete_selected(self):
-        """Deletes selected nodes, groups, and connections."""
-        items = self.selectedItems()
+        """Deletes selected nodes, groups, and connections. Auto-heals wires across deleted inline nodes."""
+        items = list(self.selectedItems())
+        selected_nodes = {item for item in items if isinstance(item, BaseNodeItem)}
+
+        # Auto-heal wires across deleted inline nodes (connect predecessors to successors)
+        connections_to_heal = []
+        for node in selected_nodes:
+            incoming = [
+                c.start_socket for sock in node.input_sockets for c in sock.connections
+                if c.start_socket and c.start_socket.node not in selected_nodes
+            ]
+            outgoing = [
+                c.end_socket for sock in node.output_sockets for c in sock.connections
+                if c.end_socket and c.end_socket.node not in selected_nodes
+            ]
+            for in_sock, out_sock in zip(incoming, outgoing):
+                if in_sock and out_sock:
+                    connections_to_heal.append((in_sock, out_sock))
+
         for item in items:
             if isinstance(item, NodeConnection):
                 self.remove_connection(item)
@@ -441,3 +458,7 @@ class NodeScene(QGraphicsScene):
                 self.remove_node(item)
             elif isinstance(item, NodeGroupItem):
                 self.remove_group(item)
+
+        # Re-establish healed connections
+        for in_sock, out_sock in connections_to_heal:
+            self.add_connection(in_sock, out_sock)
