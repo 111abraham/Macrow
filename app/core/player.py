@@ -158,7 +158,13 @@ class MacroPlayer:
         if total_steps == 0:
             return
 
-        has_branching = any("found_next" in s or "miss_next" in s for s in steps)
+        has_branching = any(
+            "found_next" in s
+            or "miss_next" in s
+            or "body_next" in s
+            or s.get("type") in ("loop_count", "if_condition")
+            for s in steps
+        )
         if has_branching:
             self._execute_graph_pass(steps)
         else:
@@ -172,6 +178,12 @@ class MacroPlayer:
         for i, step in enumerate(steps):
             if self._stop_requested.is_set():
                 break
+
+            # If step is bypassed, skip execution without delay
+            if step.get("bypassed", False):
+                if self.on_progress:
+                    self.on_progress(i + 1, total_steps)
+                continue
 
             # Handle Pause / Resume timing
             if self._pause_requested.is_set():
@@ -212,7 +224,8 @@ class MacroPlayer:
         step_map = {s["id"]: s for s in steps if "id" in s}
         curr_step = steps[0]
         step_count = 0
-        max_steps = 10000
+        max_steps = 100000
+        loop_counters = {}
 
         while curr_step and not self._stop_requested.is_set() and step_count < max_steps:
             step_count += 1
@@ -222,6 +235,44 @@ class MacroPlayer:
                 self._resume_event.wait()
                 if self._stop_requested.is_set():
                     break
+
+            # If node is bypassed, skip execution and route to next connection
+            if curr_step.get("bypassed", False):
+                if self.on_progress:
+                    self.on_progress(min(step_count, len(steps)), len(steps))
+                if curr_step.get("type") == "loop_count":
+                    next_id = curr_step.get("next")
+                elif "found_next" in curr_step or "miss_next" in curr_step:
+                    next_id = curr_step.get("found_next") or curr_step.get("miss_next")
+                else:
+                    next_id = curr_step.get("next")
+                if not next_id:
+                    break
+                curr_step = step_map.get(next_id)
+                continue
+
+            # Special state handling for Loop (N Times) node
+            if curr_step.get("type") == "loop_count":
+                lid = curr_step.get("id")
+                target_count = int(curr_step.get("count", 5))
+                var_name = str(curr_step.get("var_name", "i")).lstrip("$")
+
+                iter_count = loop_counters.get(lid, 0)
+                if iter_count < target_count:
+                    self.variables[var_name] = iter_count
+                    self.variables[f"${var_name}"] = iter_count
+                    loop_counters[lid] = iter_count + 1
+                    next_id = curr_step.get("body_next") or curr_step.get("next")
+                else:
+                    loop_counters[lid] = 0
+                    next_id = curr_step.get("next")
+
+                if self.on_progress:
+                    self.on_progress(min(step_count, len(steps)), len(steps))
+                if not next_id:
+                    break
+                curr_step = step_map.get(next_id)
+                continue
 
             # Execute the current step
             cond_res = self._execute_step(curr_step)
@@ -250,6 +301,8 @@ class MacroPlayer:
     def _execute_step(self, step):
         if step.get("_unplugged", False):
             return False
+        if step.get("bypassed", False):
+            return True
 
         st_type = step.get("type", "")
         x = step.get("x")
@@ -315,7 +368,7 @@ class MacroPlayer:
             try:
                 template_path = step.get("template", "")
                 confidence = float(step.get("confidence", 0.85))
-                action = str(step.get("action", "click")).lower().replace(" ", "")
+                action = str(step.get("action", "none")).lower().replace(" ", "")
                 btn = step.get("button", "left")
                 is_wait = st_type in ("wait_image", "wait", "waitforimage")
                 speed_factor = max(0.01, self.speed)

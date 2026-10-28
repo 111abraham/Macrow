@@ -23,6 +23,7 @@ from app.core.win32_api import (
     MOUSEEVENTF_MIDDLEUP,
     MOUSEEVENTF_WHEEL,
     MOUSEEVENTF_HWHEEL,
+    WHEEL_DELTA,
     KEYEVENTF_KEYUP,
     KEYEVENTF_UNICODE,
     SYNTHETIC_EXTRA_INFO,
@@ -106,18 +107,35 @@ class InputSimulator:
 
     def mouse_wheel(self, delta_y=0, delta_x=0, x=None, y=None):
         """
-        Scroll mouse wheel.
+        Scroll mouse wheel reliably.
         delta_y > 0 scrolls up, delta_y < 0 scrolls down.
         delta_x > 0 scrolls right, delta_x < 0 scrolls left.
         """
         if x is not None and y is not None:
-            self.move_to(x, y)
+            self.move_to(int(x), int(y))
+            # Settle time so Windows OS hit-tests the window beneath the cursor
+            time.sleep(0.02)
 
+        # Break delta_y into standard WHEEL_DELTA (120) increments for maximum application compatibility
         if delta_y != 0:
-            # Positive mouseData indicates forward/up wheel rotation
-            self._send_mouse_event(MOUSEEVENTF_WHEEL, data=int(delta_y))
+            sign = 1 if delta_y > 0 else -1
+            rem = abs(int(delta_y))
+            while rem > 0:
+                chunk = min(rem, WHEEL_DELTA)
+                self._send_mouse_event(MOUSEEVENTF_WHEEL, data=int(chunk * sign))
+                rem -= chunk
+                if rem > 0:
+                    time.sleep(0.015)
+
         if delta_x != 0:
-            self._send_mouse_event(MOUSEEVENTF_HWHEEL, data=int(delta_x))
+            sign = 1 if delta_x > 0 else -1
+            rem = abs(int(delta_x))
+            while rem > 0:
+                chunk = min(rem, WHEEL_DELTA)
+                self._send_mouse_event(MOUSEEVENTF_HWHEEL, data=int(chunk * sign))
+                rem -= chunk
+                if rem > 0:
+                    time.sleep(0.015)
 
     def key_down(self, vk_code):
         """Press down a virtual key code."""

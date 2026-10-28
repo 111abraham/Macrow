@@ -134,6 +134,9 @@ def macro_to_graph(
             node.id = step["id"]
             node_id_map[str(step["id"])] = node
 
+        if step.get("bypassed", False):
+            node.set_bypassed(True)
+
         # Place left-to-right
         node_pos = QPointF(curr_x, curr_y)
         scene.add_node(node, node_pos)
@@ -164,6 +167,14 @@ def macro_to_graph(
             if step.get("_unplugged", False):
                 continue
 
+            # Loop Body socket (index 0)
+            if "body_next" in step:
+                b_id = step.get("body_next")
+                if b_id and b_id in node_id_map:
+                    target_node = node_id_map[b_id]
+                    if len(node.output_sockets) > 0 and len(target_node.input_sockets) > 0:
+                        scene.add_connection(node.output_sockets[0], target_node.input_sockets[0])
+
             # Found socket (index 0)
             if "found_next" in step:
                 f_id = step.get("found_next")
@@ -180,13 +191,14 @@ def macro_to_graph(
                     if len(node.output_sockets) > 1 and len(target_node.input_sockets) > 0:
                         scene.add_connection(node.output_sockets[1], target_node.input_sockets[0])
 
-            # Standard next socket
+            # Standard next socket (for LoopNodeItem, 'next' is index 1 Done; for others, index 0)
             if "next" in step:
                 n_id = step.get("next")
                 if n_id and n_id in node_id_map:
                     target_node = node_id_map[n_id]
-                    if len(node.output_sockets) > 0 and len(target_node.input_sockets) > 0:
-                        scene.add_connection(node.output_sockets[0], target_node.input_sockets[0])
+                    out_idx = 1 if isinstance(node, LoopNodeItem) else 0
+                    if len(node.output_sockets) > out_idx and len(target_node.input_sockets) > 0:
+                        scene.add_connection(node.output_sockets[out_idx], target_node.input_sockets[0])
 
 
 def graph_to_macro(scene: NodeScene) -> List[Dict[str, Any]]:
@@ -234,12 +246,14 @@ def graph_to_macro(scene: NodeScene) -> List[Dict[str, Any]]:
             return None
 
         step: Dict[str, Any] = {"id": node_id, "type": action_type}
+        if getattr(node, "bypassed", False):
+            step["bypassed"] = True
 
         if isinstance(node, VisionNodeItem):
             step["type"] = "wait_image"
             step["template"] = props.get("template", "")
             step["confidence"] = float(props.get("confidence", 0.85))
-            step["action"] = props.get("action", "click")
+            step["action"] = props.get("action", "none")
             step["button"] = props.get("button", "left")
             step["timeout"] = float(props.get("timeout", 5.0))
             step["found_next"] = get_target_id(0)
@@ -320,6 +334,9 @@ def graph_to_macro(scene: NodeScene) -> List[Dict[str, Any]]:
             elif action_type == "wheel":
                 step["deltaY"] = int(props.get("deltaY", 0))
                 step["deltaX"] = int(props.get("deltaX", 0))
+                if "x" in props and "y" in props:
+                    step["x"] = int(props["x"])
+                    step["y"] = int(props["y"])
                 current_dt += 80
                 step["dt"] = current_dt
 

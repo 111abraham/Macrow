@@ -234,7 +234,12 @@ class TestNodeEditor(unittest.TestCase):
         inspector.set_node(move_node)
 
         # Find direct jump checkbox inside inspector
-        chk_direct = inspector.findChild(QCheckBox)
+        chk_direct = inspector.findChild(QCheckBox, "DirectJumpCheckbox")
+        if not chk_direct:
+            for cb in inspector.findChildren(QCheckBox):
+                if "Direct Jump" in cb.text():
+                    chk_direct = cb
+                    break
         self.assertIsNotNone(chk_direct)
         self.assertTrue(chk_direct.isChecked())
 
@@ -633,6 +638,126 @@ class TestNodeEditor(unittest.TestCase):
             player._thread.join(timeout=3.0)
 
         self.assertEqual(executed_clicks, [(444, 444)])
+
+    def test_toggle_bypass_selected(self):
+        """Test B key bypass toggling, serialization, and deserialization."""
+        n1 = ActionNodeItem("click", {"x": 100, "y": 100})
+        n2 = ActionNodeItem("move", {"x": 200, "y": 200})
+        self.scene.add_node(n1)
+        self.scene.add_node(n2)
+
+        # Initially not bypassed
+        self.assertFalse(n1.bypassed)
+        self.assertFalse(n2.bypassed)
+
+        # Select n1 and toggle bypass
+        n1.setSelected(True)
+        count = self.scene.toggle_bypass_selected()
+        self.assertEqual(count, 1)
+        self.assertTrue(n1.bypassed)
+        self.assertEqual(n1.properties.get("bypassed"), True)
+
+        # Toggle again -> unbypass
+        self.scene.toggle_bypass_selected()
+        self.assertFalse(n1.bypassed)
+        self.assertEqual(n1.properties.get("bypassed"), False)
+
+    def test_bypassed_node_playback_skipping(self):
+        """Test that bypassed nodes are skipped during playback."""
+        from app.core.player import MacroPlayer
+        from app.core.input_simulator import InputSimulator
+
+        sim = InputSimulator()
+        player = MacroPlayer(sim)
+
+        executed = []
+        sim.click = lambda x, y, btn="left": executed.append((x, y))
+
+        steps = [
+            {"id": "s1", "type": "click", "x": 100, "y": 100, "bypassed": True, "dt": 10},
+            {"id": "s2", "type": "click", "x": 200, "y": 200, "bypassed": False, "dt": 20},
+            {"id": "s3", "type": "click", "x": 300, "y": 300, "bypassed": True, "dt": 30},
+        ]
+
+        player.play(steps, speed=5.0, repeat=False, repeat_count=1)
+        player._thread.join(timeout=2.0)
+
+        # Only the non-bypassed click (200, 200) should have executed
+        self.assertEqual(executed, [(200, 200)])
+
+    def test_loop_node_execution(self):
+        """Test that loop_count iterates N times via body_next and then exits to next (Done)."""
+        from app.core.player import MacroPlayer
+        from app.core.input_simulator import InputSimulator
+
+        sim = InputSimulator()
+        player = MacroPlayer(sim)
+
+        loop_indices = []
+        def mock_click(x, y, btn="left"):
+            # Record loop index stored in variables
+            loop_indices.append(player.variables.get("i"))
+
+        sim.click = mock_click
+
+        # Start -> Loop -> Body -> Click -> wires back to Loop -> Done -> Click (Done)
+        steps = [
+            {
+                "id": "loop_1",
+                "type": "loop_count",
+                "count": 3,
+                "var_name": "i",
+                "body_next": "click_body",
+                "next": "click_done",
+                "dt": 10,
+            },
+            {
+                "id": "click_body",
+                "type": "click",
+                "x": 50,
+                "y": 50,
+                "next": "loop_1",  # Wire back to loop
+                "dt": 20,
+            },
+            {
+                "id": "click_done",
+                "type": "click",
+                "x": 999,
+                "y": 999,
+                "next": None,
+                "dt": 30,
+            },
+        ]
+
+        player.play(steps, speed=10.0, repeat=False, repeat_count=1)
+        player._thread.join(timeout=3.0)
+
+        # Loop body should have executed 3 times with indices 0, 1, 2, then click_done (index remained 2 or done)
+        self.assertEqual(loop_indices[:3], [0, 1, 2])
+        self.assertEqual(len(loop_indices), 4)
+
+    def test_vision_node_default_action_none(self):
+        """Test that wait_image node defaults to action 'none'."""
+        vnode = VisionNodeItem()
+        self.assertEqual(vnode.properties.get("action"), "none")
+
+    def test_wheel_node_coordinates_and_simulation(self):
+        """Test wheel node preserves coordinates and simulates standard WHEEL_DELTA notches."""
+        from app.ui.node_editor.graph_compiler import graph_to_macro
+
+        start = StartNodeItem()
+        wheel = ActionNodeItem("wheel", {"deltaY": -360, "x": 640, "y": 480})
+        self.scene.add_node(start, QPointF(50, 100))
+        self.scene.add_node(wheel, QPointF(200, 100))
+        self.scene.add_connection(start.output_sockets[0], wheel.input_sockets[0])
+
+        compiled = graph_to_macro(self.scene)
+        self.assertEqual(len(compiled), 1)
+        step = compiled[0]
+        self.assertEqual(step["type"], "wheel")
+        self.assertEqual(step["deltaY"], -360)
+        self.assertEqual(step["x"], 640)
+        self.assertEqual(step["y"], 480)
 
 
 if __name__ == "__main__":

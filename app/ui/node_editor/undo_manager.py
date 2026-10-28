@@ -44,6 +44,7 @@ def serialize_scene(scene: NodeScene) -> Dict[str, Any]:
             "node_type": node.node_type,
             "title": getattr(node, "title", "Node"),
             "pos": (node.pos().x(), node.pos().y()),
+            "bypassed": getattr(node, "bypassed", False),
             "properties": copy.deepcopy(node.properties),
         })
 
@@ -101,6 +102,8 @@ def deserialize_scene(scene: NodeScene, data: Dict[str, Any]):
             node = cls(properties=props)
 
         node.id = nd.get("id")
+        if nd.get("bypassed", props.get("bypassed", False)):
+            node.set_bypassed(True)
         pos = nd.get("pos", (0, 0))
         scene.add_node(node, QPointF(pos[0], pos[1]))
         id_to_node[node.id] = node

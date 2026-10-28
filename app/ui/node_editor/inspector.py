@@ -168,10 +168,34 @@ class PropertyInspector(QWidget):
         self._clear_content()
 
         # Node Title Badge
-        badge = QLabel(f"Node: {node.title}")
+        badge_text = f"Node: {node.title}" + (" [BYPASSED]" if getattr(node, "bypassed", False) else "")
+        badge = QLabel(badge_text)
         badge.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
         badge.setStyleSheet("color: #f1f5f9; background: #1e293b; padding: 6px; border-radius: 4px;")
         self.content_layout.addWidget(badge)
+
+        # Bypass Checkbox (for any node other than Start)
+        from app.ui.node_editor.node_items import StartNodeItem
+        if not isinstance(node, StartNodeItem):
+            chk_bypass = QCheckBox("🚫 Bypass Node (Skip during playback) [B]")
+            chk_bypass.setObjectName("BypassCheckbox")
+            chk_bypass.setChecked(getattr(node, "bypassed", False))
+            chk_bypass.setStyleSheet("""
+                QCheckBox {
+                    color: #f59e0b;
+                    font-weight: 600;
+                    font-size: 11px;
+                    padding: 3px 2px;
+                }
+            """)
+
+            def on_bypass_toggle(checked):
+                node.set_bypassed(checked)
+                badge.setText(f"Node: {node.title}" + (" [BYPASSED]" if checked else ""))
+                self.property_changed.emit()
+
+            chk_bypass.toggled.connect(on_bypass_toggle)
+            self.content_layout.addWidget(chk_bypass)
 
         # Build controls based on node type
         if isinstance(node, VisionNodeItem):
@@ -352,6 +376,7 @@ class PropertyInspector(QWidget):
                 mob_layout.setSpacing(6)
 
                 chk_direct = QCheckBox("Direct Jump (Skip in-between movements)")
+                chk_direct.setObjectName("DirectJumpCheckbox")
                 chk_direct.setStyleSheet("color: #f1f5f9; font-weight: 600; font-size: 11px;")
                 chk_direct.setChecked(bool(node.properties.get("direct_jump", True)))
 
@@ -534,7 +559,7 @@ class PropertyInspector(QWidget):
 
         elif at == "wheel":
             w_box = QFrame()
-            w_box.setStyleSheet("background: #1e293b; border-radius: 6px; padding: 8px;")
+            w_box.setStyleSheet("background: #1e293b; border-radius: 6px; padding: 10px;")
             wb_layout = QVBoxLayout(w_box)
             wb_layout.setSpacing(8)
 
@@ -543,30 +568,158 @@ class PropertyInspector(QWidget):
             lbl_w.setStyleSheet("color: #6366f1;")
             wb_layout.addWidget(lbl_w)
 
-            row_dy = QHBoxLayout()
-            row_dy.addWidget(QLabel("Vertical Scroll (Delta Y):"))
-            spin_dy = QSpinBox()
-            spin_dy.setRange(-10000, 10000)
-            spin_dy.setSingleStep(120)
-            spin_dy.setValue(int(node.properties.get("deltaY", 120)))
-            row_dy.addWidget(spin_dy)
-            wb_layout.addLayout(row_dy)
+            # Target Position Option
+            has_pos = ("x" in node.properties and "y" in node.properties)
+            chk_pos = QCheckBox("Target Specific Screen Position")
+            chk_pos.setChecked(has_pos)
+            chk_pos.setStyleSheet("color: #cbd5e1; font-size: 11px; font-weight: 600;")
+            wb_layout.addWidget(chk_pos)
 
-            btn_row = QHBoxLayout()
-            b_up = QPushButton("▲ Scroll Up (+120)")
-            b_down = QPushButton("▼ Scroll Down (-120)")
-            b_up.clicked.connect(lambda: spin_dy.setValue(120))
-            b_down.clicked.connect(lambda: spin_dy.setValue(-120))
-            btn_row.addWidget(b_up)
-            btn_row.addWidget(b_down)
-            wb_layout.addLayout(btn_row)
+            pos_container = QWidget()
+            pos_layout = QVBoxLayout(pos_container)
+            pos_layout.setContentsMargins(0, 0, 0, 0)
+            pos_layout.setSpacing(6)
 
-            def on_dy_change(v):
-                node.properties["deltaY"] = v
+            row_xy = QHBoxLayout()
+            row_xy.addWidget(QLabel("X:"))
+            spin_x = QSpinBox()
+            spin_x.setRange(-30000, 60000)
+            spin_x.setValue(int(node.properties.get("x", 500)))
+            row_xy.addWidget(spin_x)
+
+            row_xy.addWidget(QLabel("Y:"))
+            spin_y = QSpinBox()
+            spin_y.setRange(-30000, 60000)
+            spin_y.setValue(int(node.properties.get("y", 500)))
+            row_xy.addWidget(spin_y)
+            pos_layout.addLayout(row_xy)
+
+            btn_dropper = QPushButton("🎯 Sample Coord (Eye Dropper)")
+            btn_dropper.setStyleSheet("""
+                QPushButton {
+                    background-color: #0284c7;
+                    color: white;
+                    font-weight: 600;
+                    padding: 4px;
+                    border-radius: 4px;
+                }
+                QPushButton:hover {
+                    background-color: #0369a1;
+                }
+            """)
+
+            def on_pick_coord():
+                parent_win = self.window()
+                if parent_win:
+                    parent_win.showMinimized()
+                dropper = CoordinateEyeDropper(parent=None)
+
+                def on_picked(x, y, hex_col, rgb):
+                    spin_x.setValue(x)
+                    spin_y.setValue(y)
+                    node.properties["x"] = x
+                    node.properties["y"] = y
+                    node.update()
+                    self.property_changed.emit()
+                    if parent_win:
+                        parent_win.showNormal()
+                        parent_win.activateWindow()
+
+                dropper.coord_picked.connect(on_picked)
+                dropper.rejected.connect(lambda: parent_win.showNormal() if parent_win else None)
+                dropper.exec()
+
+            btn_dropper.clicked.connect(on_pick_coord)
+            pos_layout.addWidget(btn_dropper)
+            wb_layout.addWidget(pos_container)
+
+            pos_container.setVisible(has_pos)
+
+            def on_toggle_pos(checked):
+                pos_container.setVisible(checked)
+                if checked:
+                    node.properties["x"] = spin_x.value()
+                    node.properties["y"] = spin_y.value()
+                else:
+                    node.properties.pop("x", None)
+                    node.properties.pop("y", None)
                 node.update()
                 self.property_changed.emit()
 
-            spin_dy.valueChanged.connect(on_dy_change)
+            chk_pos.toggled.connect(on_toggle_pos)
+
+            def on_x_change(v):
+                if chk_pos.isChecked():
+                    node.properties["x"] = v
+                    node.update()
+                    self.property_changed.emit()
+
+            def on_y_change(v):
+                if chk_pos.isChecked():
+                    node.properties["y"] = v
+                    node.update()
+                    self.property_changed.emit()
+
+            spin_x.valueChanged.connect(on_x_change)
+            spin_y.valueChanged.connect(on_y_change)
+
+            # Scroll Direction & Notches
+            cur_dy = int(node.properties.get("deltaY", -120))
+            is_up = cur_dy >= 0
+            cur_notches = max(1, abs(cur_dy) // 120)
+
+            row_dir = QHBoxLayout()
+            row_dir.addWidget(QLabel("Scroll Direction:"))
+            combo_dir = QComboBox()
+            combo_dir.addItems(["▼ Scroll Down", "▲ Scroll Up"])
+            combo_dir.setCurrentIndex(1 if is_up else 0)
+            row_dir.addWidget(combo_dir)
+            wb_layout.addLayout(row_dir)
+
+            row_notches = QHBoxLayout()
+            row_notches.addWidget(QLabel("Clicks / Notches:"))
+            spin_notches = QSpinBox()
+            spin_notches.setRange(1, 100)
+            spin_notches.setValue(cur_notches)
+            row_notches.addWidget(spin_notches)
+            wb_layout.addLayout(row_notches)
+
+            # Quick presets
+            btn_row = QHBoxLayout()
+            b_down1 = QPushButton("▼ Down 1")
+            b_down3 = QPushButton("▼ Down 3")
+            b_down5 = QPushButton("▼ Down 5")
+            b_up1 = QPushButton("▲ Up 1")
+            b_up3 = QPushButton("▲ Up 3")
+            btn_row.addWidget(b_down1)
+            btn_row.addWidget(b_down3)
+            btn_row.addWidget(b_down5)
+            btn_row.addWidget(b_up1)
+            btn_row.addWidget(b_up3)
+            wb_layout.addLayout(btn_row)
+
+            def update_delta_from_ui():
+                direction = 1 if combo_dir.currentIndex() == 1 else -1
+                notches = spin_notches.value()
+                dy = direction * notches * 120
+                node.properties["deltaY"] = dy
+                node.update()
+                self.property_changed.emit()
+
+            combo_dir.currentIndexChanged.connect(lambda _: update_delta_from_ui())
+            spin_notches.valueChanged.connect(lambda _: update_delta_from_ui())
+
+            def apply_preset(direction_idx, notches_val):
+                combo_dir.setCurrentIndex(direction_idx)
+                spin_notches.setValue(notches_val)
+                update_delta_from_ui()
+
+            b_down1.clicked.connect(lambda: apply_preset(0, 1))
+            b_down3.clicked.connect(lambda: apply_preset(0, 3))
+            b_down5.clicked.connect(lambda: apply_preset(0, 5))
+            b_up1.clicked.connect(lambda: apply_preset(1, 1))
+            b_up3.clicked.connect(lambda: apply_preset(1, 3))
+
             self.content_layout.addWidget(w_box)
 
     def _build_if_controls(self, node: IfConditionNodeItem):
@@ -1063,7 +1216,7 @@ class PropertyInspector(QWidget):
         row_act = QHBoxLayout()
         row_act.addWidget(QLabel("On Found:"))
         combo_act = QComboBox()
-        combo_act.addItems(["Click", "Double Click", "Move", "None"])
+        combo_act.addItems(["None", "Click", "Double Click", "Move"])
         act_map = {
             "click": "Click",
             "doubleclick": "Double Click",
@@ -1071,8 +1224,8 @@ class PropertyInspector(QWidget):
             "move": "Move",
             "none": "None",
         }
-        raw_act = str(node.properties.get("action", "click")).lower().replace(" ", "")
-        disp_act = act_map.get(raw_act, "Click")
+        raw_act = str(node.properties.get("action", "none")).lower().replace(" ", "")
+        disp_act = act_map.get(raw_act, "None")
         idx = combo_act.findText(disp_act)
         if idx >= 0:
             combo_act.setCurrentIndex(idx)
@@ -1084,7 +1237,7 @@ class PropertyInspector(QWidget):
                 "Move": "move",
                 "None": "none",
             }
-            node.properties["action"] = rev_map.get(txt, "click")
+            node.properties["action"] = rev_map.get(txt, "none")
             node.update()
             self.property_changed.emit()
 

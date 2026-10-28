@@ -306,14 +306,19 @@ class MacrowPanel(QWidget):
         # Section: Node Graph Editor
         menu.addSection("NODE GRAPH EDITOR SHORTCUTS")
 
+        menu.addAction("🎯 Center / Frame View\tR")
+        menu.addAction("☑ Select All Nodes\tCtrl+A")
+        menu.addAction("🚫 Bypass / Mute Node(s)\tB")
         menu.addAction("💾 Save & Apply\tCtrl+S")
-        menu.addAction("↩ Undo\tCtrl+Z")
-        menu.addAction("↪ Redo\tCtrl+Y")
+        menu.addAction("↩ Undo Canvas\tCtrl+Z")
+        menu.addAction("↪ Redo Canvas\tCtrl+Y")
         menu.addAction("📋 Copy Nodes\tCtrl+C")
         menu.addAction("📄 Paste Nodes\tCtrl+V")
         menu.addAction("⚡ Duplicate Drag\tAlt + Drag")
         menu.addAction("✂ Cut Wire (Knife)\tY + Drag")
         menu.addAction("🔌 Unplug Wire\tClick Input")
+        menu.addAction("✋ Pan Canvas\tRight / Middle Drag")
+        menu.addAction("🔍 Zoom In / Out\tMouse Wheel")
         menu.addAction("🗑 Delete Selected\tDelete / Backspace")
         menu.addAction("❌ Cancel / Dismiss\tEscape")
 

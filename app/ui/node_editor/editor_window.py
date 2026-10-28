@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from typing import List, Dict, Any, Optional, Callable
-from PyQt6.QtCore import Qt, QPointF, QTimer
+from PyQt6.QtCore import Qt, QPointF, QPoint, QTimer
 from PyQt6.QtGui import QFont, QIcon, QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QMainWindow,
@@ -143,6 +143,7 @@ class MacroNodeEditorWindow(QMainWindow):
         add_menu.addAction("🖱 Mouse Click", lambda: self._add_action_node("click"))
         add_menu.addAction("🖱 Double Click", lambda: self._add_action_node("dblclick"))
         add_menu.addAction("🏹 Mouse Move", lambda: self._add_action_node("move"))
+        add_menu.addAction("📜 Mouse Wheel Scroll", lambda: self._add_action_node("wheel"))
         add_menu.addAction("⏳ Delay / Wait", lambda: self._add_action_node("delay"))
         add_menu.addAction("🔤 Type Text", lambda: self._add_action_node("type"))
         add_menu.addAction("⌨ Key Combo (Hotkey)", lambda: self._add_custom_node(HotkeyNodeItem()))
@@ -190,6 +191,12 @@ class MacroNodeEditorWindow(QMainWindow):
         self.settings_btn.setToolTip("Configure Node Editor preferences and defaults")
         self.settings_btn.clicked.connect(self._open_settings_dialog)
         toolbar.addWidget(self.settings_btn)
+
+        # Shortcuts Help button
+        self.help_btn = QPushButton("? Shortcuts")
+        self.help_btn.setToolTip("View all keyboard shortcuts and gestures")
+        self.help_btn.clicked.connect(self._show_shortcuts_menu)
+        toolbar.addWidget(self.help_btn)
 
         # Save & Apply button - with pressed animation matching settings and fit all
         self.save_btn = QPushButton("💾 Save & Apply")
@@ -258,7 +265,82 @@ class MacroNodeEditorWindow(QMainWindow):
         QShortcut(QKeySequence("Ctrl+D"), self, self._duplicate_selected)
         QShortcut(QKeySequence("Ctrl+G"), self, self._group_selected)
         QShortcut(QKeySequence("R"), self, self.view.frame_selected)
+        QShortcut(QKeySequence("B"), self, self._toggle_bypass_selected)
         QShortcut(QKeySequence("Delete"), self, self._delete_selected)
+
+    def _toggle_bypass_selected(self):
+        count = self.scene.toggle_bypass_selected()
+        if count > 0:
+            self._has_unsaved_changes = True
+            self.status_bar.showMessage(f"Toggled bypass on {count} node(s) (B).")
+            if self.inspector.current_node:
+                self.inspector.set_node(self.inspector.current_node)
+        else:
+            self.status_bar.showMessage("Select node(s) to bypass or unbypass (B).")
+
+    def _show_shortcuts_menu(self):
+        menu = QMenu(self)
+        menu.setStyleSheet("""
+            QMenu {
+                background-color: #18181b;
+                border: 1px solid #3f3f46;
+                border-radius: 6px;
+                padding: 4px;
+                color: #e4e4e7;
+                font-family: 'Segoe UI', -apple-system, sans-serif;
+                font-size: 11px;
+            }
+            QMenu::item {
+                padding: 5px 22px 5px 12px;
+                border-radius: 4px;
+            }
+            QMenu::item:selected {
+                background-color: #27272a;
+                color: #38bdf8;
+            }
+            QMenu::separator {
+                height: 1px;
+                background-color: #27272a;
+                margin: 4px 6px;
+            }
+            QMenu::section {
+                padding: 4px 10px;
+                font-weight: 700;
+                font-size: 10px;
+                color: #38bdf8;
+                letter-spacing: 0.5px;
+            }
+        """)
+
+        menu.addSection("NODE GRAPH EDITOR SHORTCUTS")
+        menu.addAction("🎯 Center / Frame View\tR")
+        menu.addAction("☑ Select All Nodes\tCtrl+A")
+        menu.addAction("🚫 Bypass / Mute Node(s)\tB")
+        menu.addAction("💾 Save & Apply\tCtrl+S")
+        menu.addAction("↩ Undo Canvas\tCtrl+Z")
+        menu.addAction("↪ Redo Canvas\tCtrl+Y")
+        menu.addAction("📋 Copy Nodes\tCtrl+C")
+        menu.addAction("📄 Paste Nodes\tCtrl+V")
+        menu.addAction("⚡ Duplicate Drag\tAlt + Drag")
+        menu.addAction("✂ Cut Wire (Knife)\tY + Drag")
+        menu.addAction("🔌 Unplug Wire\tClick Input Socket")
+        menu.addAction("✋ Pan Canvas\tRight / Middle Drag")
+        menu.addAction("🔍 Zoom In / Out\tMouse Wheel")
+        menu.addAction("🗑 Delete Selected\tDelete / Backspace")
+        menu.addAction("❌ Cancel / Dismiss\tEscape")
+
+        menu.addSeparator()
+        menu.addSection("GLOBAL SHORTCUTS")
+        menu.addAction("● Record Macro (Start / Stop)\tF9 / Ctrl+F9")
+        menu.addAction("▶ Play / Pause Macro\tF8 / Ctrl+F8")
+        menu.addAction("⏹ Stop Playback\tF7 / Ctrl+F7")
+        menu.addAction("🛑 Emergency Stop\tAlt+S / F12")
+
+        btn_pos = self.help_btn.mapToGlobal(QPoint(0, self.help_btn.height() + 2))
+        menu_width = menu.sizeHint().width()
+        x = btn_pos.x() + self.help_btn.width() - menu_width
+        y = btn_pos.y()
+        menu.exec(QPoint(x, y))
 
     def _select_all_nodes(self):
         for node in self.scene.nodes:

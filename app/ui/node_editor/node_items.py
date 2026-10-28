@@ -32,6 +32,7 @@ class BaseNodeItem(QGraphicsItem):
         title: str = "Node",
         node_type: str = "action",
         color: Optional[QColor] = None,
+        properties: Optional[Dict[str, Any]] = None,
         parent: Optional[QGraphicsItem] = None,
     ):
         super().__init__(parent)
@@ -49,7 +50,8 @@ class BaseNodeItem(QGraphicsItem):
         self.group: Optional["NodeGroupItem"] = None
 
         # Data properties dictionary for serialization and execution
-        self.properties: Dict[str, Any] = {}
+        self.properties: Dict[str, Any] = dict(properties) if properties else {}
+        self.bypassed: bool = bool(self.properties.get("bypassed", False))
 
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
@@ -60,7 +62,13 @@ class BaseNodeItem(QGraphicsItem):
         """Create a clone instance of this node with copied properties."""
         cls = self.__class__
         new_node = cls(node_type=self.node_type, properties=dict(self.properties))
+        new_node.bypassed = self.bypassed
         return new_node
+
+    def set_bypassed(self, state: bool):
+        self.bypassed = bool(state)
+        self.properties["bypassed"] = self.bypassed
+        self.update()
 
     def boundingRect(self) -> QRectF:
         return QRectF(-10, -10, self.width + 20, self.height + 20)
@@ -107,39 +115,53 @@ class BaseNodeItem(QGraphicsItem):
         rect = QRectF(0, 0, self.width, self.height)
         is_sel = self.isSelected()
 
+        # If bypassed, reduce overall opacity
+        if self.bypassed:
+            painter.setOpacity(0.55)
+
         # Body background
         painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(QBrush(QColor(30, 41, 59)))  # Slate 800
+        body_color = QColor(24, 28, 38) if self.bypassed else QColor(30, 41, 59)
+        painter.setBrush(QBrush(body_color))
         painter.drawRoundedRect(rect, 8, 8)
 
         # Header background
         header_rect = QRectF(0, 0, self.width, self.header_height)
-        painter.setBrush(QBrush(self.accent_color))
+        hdr_color = QColor(71, 85, 105) if self.bypassed else self.accent_color
+        painter.setBrush(QBrush(hdr_color))
         painter.drawRoundedRect(header_rect, 8, 8)
         # Flatten bottom corners of header
-        painter.fillRect(QRectF(0, self.header_height - 6, self.width, 6), self.accent_color)
+        painter.fillRect(QRectF(0, self.header_height - 6, self.width, 6), hdr_color)
 
         # Border
-        border_col = QColor(251, 146, 60) if is_sel else QColor(71, 85, 105)
-        border_width = 2.5 if is_sel else 1.2
-        painter.setPen(QPen(border_col, border_width))
+        if is_sel:
+            border_col = QColor(251, 146, 60)
+            pen = QPen(border_col, 2.5)
+        elif self.bypassed:
+            border_col = QColor(245, 158, 11)  # Amber dashed
+            pen = QPen(border_col, 1.8, Qt.PenStyle.DashLine)
+        else:
+            border_col = QColor(71, 85, 105)
+            pen = QPen(border_col, 1.2)
+        painter.setPen(pen)
         painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawRoundedRect(rect, 8, 8)
 
         # Header Title
-        painter.setPen(QColor(255, 255, 255))
+        painter.setPen(QColor(255, 255, 255) if not self.bypassed else QColor(203, 213, 225))
         painter.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
         text_rect = QRectF(10, 0, self.width - 20, self.header_height)
+        display_title = f"{self.title} [BYPASSED]" if self.bypassed else self.title
         painter.drawText(
             text_rect,
             Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft,
-            self.title,
+            display_title,
         )
 
         # Body summary text
         summary = self.get_summary_text()
         if summary:
-            painter.setPen(QColor(203, 213, 225))  # Slate 300
+            painter.setPen(QColor(148, 163, 184) if self.bypassed else QColor(203, 213, 225))
             painter.setFont(QFont("Segoe UI", 8, QFont.Weight.Normal))
             body_rect = QRectF(12, self.header_height + 4, self.width - 24, self.height - self.header_height - 8)
             painter.drawText(
@@ -147,6 +169,11 @@ class BaseNodeItem(QGraphicsItem):
                 Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft,
                 summary,
             )
+
+        # If bypassed, draw a distinct strikethrough line across header title
+        if self.bypassed:
+            painter.setPen(QPen(QColor(245, 158, 11, 220), 2))
+            painter.drawLine(8, int(self.header_height / 2), int(self.width - 8), int(self.header_height / 2))
 
 
 class StartNodeItem(BaseNodeItem):
@@ -214,6 +241,8 @@ class ActionNodeItem(BaseNodeItem):
         )
         self.properties = dict(props)
         self.properties.setdefault("action_type", action_type)
+        if "bypassed" in self.properties:
+            self.bypassed = bool(self.properties["bypassed"])
 
         self.add_input_socket(name="In")
         self.add_output_socket(name="Out")
@@ -252,8 +281,13 @@ class ActionNodeItem(BaseNodeItem):
             action_desc = "Press" if at == "key_down" else "Release"
             return f"{action_desc} VK: {vk}"
         elif at == "wheel":
-            dy = self.properties.get("deltaY", 0)
-            return f"Scroll delta: {dy}"
+            dy = int(self.properties.get("deltaY", 120))
+            notches = abs(dy) // 120 or 1
+            direction = "Up ▲" if dy >= 0 else "Down ▼"
+            x = self.properties.get("x")
+            y = self.properties.get("y")
+            loc_str = f" at ({x}, {y})" if (x is not None and y is not None) else " (At Cursor)"
+            return f"Scroll {direction} ({notches} notch){loc_str}"
         return f"Action: {at}"
 
     def clone(self) -> "ActionNodeItem":
@@ -281,10 +315,12 @@ class VisionNodeItem(BaseNodeItem):
         self.properties = properties or {}
         self.properties.setdefault("action_type", "wait_image")
         self.properties.setdefault("confidence", 0.85)
-        self.properties.setdefault("action", "click")
+        self.properties.setdefault("action", "none")
         self.properties.setdefault("button", "left")
         self.properties.setdefault("timeout", 5.0)
         self.properties.setdefault("template", "")
+        if "bypassed" in self.properties:
+            self.bypassed = bool(self.properties["bypassed"])
 
         self.width = 210.0
         self.height = 135.0  # Room for snippet preview thumbnail!
@@ -321,10 +357,11 @@ class VisionNodeItem(BaseNodeItem):
 
     def get_summary_text(self) -> str:
         conf = int(self.properties.get("confidence", 0.85) * 100)
-        act = str(self.properties.get("action", "click")).capitalize()
+        act = str(self.properties.get("action", "none")).capitalize()
         btn = str(self.properties.get("button", "left")).capitalize()
         tout = float(self.properties.get("timeout", 5.0))
-        return f"Wait: {tout:g}s  •  ≥{conf}%  •  {act} ({btn})"
+        act_str = f"{act} ({btn})" if act != "None" else "None"
+        return f"Wait: {tout:g}s  •  ≥{conf}%  •  {act_str}"
 
     def paint(self, painter: QPainter, option, widget=None):
         super().paint(painter, option, widget)
@@ -391,6 +428,8 @@ class IfConditionNodeItem(BaseNodeItem):
         self.properties.setdefault("var_a", "$count")
         self.properties.setdefault("operator", "==")
         self.properties.setdefault("val_b", "5")
+        if "bypassed" in self.properties:
+            self.bypassed = bool(self.properties["bypassed"])
 
         self.width = 190.0
         self.height = 95.0
@@ -449,6 +488,8 @@ class MathNodeItem(BaseNodeItem):
         self.properties.setdefault("value", "1")
         self.properties.setdefault("min_val", 100)
         self.properties.setdefault("max_val", 1000)
+        if "bypassed" in self.properties:
+            self.bypassed = bool(self.properties["bypassed"])
 
         self.width = 190.0
         self.height = 85.0
@@ -503,6 +544,8 @@ class PixelColorNodeItem(BaseNodeItem):
         self.properties.setdefault("y", 300)
         self.properties.setdefault("color", "#38BDF8")
         self.properties.setdefault("tolerance", 15)
+        if "bypassed" in self.properties:
+            self.bypassed = bool(self.properties["bypassed"])
 
         self.width = 195.0
         self.height = 95.0
@@ -564,6 +607,8 @@ class HotkeyNodeItem(BaseNodeItem):
         self.properties = properties or {}
         self.properties.setdefault("action_type", "hotkey")
         self.properties.setdefault("combo", "Ctrl+C")
+        if "bypassed" in self.properties:
+            self.bypassed = bool(self.properties["bypassed"])
 
         self.width = 180.0
         self.height = 80.0
@@ -597,6 +642,8 @@ class LoopNodeItem(BaseNodeItem):
         self.properties.setdefault("action_type", "loop_count")
         self.properties.setdefault("count", 5)
         self.properties.setdefault("var_name", "i")
+        if "bypassed" in self.properties:
+            self.bypassed = bool(self.properties["bypassed"])
 
         self.width = 190.0
         self.height = 95.0
@@ -647,6 +694,8 @@ class StopNodeItem(BaseNodeItem):
         )
         self.properties = properties or {}
         self.properties.setdefault("action_type", "stop_playback")
+        if "bypassed" in self.properties:
+            self.bypassed = bool(self.properties["bypassed"])
 
         self.width = 150.0
         self.height = 65.0

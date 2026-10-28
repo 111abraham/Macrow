@@ -411,6 +411,26 @@ class NodeScene(QGraphicsScene):
             return []
         return self.paste_clipboard(offset_step=QPointF(0.0, 0.0))
 
+    def toggle_bypass_selected(self) -> int:
+        """Toggles bypass state on all selected nodes (excluding StartNodeItem)."""
+        from app.ui.node_editor.node_items import StartNodeItem
+        selected_nodes = [
+            item for item in self.selectedItems()
+            if isinstance(item, BaseNodeItem) and not isinstance(item, StartNodeItem)
+        ]
+        if not selected_nodes:
+            return 0
+
+        # If any node is NOT bypassed, bypass all. If all are already bypassed, unbypass all.
+        any_active = any(not getattr(n, "bypassed", False) for n in selected_nodes)
+        new_state = any_active
+
+        for n in selected_nodes:
+            n.set_bypassed(new_state)
+
+        self.scene_modified.emit()
+        return len(selected_nodes)
+
     def delete_selected(self):
         """Deletes selected nodes, groups, and connections."""
         items = self.selectedItems()

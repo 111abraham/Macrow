@@ -220,6 +220,12 @@ class NodeView(QGraphicsView):
             event.accept()
             return
 
+        # B key: Toggle bypass on selected nodes
+        if event.key() == Qt.Key.Key_B and not event.modifiers():
+            self.node_scene.toggle_bypass_selected()
+            event.accept()
+            return
+
         # Ctrl+A: Select all nodes
         if (event.modifiers() & Qt.KeyboardModifier.ControlModifier) and event.key() == Qt.Key.Key_A:
             for n in self.node_scene.nodes:
