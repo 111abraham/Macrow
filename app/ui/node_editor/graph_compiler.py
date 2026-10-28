@@ -381,9 +381,14 @@ def graph_to_macro(scene: NodeScene) -> List[Dict[str, Any]]:
                 step["dt"] = current_dt
 
             elif action_type == "delay":
-                dur = int(props.get("duration", 500))
+                raw_dur = props.get("duration", 500)
+                try:
+                    dur = int(raw_dur)
+                    current_dt += dur
+                except (ValueError, TypeError):
+                    dur = str(raw_dur)
+                    current_dt += 100
                 step["duration"] = dur
-                current_dt += dur
                 step["dt"] = current_dt
 
             elif action_type == "type":
@@ -392,16 +397,35 @@ def graph_to_macro(scene: NodeScene) -> List[Dict[str, Any]]:
                 step["dt"] = current_dt
 
             elif action_type in ("key_down", "key_up"):
-                step["vk"] = int(props.get("vk", 0)) if props.get("vk") else 0
+                try:
+                    step["vk"] = int(props.get("vk", 0)) if props.get("vk") else 0
+                except (ValueError, TypeError):
+                    step["vk"] = 0
                 current_dt += 50
                 step["dt"] = current_dt
 
             elif action_type == "wheel":
-                step["deltaY"] = int(props.get("deltaY", 0))
-                step["deltaX"] = int(props.get("deltaX", 0))
+                raw_dy = props.get("deltaY", 0)
+                try:
+                    step["deltaY"] = int(raw_dy)
+                except (ValueError, TypeError):
+                    step["deltaY"] = str(raw_dy)
+                raw_dx = props.get("deltaX", 0)
+                try:
+                    step["deltaX"] = int(raw_dx)
+                except (ValueError, TypeError):
+                    step["deltaX"] = str(raw_dx)
                 if "x" in props and "y" in props:
-                    step["x"] = int(props["x"])
-                    step["y"] = int(props["y"])
+                    raw_x = props["x"]
+                    raw_y = props["y"]
+                    try:
+                        step["x"] = int(raw_x)
+                    except (ValueError, TypeError):
+                        step["x"] = str(raw_x)
+                    try:
+                        step["y"] = int(raw_y)
+                    except (ValueError, TypeError):
+                        step["y"] = str(raw_y)
                 current_dt += 80
                 step["dt"] = current_dt
 
@@ -428,10 +452,21 @@ def graph_to_macro(scene: NodeScene) -> List[Dict[str, Any]]:
 
         elif isinstance(node, PixelColorNodeItem):
             step["type"] = "pixel_color"
-            step["x"] = int(props.get("x", 0))
-            step["y"] = int(props.get("y", 0))
+            raw_x = props.get("x", 0)
+            raw_y = props.get("y", 0)
+            try:
+                step["x"] = int(raw_x)
+            except (ValueError, TypeError):
+                step["x"] = str(raw_x)
+            try:
+                step["y"] = int(raw_y)
+            except (ValueError, TypeError):
+                step["y"] = str(raw_y)
             step["color"] = props.get("color", "#FFFFFF")
-            step["tolerance"] = int(props.get("tolerance", 15))
+            try:
+                step["tolerance"] = int(props.get("tolerance", 15))
+            except (ValueError, TypeError):
+                step["tolerance"] = str(props.get("tolerance", 15))
             step["found_next"] = get_target_id(0)
             step["miss_next"] = get_target_id(1)
             current_dt += 20
@@ -447,7 +482,11 @@ def graph_to_macro(scene: NodeScene) -> List[Dict[str, Any]]:
 
         elif isinstance(node, LoopNodeItem):
             step["type"] = "loop_count"
-            step["count"] = int(props.get("count", 5))
+            raw_count = props.get("count", 5)
+            try:
+                step["count"] = int(raw_count)
+            except (ValueError, TypeError):
+                step["count"] = str(raw_count)
             step["infinite"] = bool(props.get("infinite", True))
             step["var_name"] = props.get("var_name", "i")
             step["body_next"] = get_target_id(0)

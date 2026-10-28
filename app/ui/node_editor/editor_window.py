@@ -530,7 +530,7 @@ class MacroNodeEditorWindow(QMainWindow):
 
         elif preset_key == "math_grid":
             # Example 3: Loop with Math ($y coordinate increment)
-            init_math = MathNodeItem(properties={"var_name": "y", "op": "set", "val_a": "200"})
+            init_math = MathNodeItem(properties={"var_name": "y", "operation": "set", "value": "200"})
             self.scene.add_node(init_math, QPointF(250, 150))
 
             loop = LoopNodeItem(properties={"count": 4, "infinite": False, "var_name": "row"})
@@ -542,7 +542,7 @@ class MacroNodeEditorWindow(QMainWindow):
             delay = ActionNodeItem("delay", {"duration": 200})
             self.scene.add_node(delay, QPointF(840, 180))
 
-            step_math = MathNodeItem(properties={"var_name": "y", "op": "+", "val_a": "$y", "val_b": "60"})
+            step_math = MathNodeItem(properties={"var_name": "y", "operation": "add", "value": "60"})
             self.scene.add_node(step_math, QPointF(1080, 180))
 
             stop = StopNodeItem()

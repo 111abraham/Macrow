@@ -278,9 +278,13 @@ class ActionNodeItem(BaseNodeItem):
             return f"Move ({mode})\nX: {x},  Y: {y}"
         elif at == "delay":
             ms = self.properties.get("duration", 500)
-            return f"Pause for {ms} ms\n({ms/1000.0:.2f} seconds)"
+            try:
+                ms_num = float(ms)
+                return f"Pause for {ms_num:.0f} ms\n({ms_num/1000.0:.2f} seconds)"
+            except (ValueError, TypeError):
+                return f"Pause for {ms} ms\n(Variable delay)"
         elif at == "type":
-            txt = self.properties.get("value", "")
+            txt = str(self.properties.get("value", ""))
             disp = (txt[:18] + "..") if len(txt) > 20 else txt
             return f"Type text:\n\"{disp}\""
         elif at in ("key_down", "key_up"):
@@ -288,13 +292,18 @@ class ActionNodeItem(BaseNodeItem):
             action_desc = "Press" if at == "key_down" else "Release"
             return f"{action_desc} VK: {vk}"
         elif at == "wheel":
-            dy = int(self.properties.get("deltaY", 120))
-            notches = abs(dy) // 120 or 1
-            direction = "Up ▲" if dy >= 0 else "Down ▼"
+            raw_dy = self.properties.get("deltaY", 120)
+            try:
+                dy = int(raw_dy)
+                notches = abs(dy) // 120 or 1
+                direction = "Up ▲" if dy >= 0 else "Down ▼"
+                desc = f"Scroll {direction} ({notches} notch)"
+            except (ValueError, TypeError):
+                desc = f"Scroll: {raw_dy}"
             x = self.properties.get("x")
             y = self.properties.get("y")
             loc_str = f" at ({x}, {y})" if (x is not None and y is not None) else " (At Cursor)"
-            return f"Scroll {direction} ({notches} notch){loc_str}"
+            return f"{desc}{loc_str}"
         return f"Action: {at}"
 
     def clone(self) -> "ActionNodeItem":

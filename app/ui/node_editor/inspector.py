@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import os
-from typing import Optional, TYPE_CHECKING
-from PyQt6.QtCore import Qt, pyqtSignal
+from typing import Optional, TYPE_CHECKING, List, Tuple, Any, Callable
+from PyQt6.QtCore import Qt, pyqtSignal, QPoint
 from PyQt6.QtGui import QPixmap, QFont, QColor
 from PyQt6.QtWidgets import (
     QWidget,
@@ -23,6 +23,8 @@ from PyQt6.QtWidgets import (
     QColorDialog,
     QFrame,
     QScrollArea,
+    QInputDialog,
+    QMenu,
 )
 
 from app.ui.node_editor.node_items import (
@@ -221,6 +223,156 @@ class PropertyInspector(QWidget):
 
         self.content_layout.addStretch()
 
+    def _get_known_variables(self) -> List[str]:
+        vars_set = {"$i", "$x", "$y"}
+        if self.scene:
+            for n in self.scene.nodes:
+                if isinstance(n, LoopNodeItem):
+                    vn = str(n.properties.get("var_name", "i")).strip()
+                    if vn:
+                        vars_set.add(f"${vn.lstrip('$')}")
+                elif isinstance(n, MathNodeItem):
+                    vn = str(n.properties.get("var_name", "")).strip()
+                    if vn:
+                        vars_set.add(f"${vn.lstrip('$')}")
+                elif isinstance(n, PixelColorNodeItem):
+                    vars_set.add("$pixel_match")
+                elif isinstance(n, IfConditionNodeItem):
+                    vars_set.add("$last_condition")
+        return sorted(list(vars_set))
+
+    def _create_param_input(
+        self,
+        current_val: Any,
+        on_change_callback: Callable[[Any], None],
+        placeholder: str = "0 or $var",
+        tooltip: str = "Enter a number or variable (e.g. $y, $i)",
+    ) -> Tuple[QWidget, QLineEdit]:
+        """Creates a hybrid parameter input that accepts numbers or variables ($var),
+        with interactive variable styling and a quick [$] insertion menu.
+        """
+        container = QWidget()
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(4)
+
+        init_str = str(current_val if current_val is not None else "")
+        edit = QLineEdit(init_str)
+        edit.setPlaceholderText(placeholder)
+        edit.setToolTip(tooltip)
+
+        def update_style():
+            txt = edit.text().strip()
+            if txt.startswith("$"):
+                edit.setStyleSheet("""
+                    QLineEdit {
+                        background-color: #2e1065;
+                        color: #d8b4fe;
+                        border: 1.5px solid #a855f7;
+                        border-radius: 4px;
+                        padding: 3px 6px;
+                        font-family: 'Consolas', 'Segoe UI', monospace;
+                        font-weight: bold;
+                        font-size: 11px;
+                    }
+                """)
+            else:
+                edit.setStyleSheet("""
+                    QLineEdit {
+                        background-color: #0f172a;
+                        color: #f8fafc;
+                        border: 1px solid #334155;
+                        border-radius: 4px;
+                        padding: 3px 6px;
+                        font-family: 'Consolas', 'Segoe UI', monospace;
+                        font-size: 11px;
+                    }
+                    QLineEdit:focus {
+                        border-color: #38bdf8;
+                    }
+                """)
+
+        update_style()
+
+        def on_text(txt):
+            update_style()
+            val_str = txt.strip()
+            if val_str.startswith("$"):
+                on_change_callback(val_str)
+            else:
+                try:
+                    num = int(val_str)
+                    on_change_callback(num)
+                except ValueError:
+                    try:
+                        f_num = float(val_str)
+                        on_change_callback(f_num)
+                    except ValueError:
+                        on_change_callback(val_str)
+
+        edit.textChanged.connect(on_text)
+        layout.addWidget(edit, 1)
+
+        btn_var = QPushButton("$")
+        btn_var.setToolTip("Insert a variable (e.g. $i, $y, $x)")
+        btn_var.setStyleSheet("""
+            QPushButton {
+                background-color: #1e1b4b;
+                color: #c084fc;
+                font-weight: bold;
+                font-family: 'Segoe UI', sans-serif;
+                font-size: 11px;
+                border: 1px solid #4338ca;
+                border-radius: 4px;
+                padding: 3px 6px;
+                min-width: 20px;
+            }
+            QPushButton:hover {
+                background-color: #312e81;
+                color: #e9d5ff;
+                border-color: #818cf8;
+            }
+        """)
+
+        def show_var_menu():
+            menu = QMenu(container)
+            menu.setStyleSheet("""
+                QMenu {
+                    background-color: #1e293b;
+                    color: #f1f5f9;
+                    border: 1px solid #475569;
+                    padding: 4px;
+                }
+                QMenu::item {
+                    padding: 4px 16px;
+                    border-radius: 3px;
+                }
+                QMenu::item:selected {
+                    background-color: #6366f1;
+                    color: white;
+                }
+            """)
+            known = self._get_known_variables()
+            for v in known:
+                menu.addAction(v, lambda var_name=v: edit.setText(var_name))
+
+            menu.addSeparator()
+            def add_custom_var():
+                name, ok = QInputDialog.getText(container, "Insert Variable", "Variable name (e.g. my_var or $y):")
+                if ok and name.strip():
+                    vn = name.strip()
+                    if not vn.startswith("$"):
+                        vn = f"${vn}"
+                    edit.setText(vn)
+
+            menu.addAction("➕ Custom Variable...", add_custom_var)
+            menu.exec(btn_var.mapToGlobal(QPoint(0, btn_var.height())))
+
+        btn_var.clicked.connect(show_var_menu)
+        layout.addWidget(btn_var)
+
+        return container, edit
+
     def _build_action_controls(self, node: ActionNodeItem):
         at = node.properties.get("action_type", node.node_type)
 
@@ -281,16 +433,22 @@ class PropertyInspector(QWidget):
 
             row_xy = QHBoxLayout()
             row_xy.addWidget(QLabel("X:"))
-            spin_x = QSpinBox()
-            spin_x.setRange(-30000, 60000)
-            spin_x.setValue(int(node.properties.get("x", 0)))
-            row_xy.addWidget(spin_x)
+            widget_x, edit_x = self._create_param_input(
+                node.properties.get("x", 0),
+                lambda val: (node.properties.__setitem__("x", val), node.update(), self.property_changed.emit()),
+                placeholder="0 or $x",
+                tooltip="Target X coordinate or variable (e.g. 500 or $x)",
+            )
+            row_xy.addWidget(widget_x)
 
             row_xy.addWidget(QLabel("Y:"))
-            spin_y = QSpinBox()
-            spin_y.setRange(-30000, 60000)
-            spin_y.setValue(int(node.properties.get("y", 0)))
-            row_xy.addWidget(spin_y)
+            widget_y, edit_y = self._create_param_input(
+                node.properties.get("y", 0),
+                lambda val: (node.properties.__setitem__("y", val), node.update(), self.property_changed.emit()),
+                placeholder="0 or $y",
+                tooltip="Target Y coordinate or variable (e.g. 300 or $y)",
+            )
+            row_xy.addWidget(widget_y)
             cb_layout.addLayout(row_xy)
 
             # Eye dropper button for sampling coordinate on screen!
@@ -316,8 +474,8 @@ class PropertyInspector(QWidget):
                 dropper = CoordinateEyeDropper(parent=None)
 
                 def on_picked(x, y, hex_col, rgb):
-                    spin_x.setValue(x)
-                    spin_y.setValue(y)
+                    edit_x.setText(str(x))
+                    edit_y.setText(str(y))
                     node.properties["x"] = x
                     node.properties["y"] = y
                     node.update()
@@ -332,19 +490,6 @@ class PropertyInspector(QWidget):
 
             btn_dropper.clicked.connect(on_pick_coord)
             cb_layout.addWidget(btn_dropper)
-
-            def on_x_changed(val):
-                node.properties["x"] = val
-                node.update()
-                self.property_changed.emit()
-
-            def on_y_changed(val):
-                node.properties["y"] = val
-                node.update()
-                self.property_changed.emit()
-
-            spin_x.valueChanged.connect(on_x_changed)
-            spin_y.valueChanged.connect(on_y_changed)
 
             # Button selector for click/press actions
             if at in ("click", "dblclick", "down", "up"):
@@ -413,18 +558,13 @@ class PropertyInspector(QWidget):
 
             row_d = QHBoxLayout()
             row_d.addWidget(QLabel("Milliseconds:"))
-            spin_ms = QSpinBox()
-            spin_ms.setRange(10, 60000)
-            spin_ms.setSingleStep(50)
-            spin_ms.setValue(int(node.properties.get("duration", 500)))
-
-            def on_dur_changed(val):
-                node.properties["duration"] = val
-                node.update()
-                self.property_changed.emit()
-
-            spin_ms.valueChanged.connect(on_dur_changed)
-            row_d.addWidget(spin_ms)
+            widget_dur, edit_dur = self._create_param_input(
+                node.properties.get("duration", 500),
+                lambda val: (node.properties.__setitem__("duration", val), node.update(), self.property_changed.emit()),
+                placeholder="500 or $delay",
+                tooltip="Delay in ms or variable (e.g. 500 or $wait)",
+            )
+            row_d.addWidget(widget_dur)
             db_layout.addLayout(row_d)
 
             # Quick presets
@@ -432,7 +572,7 @@ class PropertyInspector(QWidget):
             for ms in (100, 250, 500, 1000, 2000):
                 p_btn = QPushButton(f"{ms}ms" if ms < 1000 else f"{ms//1000}s")
                 p_btn.setStyleSheet("padding: 2px 4px; font-size: 10px; background: #334155; color: #f1f5f9;")
-                p_btn.clicked.connect(lambda _, m=ms: spin_ms.setValue(m))
+                p_btn.clicked.connect(lambda _, m=ms: edit_dur.setText(str(m)))
                 preset_row.addWidget(p_btn)
             db_layout.addLayout(preset_row)
 
@@ -504,7 +644,11 @@ class PropertyInspector(QWidget):
             row_vk.addWidget(QLabel("Virtual Key (VK):"))
             spin_vk = QSpinBox()
             spin_vk.setRange(1, 255)
-            spin_vk.setValue(int(node.properties.get("vk", 13)))
+            try:
+                vk_val = int(node.properties.get("vk", 13))
+            except (ValueError, TypeError):
+                vk_val = 13
+            spin_vk.setValue(vk_val)
             row_vk.addWidget(spin_vk)
             kb_layout.addLayout(row_vk)
 
@@ -533,7 +677,7 @@ class PropertyInspector(QWidget):
                 combo_keys.addItem(f"{kname} (VK {vk_code})", vk_code)
 
             # Set current preset if matches
-            cur_vk = int(node.properties.get("vk", 13))
+            cur_vk = vk_val
             for i in range(combo_keys.count()):
                 if combo_keys.itemData(i) == cur_vk:
                     combo_keys.setCurrentIndex(i)
@@ -582,16 +726,22 @@ class PropertyInspector(QWidget):
 
             row_xy = QHBoxLayout()
             row_xy.addWidget(QLabel("X:"))
-            spin_x = QSpinBox()
-            spin_x.setRange(-30000, 60000)
-            spin_x.setValue(int(node.properties.get("x", 500)))
-            row_xy.addWidget(spin_x)
+            widget_x, edit_x = self._create_param_input(
+                node.properties.get("x", 500),
+                lambda val: (node.properties.__setitem__("x", val) if chk_pos.isChecked() else None, node.update(), self.property_changed.emit()),
+                placeholder="500 or $x",
+                tooltip="Target X coordinate or variable",
+            )
+            row_xy.addWidget(widget_x)
 
             row_xy.addWidget(QLabel("Y:"))
-            spin_y = QSpinBox()
-            spin_y.setRange(-30000, 60000)
-            spin_y.setValue(int(node.properties.get("y", 500)))
-            row_xy.addWidget(spin_y)
+            widget_y, edit_y = self._create_param_input(
+                node.properties.get("y", 500),
+                lambda val: (node.properties.__setitem__("y", val) if chk_pos.isChecked() else None, node.update(), self.property_changed.emit()),
+                placeholder="500 or $y",
+                tooltip="Target Y coordinate or variable",
+            )
+            row_xy.addWidget(widget_y)
             pos_layout.addLayout(row_xy)
 
             btn_dropper = QPushButton("🎯 Sample Coord (Eye Dropper)")
@@ -615,8 +765,8 @@ class PropertyInspector(QWidget):
                 dropper = CoordinateEyeDropper(parent=None)
 
                 def on_picked(x, y, hex_col, rgb):
-                    spin_x.setValue(x)
-                    spin_y.setValue(y)
+                    edit_x.setText(str(x))
+                    edit_y.setText(str(y))
                     node.properties["x"] = x
                     node.properties["y"] = y
                     node.update()
@@ -638,8 +788,16 @@ class PropertyInspector(QWidget):
             def on_toggle_pos(checked):
                 pos_container.setVisible(checked)
                 if checked:
-                    node.properties["x"] = spin_x.value()
-                    node.properties["y"] = spin_y.value()
+                    val_x = edit_x.text().strip()
+                    try:
+                        node.properties["x"] = int(val_x)
+                    except (ValueError, TypeError):
+                        node.properties["x"] = val_x
+                    val_y = edit_y.text().strip()
+                    try:
+                        node.properties["y"] = int(val_y)
+                    except (ValueError, TypeError):
+                        node.properties["y"] = val_y
                 else:
                     node.properties.pop("x", None)
                     node.properties.pop("y", None)
@@ -648,23 +806,12 @@ class PropertyInspector(QWidget):
 
             chk_pos.toggled.connect(on_toggle_pos)
 
-            def on_x_change(v):
-                if chk_pos.isChecked():
-                    node.properties["x"] = v
-                    node.update()
-                    self.property_changed.emit()
-
-            def on_y_change(v):
-                if chk_pos.isChecked():
-                    node.properties["y"] = v
-                    node.update()
-                    self.property_changed.emit()
-
-            spin_x.valueChanged.connect(on_x_change)
-            spin_y.valueChanged.connect(on_y_change)
-
             # Scroll Direction & Notches
-            cur_dy = int(node.properties.get("deltaY", -120))
+            raw_dy = node.properties.get("deltaY", -120)
+            try:
+                cur_dy = int(raw_dy)
+            except (ValueError, TypeError):
+                cur_dy = -120
             is_up = cur_dy >= 0
             cur_notches = max(1, abs(cur_dy) // 120)
 
@@ -735,16 +882,13 @@ class PropertyInspector(QWidget):
 
         # Variable A
         layout.addWidget(QLabel("Variable A (e.g. $count):"))
-        edit_a = QLineEdit(node.properties.get("var_a", "$count"))
-        edit_a.setPlaceholderText("$variable or value")
-
-        def on_a_change(val):
-            node.properties["var_a"] = val
-            node.update()
-            self.property_changed.emit()
-
-        edit_a.textChanged.connect(on_a_change)
-        layout.addWidget(edit_a)
+        widget_a, edit_a = self._create_param_input(
+            node.properties.get("var_a", "$count"),
+            lambda val: (node.properties.__setitem__("var_a", str(val)), node.update(), self.property_changed.emit()),
+            placeholder="$variable or value",
+            tooltip="First variable or operand to compare (e.g. $count, $i, $y)",
+        )
+        layout.addWidget(widget_a)
 
         # Operator
         layout.addWidget(QLabel("Comparison Operator:"))
@@ -777,15 +921,13 @@ class PropertyInspector(QWidget):
 
         # Value B
         layout.addWidget(QLabel("Value B:"))
-        edit_b = QLineEdit(node.properties.get("val_b", "5"))
-
-        def on_b_change(val):
-            node.properties["val_b"] = val
-            node.update()
-            self.property_changed.emit()
-
-        edit_b.textChanged.connect(on_b_change)
-        layout.addWidget(edit_b)
+        widget_b, edit_b = self._create_param_input(
+            node.properties.get("val_b", "5"),
+            lambda val: (node.properties.__setitem__("val_b", str(val)), node.update(), self.property_changed.emit()),
+            placeholder="5 or $target",
+            tooltip="Second value or variable to compare against",
+        )
+        layout.addWidget(widget_b)
 
         info = QLabel("Routes flow to 'True' if condition matches, else 'False'.")
         info.setStyleSheet("color: #94a3b8; font-size: 10px;")
@@ -841,9 +983,14 @@ class PropertyInspector(QWidget):
         val_layout = QVBoxLayout(val_box)
         val_layout.setContentsMargins(0, 0, 0, 0)
         lbl_v = QLabel("Value:")
-        edit_val = QLineEdit(str(node.properties.get("value", "1")))
+        widget_val, edit_val = self._create_param_input(
+            node.properties.get("value", "1"),
+            lambda val: (node.properties.__setitem__("value", str(val)), node.update(), self.property_changed.emit()),
+            placeholder="1 or $step",
+            tooltip="Numeric value or variable to assign/calculate",
+        )
         val_layout.addWidget(lbl_v)
-        val_layout.addWidget(edit_val)
+        val_layout.addWidget(widget_val)
 
         # Random container
         rand_box = QWidget()
@@ -851,10 +998,18 @@ class PropertyInspector(QWidget):
         rand_layout.setContentsMargins(0, 0, 0, 0)
         spin_min = QSpinBox()
         spin_min.setRange(-100000, 100000)
-        spin_min.setValue(int(node.properties.get("min_val", 100)))
+        try:
+            min_v = int(node.properties.get("min_val", 100))
+        except (ValueError, TypeError):
+            min_v = 100
+        spin_min.setValue(min_v)
         spin_max = QSpinBox()
         spin_max.setRange(-100000, 100000)
-        spin_max.setValue(int(node.properties.get("max_val", 1000)))
+        try:
+            max_v = int(node.properties.get("max_val", 1000))
+        except (ValueError, TypeError):
+            max_v = 1000
+        spin_max.setValue(max_v)
         rand_layout.addWidget(QLabel("Min:"))
         rand_layout.addWidget(spin_min)
         rand_layout.addWidget(QLabel("Max:"))
@@ -878,12 +1033,6 @@ class PropertyInspector(QWidget):
         layout.addWidget(val_box)
         layout.addWidget(rand_box)
 
-        def on_val_change(txt):
-            node.properties["value"] = txt
-            node.update()
-            self.property_changed.emit()
-
-        edit_val.textChanged.connect(on_val_change)
         spin_min.valueChanged.connect(lambda v: (node.properties.update({"min_val": v}), node.update(), self.property_changed.emit()))
         spin_max.valueChanged.connect(lambda v: (node.properties.update({"max_val": v}), node.update(), self.property_changed.emit()))
 
@@ -902,30 +1051,24 @@ class PropertyInspector(QWidget):
 
         # Coordinates
         row_xy = QHBoxLayout()
-        spin_x = QSpinBox()
-        spin_x.setRange(-30000, 60000)
-        spin_x.setValue(int(node.properties.get("x", 0)))
-        spin_y = QSpinBox()
-        spin_y.setRange(-30000, 60000)
-        spin_y.setValue(int(node.properties.get("y", 0)))
         row_xy.addWidget(QLabel("X:"))
-        row_xy.addWidget(spin_x)
+        widget_x, edit_x = self._create_param_input(
+            node.properties.get("x", 0),
+            lambda val: (node.properties.__setitem__("x", val), node.update(), self.property_changed.emit()),
+            placeholder="0 or $x",
+            tooltip="Target screen pixel X coordinate or variable (e.g. 500 or $x)",
+        )
+        row_xy.addWidget(widget_x)
+
         row_xy.addWidget(QLabel("Y:"))
-        row_xy.addWidget(spin_y)
+        widget_y, edit_y = self._create_param_input(
+            node.properties.get("y", 0),
+            lambda val: (node.properties.__setitem__("y", val), node.update(), self.property_changed.emit()),
+            placeholder="0 or $y",
+            tooltip="Target screen pixel Y coordinate or variable (e.g. 300 or $y)",
+        )
+        row_xy.addWidget(widget_y)
         layout.addLayout(row_xy)
-
-        def on_x_changed(val):
-            node.properties["x"] = val
-            node.update()
-            self.property_changed.emit()
-
-        def on_y_changed(val):
-            node.properties["y"] = val
-            node.update()
-            self.property_changed.emit()
-
-        spin_x.valueChanged.connect(on_x_changed)
-        spin_y.valueChanged.connect(on_y_changed)
 
         # Eye dropper button for sampling coordinate AND color together!
         btn_sample = QPushButton("🎯 Pick Color & Coord (Eye Dropper)")
@@ -980,8 +1123,8 @@ class PropertyInspector(QWidget):
             dropper = CoordinateEyeDropper(parent=None)
 
             def on_picked(x, y, hex_col, rgb):
-                spin_x.setValue(x)
-                spin_y.setValue(y)
+                edit_x.setText(str(x))
+                edit_y.setText(str(y))
                 edit_hex.setText(hex_col)
                 node.properties["x"] = x
                 node.properties["y"] = y
@@ -1001,7 +1144,10 @@ class PropertyInspector(QWidget):
         layout.addLayout(row_col)
 
         # Tolerance
-        tol_val = int(node.properties.get("tolerance", 15))
+        try:
+            tol_val = int(node.properties.get("tolerance", 15))
+        except (ValueError, TypeError):
+            tol_val = 15
         lbl_tol = QLabel(f"Color Tolerance: ±{tol_val}")
         layout.addWidget(lbl_tol)
 
@@ -1139,28 +1285,24 @@ class PropertyInspector(QWidget):
         row_cnt = QHBoxLayout()
         lbl_cnt = QLabel("Repeat Count:")
         row_cnt.addWidget(lbl_cnt)
-        spin_cnt = QSpinBox()
-        spin_cnt.setRange(1, 100000)
-        spin_cnt.setValue(int(node.properties.get("count", 5)))
-        spin_cnt.setEnabled(not is_inf)
+        widget_cnt, edit_cnt = self._create_param_input(
+            node.properties.get("count", 5),
+            lambda val: (node.properties.__setitem__("count", val), node.update(), self.property_changed.emit()),
+            placeholder="5 or $count",
+            tooltip="Loop iteration count or variable (e.g. 5 or $total)",
+        )
+        widget_cnt.setEnabled(not is_inf)
+        row_cnt.addWidget(widget_cnt)
+        layout.addLayout(row_cnt)
 
         def on_inf_toggle(state):
             checked = (state == Qt.CheckState.Checked.value or state == True)
             node.properties["infinite"] = checked
-            spin_cnt.setEnabled(not checked)
+            widget_cnt.setEnabled(not checked)
             node.update()
             self.property_changed.emit()
 
         chk_inf.stateChanged.connect(on_inf_toggle)
-
-        def on_cnt_change(v):
-            node.properties["count"] = v
-            node.update()
-            self.property_changed.emit()
-
-        spin_cnt.valueChanged.connect(on_cnt_change)
-        row_cnt.addWidget(spin_cnt)
-        layout.addLayout(row_cnt)
 
         row_var = QHBoxLayout()
         row_var.addWidget(QLabel("Index Variable:"))
@@ -1272,7 +1414,10 @@ class PropertyInspector(QWidget):
         layout.addWidget(btn_browse)
 
         # Confidence Slider
-        curr_conf = int(node.properties.get("confidence", 0.85) * 100)
+        try:
+            curr_conf = int(float(node.properties.get("confidence", 0.85)) * 100)
+        except (ValueError, TypeError):
+            curr_conf = 85
         lbl_conf = QLabel(f"Match Confidence: {curr_conf}%")
         lbl_conf.setStyleSheet("color: #cbd5e1; font-size: 11px;")
         layout.addWidget(lbl_conf)
@@ -1330,7 +1475,11 @@ class PropertyInspector(QWidget):
         spin_tout.setRange(0.1, 300.0)
         spin_tout.setDecimals(1)
         spin_tout.setSingleStep(0.5)
-        spin_tout.setValue(float(node.properties.get("timeout", 5.0)))
+        try:
+            tout_val = float(node.properties.get("timeout", 5.0))
+        except (ValueError, TypeError):
+            tout_val = 5.0
+        spin_tout.setValue(tout_val)
         spin_tout.setCursor(Qt.CursorShape.ArrowCursor)
 
         def on_tout_change(val):

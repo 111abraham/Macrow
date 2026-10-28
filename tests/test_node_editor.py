@@ -1112,14 +1112,17 @@ class TestNodeEditor(unittest.TestCase):
 
     def test_input_simulator_extended_keys_and_hotkey(self):
         """Test InputSimulator hotkey handling for Delete, Ctrl+Shift+Esc, and Ctrl+Alt+Delete."""
+        import unittest.mock as mock
         from app.core.input_simulator import InputSimulator, EXTENDED_KEYS
         sim = InputSimulator()
         self.assertIn(0x2E, EXTENDED_KEYS)  # VK_DELETE
         self.assertIn(0x26, EXTENDED_KEYS)  # VK_UP
         # Should execute without error
         sim.hotkey("Delete")
-        sim.hotkey("Ctrl+Shift+Esc")
-        sim.hotkey("Ctrl+Alt+Delete")
+        with mock.patch("subprocess.Popen") as mock_popen:
+            sim.hotkey("Ctrl+Shift+Esc")
+            sim.hotkey("Ctrl+Alt+Delete", cad_action="taskmgr")
+            mock_popen.assert_called_with(["taskmgr.exe"], shell=True)
 
     def test_pixel_color_node_properties_and_execution(self):
         """Test PixelColorNodeItem coordinate and color properties."""
@@ -1133,6 +1136,75 @@ class TestNodeEditor(unittest.TestCase):
         player = MacroPlayer(None)
         res = player._execute_step({"type": "pixel_color", "x": 0, "y": 0, "color": "#000000", "tolerance": 50})
         self.assertIsInstance(res, bool)
+
+    def test_variable_parameters_in_inspector_and_player(self):
+        """Test variable parameters across inspector controls, compiler, and player."""
+        from app.ui.node_editor.inspector import PropertyInspector
+        from app.ui.node_editor.graph_compiler import graph_to_macro
+        from app.core.player import MacroPlayer
+
+        inspector = PropertyInspector(self.scene)
+
+        # 1. Action Node with variable coordinates ($x, $y)
+        click_node = ActionNodeItem("click", {"x": "$x", "y": "$y", "button": "left"})
+        self.scene.add_node(click_node)
+        inspector.set_node(click_node)
+        self.assertEqual(click_node.properties["x"], "$x")
+        self.assertEqual(click_node.properties["y"], "$y")
+
+        # 2. Delay Node with variable duration ($wait)
+        delay_node = ActionNodeItem("delay", {"duration": "$wait"})
+        self.scene.add_node(delay_node)
+        inspector.set_node(delay_node)
+
+        # 3. Wheel Node with variable position and delta ($dy)
+        wheel_node = ActionNodeItem("wheel", {"x": "$x", "y": "$y", "deltaY": "$dy"})
+        self.scene.add_node(wheel_node)
+        inspector.set_node(wheel_node)
+
+        # 4. Math Node with variable assignment
+        math_node = MathNodeItem(properties={"var_name": "y", "operation": "add", "value": "$step"})
+        self.scene.add_node(math_node)
+        inspector.set_node(math_node)
+
+        # 5. If Node with variables
+        if_node = IfConditionNodeItem(properties={"var_a": "$count", "operator": ">=", "val_b": "$limit"})
+        self.scene.add_node(if_node)
+        inspector.set_node(if_node)
+
+        # 6. Pixel Color Node with variables
+        pix_node = PixelColorNodeItem(properties={"x": "$px", "y": "$py", "color": "#10B981", "tolerance": 20})
+        self.scene.add_node(pix_node)
+        inspector.set_node(pix_node)
+
+        # 7. Loop Node with variable count
+        loop_node = LoopNodeItem(properties={"count": "$total", "infinite": False, "var_name": "row"})
+        self.scene.add_node(loop_node)
+        inspector.set_node(loop_node)
+
+        # Compiler should compile without ValueError
+        start_node = StartNodeItem()
+        self.scene.add_node(start_node)
+        self.scene.add_connection(start_node.output_sockets[0], click_node.input_sockets[0])
+        steps = graph_to_macro(self.scene)
+        self.assertIsInstance(steps, list)
+        self.assertGreater(len(steps), 0)
+        self.assertEqual(steps[0]["x"], "$x")
+        self.assertEqual(steps[0]["y"], "$y")
+
+        # Player should resolve variables dynamically
+        player = MacroPlayer(None)
+        player.variables["x"] = 550
+        player.variables["$y"] = 320
+        player.variables["step"] = 60
+
+        # Math op resolution: y = y + step -> 320 + 60 = 380
+        player._execute_step({"type": "math_op", "var_name": "y", "operation": "add", "value": "$step"})
+        self.assertEqual(player.variables["y"], 380)
+
+        # Coord resolution
+        self.assertEqual(player._resolve_coord("$x"), 550)
+        self.assertEqual(player._resolve_coord("$y"), 380)
 
 
 if __name__ == "__main__":

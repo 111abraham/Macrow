@@ -256,7 +256,7 @@ class MacroPlayer:
             if curr_step.get("type") == "loop_count":
                 lid = curr_step.get("id")
                 is_infinite = bool(curr_step.get("infinite", False))
-                target_count = int(curr_step.get("count", 5))
+                target_count = self._resolve_coord(curr_step.get("count", 5), default=5)
                 var_name = str(curr_step.get("var_name", "i")).lstrip("$")
 
                 iter_count = loop_counters.get(lid, 0)
@@ -320,6 +320,21 @@ class MacroPlayer:
         except (ValueError, TypeError):
             return default
 
+    def _resolve_val(self, val, default=0):
+        if val is None:
+            return default
+        if isinstance(val, (int, float)):
+            return val
+        val_str = str(val).strip()
+        if val_str.startswith("$"):
+            k = val_str.lstrip("$")
+            res = self.variables.get(k, self.variables.get(val_str, default))
+            return self._resolve_val(res, default=default)
+        try:
+            return int(val_str) if "." not in val_str else float(val_str)
+        except (ValueError, TypeError):
+            return val_str
+
     def _execute_step(self, step):
         if step.get("_unplugged", False):
             return False
@@ -359,8 +374,10 @@ class MacroPlayer:
             return True
 
         elif st_type == "wheel":
-            dx = step.get("deltaX", 0)
-            dy = step.get("deltaY", 0)
+            raw_dx = step.get("deltaX", 0)
+            raw_dy = step.get("deltaY", 0)
+            dx = self._resolve_coord(raw_dx, default=0)
+            dy = self._resolve_coord(raw_dy, default=0)
             self.simulator.mouse_wheel(dy, dx, x, y)
             return True
 
@@ -383,7 +400,8 @@ class MacroPlayer:
             return True
 
         elif st_type == "delay":
-            dur_ms = step.get("duration", 0)
+            dur_raw = step.get("duration", 0)
+            dur_ms = self._resolve_coord(dur_raw, default=0)
             if dur_ms > 0:
                 time.sleep((dur_ms / 1000.0) / self.speed)
             return True
@@ -429,46 +447,65 @@ class MacroPlayer:
         elif st_type == "math_op":
             var_name = str(step.get("var_name", "var")).lstrip("$")
             op = step.get("operation", "set")
-            val = step.get("value", "0")
+            raw_val = step.get("value", "0")
+            resolved_val = self._resolve_val(raw_val, default=0)
             if op == "set":
-                try:
-                    self.variables[var_name] = int(val) if "." not in str(val) else float(val)
-                except (ValueError, TypeError):
-                    self.variables[var_name] = str(val)
+                self.variables[var_name] = resolved_val
+                self.variables[f"${var_name}"] = resolved_val
             elif op == "increment":
-                self.variables[var_name] = self.variables.get(var_name, 0) + 1
+                cur_v = self._resolve_val(self.variables.get(var_name, self.variables.get(f"${var_name}", 0)), default=0)
+                new_v = cur_v + 1
+                self.variables[var_name] = new_v
+                self.variables[f"${var_name}"] = new_v
             elif op == "decrement":
-                self.variables[var_name] = self.variables.get(var_name, 0) - 1
+                cur_v = self._resolve_val(self.variables.get(var_name, self.variables.get(f"${var_name}", 0)), default=0)
+                new_v = cur_v - 1
+                self.variables[var_name] = new_v
+                self.variables[f"${var_name}"] = new_v
             elif op == "add":
+                cur_v = self._resolve_val(self.variables.get(var_name, self.variables.get(f"${var_name}", 0)), default=0)
+                add_v = self._resolve_val(raw_val, default=0)
                 try:
-                    self.variables[var_name] = self.variables.get(var_name, 0) + float(val)
-                except Exception:
-                    pass
+                    new_v = cur_v + add_v
+                except TypeError:
+                    new_v = f"{cur_v}{add_v}"
+                self.variables[var_name] = new_v
+                self.variables[f"${var_name}"] = new_v
             elif op == "subtract":
+                cur_v = self._resolve_val(self.variables.get(var_name, self.variables.get(f"${var_name}", 0)), default=0)
+                sub_v = self._resolve_val(raw_val, default=0)
                 try:
-                    self.variables[var_name] = self.variables.get(var_name, 0) - float(val)
+                    new_v = cur_v - sub_v
                 except Exception:
-                    pass
+                    new_v = cur_v
+                self.variables[var_name] = new_v
+                self.variables[f"${var_name}"] = new_v
             elif op == "multiply":
+                cur_v = self._resolve_val(self.variables.get(var_name, self.variables.get(f"${var_name}", 0)), default=0)
+                mul_v = self._resolve_val(raw_val, default=1)
                 try:
-                    self.variables[var_name] = self.variables.get(var_name, 0) * float(val)
+                    new_v = cur_v * mul_v
                 except Exception:
-                    pass
+                    new_v = cur_v
+                self.variables[var_name] = new_v
+                self.variables[f"${var_name}"] = new_v
             elif op == "random":
                 import random
-                min_v = int(step.get("min_val", 1))
-                max_v = int(step.get("max_val", 100))
-                self.variables[var_name] = random.randint(min(min_v, max_v), max(min_v, max_v))
+                min_v = self._resolve_coord(step.get("min_val", 1), default=1)
+                max_v = self._resolve_coord(step.get("max_val", 100), default=100)
+                new_v = random.randint(min(min_v, max_v), max(min_v, max_v))
+                self.variables[var_name] = new_v
+                self.variables[f"${var_name}"] = new_v
             return True
 
         elif st_type == "pixel_color":
             from PyQt6.QtGui import QGuiApplication, QColor
             from PyQt6.QtCore import QPoint
-            px = int(step.get("x", 0))
-            py = int(step.get("y", 0))
+            px = self._resolve_coord(step.get("x", 0), default=0)
+            py = self._resolve_coord(step.get("y", 0), default=0)
             target_hex = step.get("color", "#FFFFFF")
             target_col = QColor(target_hex)
-            tolerance = int(step.get("tolerance", 15))
+            tolerance = self._resolve_coord(step.get("tolerance", 15), default=15)
 
             matches = False
             pt = QPoint(px, py)
