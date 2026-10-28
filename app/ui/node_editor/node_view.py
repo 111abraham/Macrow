@@ -195,14 +195,15 @@ class NodeView(QGraphicsView):
 
         menu.addSeparator()
         menu.addSection("LOGIC & CONDITIONS")
+        menu.addAction("🔁 C-Clamp Repeat Zone (Loop)", lambda: add_node_item(LoopNodeItem()))
         menu.addAction("🔀 If / Compare Condition", lambda: add_node_item(IfConditionNodeItem()))
         menu.addAction("🎨 Pixel Color Check", lambda: add_node_item(PixelColorNodeItem()))
-        menu.addAction("🔁 Loop (N Times)", lambda: add_node_item(LoopNodeItem()))
         menu.addAction("🔢 Math / Variable", lambda: add_node_item(MathNodeItem()))
 
         menu.addSeparator()
         menu.addSection("VISION AI & CONTROL")
         menu.addAction("⏱ Wait For Image (AI Screen)", lambda: add_node_item(VisionNodeItem()))
+        menu.addAction("🎯 Loop Until Image Found", lambda: add_node_item(VisionNodeItem(properties={"break_loop_on_found": True})))
         menu.addAction("⏹ Stop Playback", lambda: add_node_item(StopNodeItem()))
 
         menu.exec(global_pos)

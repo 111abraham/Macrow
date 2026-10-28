@@ -1038,6 +1038,65 @@ class TestNodeEditor(unittest.TestCase):
         self.assertEqual(executed_steps.count((1, 1)), 3)
         self.assertEqual(executed_steps[-1], (999, 999))
 
+    def test_c_clamp_dynamic_bounds_and_sync_move(self):
+        """Test that C-Clamp LoopNodeItem dynamically calculates bounds for body nodes and moves in sync."""
+        loop = LoopNodeItem()
+        click_1 = ActionNodeItem("click", {"x": 100, "y": 100})
+        click_2 = ActionNodeItem("click", {"x": 200, "y": 200})
+
+        self.scene.add_node(loop, QPointF(50, 50))
+        self.scene.add_node(click_1, QPointF(150, 50))
+        self.scene.add_node(click_2, QPointF(400, 50))
+
+        # Before wiring body: clamp is default size
+        self.assertEqual(len(loop.get_body_nodes()), 0)
+        initial_w = loop.clamp_width
+
+        # Wire: Loop (Body) -> click_1 -> click_2
+        self.scene.add_connection(loop.output_sockets[0], click_1.input_sockets[0])
+        self.scene.add_connection(click_1.output_sockets[0], click_2.input_sockets[0])
+
+        body_nodes = loop.get_body_nodes()
+        self.assertEqual(body_nodes, [click_1, click_2])
+
+        # Trigger clamp bounds update
+        loop.update_clamp_bounds()
+        self.assertGreater(loop.clamp_width, initial_w)
+
+        # Move the loop clamp by (30, 20)
+        orig_c1_x = click_1.pos().x()
+        orig_c1_y = click_1.pos().y()
+        loop.setPos(loop.pos() + QPointF(30, 20))
+
+        # Enclosed body nodes should have moved in sync!
+        self.assertEqual(click_1.pos().x(), orig_c1_x + 30)
+        self.assertEqual(click_1.pos().y(), orig_c1_y + 20)
+
+    def test_wait_image_loop_until_found_auto_route(self):
+        """Test compiling Wait for Image with break_loop_on_found auto-routes found to exit and miss to loop."""
+        start = StartNodeItem()
+        loop = LoopNodeItem()
+        vnode = VisionNodeItem(properties={"break_loop_on_found": True, "template": "btn.png"})
+        done_step = ActionNodeItem("click", {"x": 888, "y": 888})
+
+        self.scene.add_node(start, QPointF(0, 100))
+        self.scene.add_node(loop, QPointF(100, 100))
+        self.scene.add_node(vnode, QPointF(300, 100))
+        self.scene.add_node(done_step, QPointF(550, 200))
+
+        self.scene.add_connection(start.output_sockets[0], loop.input_sockets[0])
+        self.scene.add_connection(loop.output_sockets[0], vnode.input_sockets[0])
+        self.scene.add_connection(loop.output_sockets[1], done_step.input_sockets[0])
+
+        compiled = graph_to_macro(self.scene)
+        step_map = {s["id"]: s for s in compiled}
+
+        v_step = step_map[vnode.id]
+        self.assertTrue(v_step["break_loop_on_found"])
+        # Should auto-route found_next to done_step.id, and miss_next back to loop.id
+        self.assertEqual(v_step["found_next"], done_step.id)
+        self.assertEqual(v_step["miss_next"], loop.id)
+
 
 if __name__ == "__main__":
     unittest.main()

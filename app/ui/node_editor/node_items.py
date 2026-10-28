@@ -323,6 +323,7 @@ class VisionNodeItem(BaseNodeItem):
         self.properties.setdefault("button", "left")
         self.properties.setdefault("timeout", 5.0)
         self.properties.setdefault("template", "")
+        self.properties.setdefault("break_loop_on_found", False)
         if "bypassed" in self.properties:
             self.bypassed = bool(self.properties["bypassed"])
 
@@ -361,14 +362,27 @@ class VisionNodeItem(BaseNodeItem):
 
     def get_summary_text(self) -> str:
         conf = int(self.properties.get("confidence", 0.85) * 100)
+        tout = float(self.properties.get("timeout", 5.0))
+        if self.properties.get("break_loop_on_found", False):
+            return f"🎯 Loop Until Found • {tout:g}s • ≥{conf}%"
         act = str(self.properties.get("action", "none")).capitalize()
         btn = str(self.properties.get("button", "left")).capitalize()
-        tout = float(self.properties.get("timeout", 5.0))
         act_str = f"{act} ({btn})" if act != "None" else "None"
         return f"Wait: {tout:g}s  •  ≥{conf}%  •  {act_str}"
 
     def paint(self, painter: QPainter, option, widget=None):
         super().paint(painter, option, widget)
+
+        is_break = bool(self.properties.get("break_loop_on_found", False))
+        if is_break:
+            # Header Badge Pill for Loop Until Found
+            badge_rect = QRectF(self.width - 95, 4, 90, 15)
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(QBrush(QColor(5, 150, 105)))
+            painter.drawRoundedRect(badge_rect, 4, 4)
+            painter.setPen(QColor(255, 255, 255))
+            painter.setFont(QFont("Segoe UI", 6, QFont.Weight.Bold))
+            painter.drawText(badge_rect, Qt.AlignmentFlag.AlignCenter, "🎯 Loop Until Found")
 
         # Draw thumbnail box
         thumb_rect = QRectF(16, self.header_height + 6, 130, 52)
@@ -628,7 +642,7 @@ class HotkeyNodeItem(BaseNodeItem):
 
 
 class LoopNodeItem(BaseNodeItem):
-    """Loop repeat zone node (Mindstorms-style C-Clamp)."""
+    """Loop repeat zone node (Lego Mindstorms-style C-Clamp Bracket)."""
 
     def __init__(
         self,
@@ -637,7 +651,7 @@ class LoopNodeItem(BaseNodeItem):
         parent=None,
     ):
         super().__init__(
-            title="🔁 Loop (Repeat Zone)",
+            title="🔁 Repeat Zone (Loop)",
             node_type="loop_count",
             color=QColor(99, 102, 241),  # Indigo
             parent=parent,
@@ -650,13 +664,102 @@ class LoopNodeItem(BaseNodeItem):
         if "bypassed" in self.properties:
             self.bypassed = bool(self.properties["bypassed"])
 
-        self.width = 215.0
-        self.height = 105.0
+        self.clamp_width = 240.0
+        self.clamp_height = 125.0
+        self.spine_width = 38.0
+        self.shelf_height = 26.0
+        self.header_height = 28.0
+
+        self.width = self.clamp_width
+        self.height = self.clamp_height
 
         self.socket_in = self.add_input_socket(name="In", color=QColor(56, 189, 248))
         self.socket_repeat = self.add_input_socket(name="Loop In", color=QColor(168, 85, 247))
         self.socket_body = self.add_output_socket(name="Body", color=QColor(16, 185, 129))
         self.socket_done = self.add_output_socket(name="Done", color=QColor(6, 182, 212))
+
+        # Position Loop behind regular action nodes so body actions sit visibly in mouth
+        self.setZValue(0.1)
+        self._layout_sockets()
+
+    def get_body_nodes(self) -> List["BaseNodeItem"]:
+        if not self.socket_body.connections:
+            return []
+        first_conn = self.socket_body.connections[0]
+        if not first_conn.end_socket or not first_conn.end_socket.node:
+            return []
+        first_node = first_conn.end_socket.node
+        if first_node == self:
+            return []
+        nodes = []
+        curr = first_node
+        visited = {self}
+        while curr and curr not in visited:
+            visited.add(curr)
+            nodes.append(curr)
+            if curr.output_sockets and curr.output_sockets[0].connections:
+                nxt_conn = curr.output_sockets[0].connections[0]
+                if not nxt_conn.end_socket or not nxt_conn.end_socket.node:
+                    break
+                nxt = nxt_conn.end_socket.node
+                if nxt == self or nxt in visited:
+                    break
+                curr = nxt
+            else:
+                break
+        return nodes
+
+    def update_clamp_bounds(self):
+        body_nodes = self.get_body_nodes()
+        if not body_nodes:
+            new_w = 240.0
+            new_h = 125.0
+        else:
+            my_x = self.pos().x()
+            my_y = self.pos().y()
+            max_x = max(n.pos().x() + n.width for n in body_nodes)
+            max_y = max(n.pos().y() + n.height for n in body_nodes)
+            new_w = max(240.0, (max_x - my_x) + 40.0)
+            new_h = max(125.0, (max_y - my_y) + 45.0)
+
+        if abs(new_w - self.clamp_width) > 1.0 or abs(new_h - self.clamp_height) > 1.0:
+            self.prepareGeometryChange()
+            self.clamp_width = new_w
+            self.clamp_height = new_h
+            self.width = new_w
+            self.height = new_h
+            self._layout_sockets()
+            self.update()
+
+    def _layout_sockets(self):
+        if not hasattr(self, "socket_in") or not hasattr(self, "socket_done"):
+            return
+        # 1. socket_in: Left outside spine
+        self.socket_in.setPos(0, 48.0)
+        # 2. socket_repeat: Left outside near bottom shelf (for backward wires)
+        self.socket_repeat.setPos(0, self.clamp_height - 13.0)
+        # 3. socket_body: Inner edge of left spine pointing directly into the mouth!
+        self.socket_body.setPos(self.spine_width, 48.0)
+        # 4. socket_done: Right end of the bottom shelf!
+        self.socket_done.setPos(self.clamp_width, self.clamp_height - 13.0)
+
+    def boundingRect(self) -> QRectF:
+        return QRectF(-10, -10, self.clamp_width + 20, self.clamp_height + 20)
+
+    def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
+        if change == QGraphicsItem.GraphicsItemChange.ItemPositionChange and self.scene():
+            new_pos = value
+            old_pos = self.pos()
+            delta = new_pos - old_pos
+            if not getattr(self, "_in_body_sync", False):
+                self._in_body_sync = True
+                for b_node in self.get_body_nodes():
+                    b_node.setPos(b_node.pos() + delta)
+                    b_node.update_connected_wires()
+                self._in_body_sync = False
+        if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
+            self.update_connected_wires()
+        return super().itemChange(change, value)
 
     def get_summary_text(self) -> str:
         is_inf = bool(self.properties.get("infinite", True))
@@ -667,62 +770,118 @@ class LoopNodeItem(BaseNodeItem):
         return f"Repeat {cnt} times\n(Index: ${vn})"
 
     def paint(self, painter: QPainter, option, widget=None):
-        super().paint(painter, option, widget)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        self.update_clamp_bounds()
 
+        w = self.clamp_width
+        h = self.clamp_height
+        sp_w = self.spine_width
+        sh_h = self.shelf_height
+        hdr_h = self.header_height
+
+        is_sel = self.isSelected()
         is_inf = bool(self.properties.get("infinite", True))
         cnt = self.properties.get("count", 5)
 
-        # Header Badge Pill (Infinite vs Count)
-        badge_text = "∞ Infinite" if is_inf else f"{cnt}x"
-        painter.setFont(QFont("Segoe UI", 7, QFont.Weight.Bold))
-        badge_w = 58 if is_inf else 32
-        badge_rect = QRectF(self.width - badge_w - 8, 4, badge_w, 14)
+        # 1. Translucent Mouth / Container Interior Backdrop
+        mouth_rect = QRectF(sp_w, hdr_h, w - sp_w, h - hdr_h - sh_h)
         painter.setPen(Qt.PenStyle.NoPen)
-        badge_bg = QColor(67, 56, 202) if is_inf else QColor(51, 65, 85)
-        painter.setBrush(QBrush(badge_bg))
+        painter.setBrush(QBrush(QColor(99, 102, 241, 18)))  # Soft indigo glow
+        painter.drawRect(mouth_rect)
+
+        # Dashed border along mouth
+        dash_pen = QPen(QColor(99, 102, 241, 90), 1.5, Qt.PenStyle.DashLine)
+        painter.setPen(dash_pen)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawRect(mouth_rect)
+
+        # 2. Solid C-Clamp Structural Spine, Header, and Bottom Shelf
+        bracket_path = QPainterPath()
+        bracket_path.moveTo(0, 8)
+        bracket_path.quadTo(0, 0, 8, 0)
+        bracket_path.lineTo(w - 8, 0)
+        bracket_path.quadTo(w, 0, w, 8)
+        bracket_path.lineTo(w, hdr_h)
+        bracket_path.lineTo(sp_w, hdr_h)
+        bracket_path.lineTo(sp_w, h - sh_h)
+        bracket_path.lineTo(w, h - sh_h)
+        bracket_path.lineTo(w, h - 8)
+        bracket_path.quadTo(w, h, w - 8, h)
+        bracket_path.lineTo(8, h)
+        bracket_path.quadTo(0, h, 0, h - 8)
+        bracket_path.closeSubpath()
+
+        # Fill bracket body
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QBrush(QColor(30, 41, 59)))  # Dark slate
+        painter.drawPath(bracket_path)
+
+        # Top arm header fill
+        hdr_path = QPainterPath()
+        hdr_path.moveTo(0, 8)
+        hdr_path.quadTo(0, 0, 8, 0)
+        hdr_path.lineTo(w - 8, 0)
+        hdr_path.quadTo(w, 0, w, 8)
+        hdr_path.lineTo(w, hdr_h)
+        hdr_path.lineTo(0, hdr_h)
+        hdr_path.closeSubpath()
+        painter.setBrush(QBrush(QColor(79, 70, 229)))  # Vibrant Indigo
+        painter.drawPath(hdr_path)
+
+        # Bracket outer border
+        border_pen = QPen(QColor(251, 146, 60) if is_sel else QColor(99, 102, 241), 2.0 if is_sel else 1.5)
+        painter.setPen(border_pen)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawPath(bracket_path)
+
+        # Header Title & Icons
+        painter.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+        painter.setPen(QColor(255, 255, 255))
+        painter.drawText(QRectF(10, 0, 160, hdr_h), Qt.AlignmentFlag.AlignVCenter, "🔁 REPEAT ZONE")
+
+        # Badge: [∞ Infinite] vs [Count]
+        badge_text = "∞ Infinite" if is_inf else f"{cnt}x"
+        badge_w = 60 if is_inf else 34
+        badge_rect = QRectF(w - badge_w - 55, 5, badge_w, 18)
+        painter.setPen(Qt.PenStyle.NoPen)
+        badge_col = QColor(67, 56, 202) if is_inf else QColor(51, 65, 85)
+        painter.setBrush(QBrush(badge_col))
         painter.drawRoundedRect(badge_rect, 4, 4)
-        painter.setPen(QColor(224, 231, 255) if is_inf else QColor(251, 191, 36))
+        painter.setPen(QColor(255, 255, 255))
+        painter.setFont(QFont("Segoe UI", 7, QFont.Weight.Bold))
         painter.drawText(badge_rect, Qt.AlignmentFlag.AlignCenter, badge_text)
+
+        # Index variable display
+        vn = self.properties.get("var_name", "i")
+        painter.setPen(QColor(199, 210, 254))
+        painter.drawText(QRectF(w - 50, 0, 42, hdr_h), Qt.AlignmentFlag.AlignVCenter, f"${vn}")
 
         # Socket text labels
         painter.setFont(QFont("Segoe UI", 7, QFont.Weight.Bold))
 
-        # Left input socket labels
+        # 1. Left input socket labels
         painter.setPen(QColor(56, 189, 248))
+        painter.drawText(QRectF(6, 40, 28, 16), Qt.AlignmentFlag.AlignLeft, "In")
+
+        # 2. Right output socket labels
+        painter.setPen(QColor(16, 185, 129))
+        painter.drawText(QRectF(sp_w + 6, 40, 50, 16), Qt.AlignmentFlag.AlignLeft, "Body →")
+
+        # 3. Bottom shelf auto-cycle hint
+        painter.setFont(QFont("Segoe UI", 7, QFont.Weight.Normal))
+        painter.setPen(QColor(165, 180, 252))
         painter.drawText(
-            QRectF(14, self.header_height + 4, 60, 16),
-            Qt.AlignmentFlag.AlignLeft,
-            "→ In",
-        )
-        painter.setPen(QColor(168, 85, 247))
-        painter.drawText(
-            QRectF(14, self.height - 20, 60, 16),
-            Qt.AlignmentFlag.AlignLeft,
-            "← Loop In",
+            QRectF(sp_w + 10, h - sh_h, w - sp_w - 65, sh_h),
+            Qt.AlignmentFlag.AlignVCenter,
+            "⤴ Auto-cycles body sequence",
         )
 
-        # Right output socket labels
-        painter.setPen(QColor(16, 185, 129))
-        painter.drawText(
-            QRectF(self.width - 55, self.header_height + 4, 45, 16),
-            Qt.AlignmentFlag.AlignRight,
-            "Body →",
-        )
+        painter.setFont(QFont("Segoe UI", 7, QFont.Weight.Bold))
         painter.setPen(QColor(6, 182, 212))
         painter.drawText(
-            QRectF(self.width - 55, self.height - 20, 45, 16),
-            Qt.AlignmentFlag.AlignRight,
+            QRectF(w - 60, h - sh_h, 50, sh_h),
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
             "Done →",
-        )
-
-        # Bottom shelf auto-cycle hint
-        painter.setFont(QFont("Segoe UI", 6, QFont.Weight.Normal))
-        painter.setPen(QColor(129, 140, 248, 180))
-        painter.drawText(
-            QRectF(16, self.height - 12, self.width - 32, 10),
-            Qt.AlignmentFlag.AlignCenter,
-            "⤴ auto-cycles body sequence",
         )
 
     def clone(self) -> "LoopNodeItem":

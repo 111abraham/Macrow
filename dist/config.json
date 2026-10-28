@@ -573,7 +573,8 @@
         {
           "id": "21659d9a",
           "type": "loop_count",
-          "count": 1000,
+          "count": 1,
+          "infinite": true,
           "var_name": "i",
           "body_next": "4ee0ff1f",
           "next": null,
@@ -626,7 +627,8 @@
         {
           "id": "fd237049",
           "type": "stop_playback",
-          "dt": 830
+          "dt": 830,
+          "next": "21659d9a"
         }
       ],
       "duration": 830,
@@ -648,7 +650,7 @@
             "id": "21659d9a",
             "class_name": "LoopNodeItem",
             "node_type": "loop_count",
-            "title": "🔁 Loop (N Times)",
+            "title": "🔁 Loop (Repeat Zone)",
             "pos": [
               133.01268203766006,
               149.31988502810526
@@ -656,8 +658,9 @@
             "bypassed": false,
             "properties": {
               "action_type": "loop_count",
-              "count": 1000,
-              "var_name": "i"
+              "count": 1,
+              "var_name": "i",
+              "infinite": true
             }
           },
           {
@@ -731,8 +734,8 @@
             "node_type": "if_condition",
             "title": "🔀 If / Compare",
             "pos": [
-              1149.2825233025374,
-              176.49064341566375
+              1077.8544857174252,
+              237.71467563147402
             ],
             "bypassed": false,
             "properties": {

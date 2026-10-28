@@ -292,6 +292,8 @@ class MacroPlayer:
             # Determine next step
             if "found_next" in curr_step or "miss_next" in curr_step:
                 next_id = curr_step.get("found_next") if cond_res else curr_step.get("miss_next")
+                if curr_step.get("break_loop_on_found", False) and cond_res:
+                    loop_counters.clear()
             else:
                 next_id = curr_step.get("next")
 

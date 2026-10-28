@@ -281,8 +281,29 @@ def graph_to_macro(scene: NodeScene) -> List[Dict[str, Any]]:
             step["action"] = props.get("action", "none")
             step["button"] = props.get("button", "left")
             step["timeout"] = float(props.get("timeout", 5.0))
-            step["found_next"] = get_target_id(0)
-            step["miss_next"] = get_target_id(1)
+            is_break = bool(props.get("break_loop_on_found", False))
+            step["break_loop_on_found"] = is_break
+            f_next = get_target_id(0)
+            m_next = get_target_id(1)
+
+            # Auto-route if break_loop_on_found is active inside a loop:
+            if is_break and node_id in auto_cycle_map:
+                parent_lid = auto_cycle_map[node_id]
+                # If found_next not explicitly wired, route to loop's Done target
+                if not f_next:
+                    for s_node in scene.nodes:
+                        if isinstance(s_node, LoopNodeItem) and (getattr(s_node, "id", None) or hex(id(s_node))) == parent_lid:
+                            if s_node.output_sockets and len(s_node.output_sockets) > 1 and s_node.output_sockets[1].connections:
+                                end_n = s_node.output_sockets[1].connections[0].end_socket.node
+                                if end_n:
+                                    f_next = getattr(end_n, "id", None) or hex(id(end_n))
+                            break
+                # If miss_next not explicitly wired, cycle back to loop
+                if not m_next:
+                    m_next = parent_lid
+
+            step["found_next"] = f_next
+            step["miss_next"] = m_next
             current_dt += 150
             step["dt"] = current_dt
 

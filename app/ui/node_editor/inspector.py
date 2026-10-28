@@ -1283,4 +1283,26 @@ class PropertyInspector(QWidget):
         row_tout.addWidget(spin_tout)
         layout.addLayout(row_tout)
 
+        # Loop Until Found / Break out toggle
+        row_break = QHBoxLayout()
+        chk_break = QCheckBox("🎯 Loop Until Found (Break on Detection)")
+        chk_break.setObjectName("BreakLoopCheckbox")
+        chk_break.setChecked(bool(node.properties.get("break_loop_on_found", False)))
+        chk_break.setStyleSheet("color: #34d399; font-weight: bold; font-size: 11px;")
+
+        def on_break_change(state):
+            checked = (state == Qt.CheckState.Checked.value or state == True)
+            node.properties["break_loop_on_found"] = checked
+            node.update()
+            self.property_changed.emit()
+
+        chk_break.stateChanged.connect(on_break_change)
+        row_break.addWidget(chk_break)
+        layout.addLayout(row_break)
+
+        desc_break = QLabel("When enabled: detecting the image immediately breaks out of the enclosing loop to the exit/Done step.")
+        desc_break.setStyleSheet("color: #94a3b8; font-size: 10px;")
+        desc_break.setWordWrap(True)
+        layout.addWidget(desc_break)
+
         self.content_layout.addWidget(vbox)
