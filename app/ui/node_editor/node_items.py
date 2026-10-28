@@ -396,13 +396,13 @@ class VisionNodeItem(BaseNodeItem):
         painter.drawText(
             QRectF(self.width - 65, self.header_height + 8, 55, 16),
             Qt.AlignmentFlag.AlignRight,
-            "Found →",
+            "✓ Found →",
         )
         painter.setPen(QColor(244, 63, 94))
         painter.drawText(
             QRectF(self.width - 65, self.height - 24, 55, 16),
             Qt.AlignmentFlag.AlignRight,
-            "Miss →",
+            "✗ Miss →",
         )
 
     def clone(self) -> "VisionNodeItem":
@@ -457,13 +457,13 @@ class IfConditionNodeItem(BaseNodeItem):
         painter.drawText(
             QRectF(self.width - 55, self.header_height + 4, 45, 16),
             Qt.AlignmentFlag.AlignRight,
-            "True →",
+            "✓ True →",
         )
         painter.setPen(QColor(244, 63, 94))
         painter.drawText(
             QRectF(self.width - 55, self.height - 20, 45, 16),
             Qt.AlignmentFlag.AlignRight,
-            "False →",
+            "✗ False →",
         )
 
     def clone(self) -> "IfConditionNodeItem":
@@ -628,7 +628,7 @@ class HotkeyNodeItem(BaseNodeItem):
 
 
 class LoopNodeItem(BaseNodeItem):
-    """Loop repeat node."""
+    """Loop repeat zone node (Mindstorms-style C-Clamp)."""
 
     def __init__(
         self,
@@ -637,20 +637,21 @@ class LoopNodeItem(BaseNodeItem):
         parent=None,
     ):
         super().__init__(
-            title="🔁 Loop (N Times)",
+            title="🔁 Loop (Repeat Zone)",
             node_type="loop_count",
             color=QColor(99, 102, 241),  # Indigo
             parent=parent,
         )
         self.properties = properties or {}
         self.properties.setdefault("action_type", "loop_count")
+        self.properties.setdefault("infinite", True)  # Default: Infinite!
         self.properties.setdefault("count", 5)
         self.properties.setdefault("var_name", "i")
         if "bypassed" in self.properties:
             self.bypassed = bool(self.properties["bypassed"])
 
-        self.width = 205.0
-        self.height = 100.0
+        self.width = 215.0
+        self.height = 105.0
 
         self.socket_in = self.add_input_socket(name="In", color=QColor(56, 189, 248))
         self.socket_repeat = self.add_input_socket(name="Loop In", color=QColor(168, 85, 247))
@@ -658,12 +659,33 @@ class LoopNodeItem(BaseNodeItem):
         self.socket_done = self.add_output_socket(name="Done", color=QColor(6, 182, 212))
 
     def get_summary_text(self) -> str:
-        cnt = self.properties.get("count", 5)
+        is_inf = bool(self.properties.get("infinite", True))
         vn = self.properties.get("var_name", "i")
+        if is_inf:
+            return f"Mode: ∞ Infinite\n(Index: ${vn})"
+        cnt = self.properties.get("count", 5)
         return f"Repeat {cnt} times\n(Index: ${vn})"
 
     def paint(self, painter: QPainter, option, widget=None):
         super().paint(painter, option, widget)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        is_inf = bool(self.properties.get("infinite", True))
+        cnt = self.properties.get("count", 5)
+
+        # Header Badge Pill (Infinite vs Count)
+        badge_text = "∞ Infinite" if is_inf else f"{cnt}x"
+        painter.setFont(QFont("Segoe UI", 7, QFont.Weight.Bold))
+        badge_w = 58 if is_inf else 32
+        badge_rect = QRectF(self.width - badge_w - 8, 4, badge_w, 14)
+        painter.setPen(Qt.PenStyle.NoPen)
+        badge_bg = QColor(67, 56, 202) if is_inf else QColor(51, 65, 85)
+        painter.setBrush(QBrush(badge_bg))
+        painter.drawRoundedRect(badge_rect, 4, 4)
+        painter.setPen(QColor(224, 231, 255) if is_inf else QColor(251, 191, 36))
+        painter.drawText(badge_rect, Qt.AlignmentFlag.AlignCenter, badge_text)
+
+        # Socket text labels
         painter.setFont(QFont("Segoe UI", 7, QFont.Weight.Bold))
 
         # Left input socket labels
@@ -692,6 +714,15 @@ class LoopNodeItem(BaseNodeItem):
             QRectF(self.width - 55, self.height - 20, 45, 16),
             Qt.AlignmentFlag.AlignRight,
             "Done →",
+        )
+
+        # Bottom shelf auto-cycle hint
+        painter.setFont(QFont("Segoe UI", 6, QFont.Weight.Normal))
+        painter.setPen(QColor(129, 140, 248, 180))
+        painter.drawText(
+            QRectF(16, self.height - 12, self.width - 32, 10),
+            Qt.AlignmentFlag.AlignCenter,
+            "⤴ auto-cycles body sequence",
         )
 
     def clone(self) -> "LoopNodeItem":

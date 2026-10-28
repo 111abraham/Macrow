@@ -573,10 +573,10 @@
         {
           "id": "21659d9a",
           "type": "loop_count",
-          "count": 5,
+          "count": 1000,
           "var_name": "i",
           "body_next": "4ee0ff1f",
-          "next": "69d82075",
+          "next": null,
           "dt": 10
         },
         {
@@ -589,32 +589,47 @@
           "dt": 110
         },
         {
-          "id": "69d82075",
-          "type": "click",
-          "next": null,
-          "x": -1300,
-          "y": 1195,
-          "button": "right",
-          "dt": 210
-        },
-        {
           "id": "c9f70096",
           "type": "delay",
           "next": "2a926b59",
           "duration": 500,
-          "dt": 710
+          "dt": 610
         },
         {
           "id": "2a926b59",
           "type": "click",
-          "next": null,
+          "next": "1d04afd4",
           "x": -676,
           "y": 225,
           "button": "left",
-          "dt": 810
+          "dt": 710
+        },
+        {
+          "id": "1d04afd4",
+          "type": "if_condition",
+          "var_a": "$i",
+          "operator": ">=",
+          "val_b": "4",
+          "found_next": "69d82075",
+          "miss_next": "21659d9a",
+          "dt": 720
+        },
+        {
+          "id": "69d82075",
+          "type": "click",
+          "next": "fd237049",
+          "x": -1300,
+          "y": 1195,
+          "button": "right",
+          "dt": 820
+        },
+        {
+          "id": "fd237049",
+          "type": "stop_playback",
+          "dt": 830
         }
       ],
-      "duration": 810,
+      "duration": 830,
       "graph_data": {
         "nodes": [
           {
@@ -623,8 +638,8 @@
             "node_type": "start",
             "title": "▶ Start",
             "pos": [
-              60.0,
-              200.0
+              -228.90111344765143,
+              124.18924828175989
             ],
             "bypassed": false,
             "properties": {}
@@ -635,13 +650,13 @@
             "node_type": "loop_count",
             "title": "🔁 Loop (N Times)",
             "pos": [
-              306.48023321258444,
-              184.02769401408403
+              133.01268203766006,
+              149.31988502810526
             ],
             "bypassed": false,
             "properties": {
               "action_type": "loop_count",
-              "count": 5,
+              "count": 1000,
               "var_name": "i"
             }
           },
@@ -651,8 +666,8 @@
             "node_type": "click",
             "title": "🖱 Mouse Click",
             "pos": [
-              586.332789588305,
-              161.42846826233082
+              437.6128087365207,
+              47.19089908925943
             ],
             "bypassed": false,
             "properties": {
@@ -668,8 +683,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              852.0163512521817,
-              155.37879429787634
+              677.6128087365207,
+              47.19089908925943
             ],
             "bypassed": false,
             "properties": {
@@ -683,8 +698,8 @@
             "node_type": "click",
             "title": "🖱 Mouse Click",
             "pos": [
-              1116.3838710781242,
-              147.1896109155033
+              917.6128087365207,
+              47.19089908925943
             ],
             "bypassed": false,
             "properties": {
@@ -699,8 +714,8 @@
             "node_type": "click",
             "title": "🖱 Mouse Click",
             "pos": [
-              595.733998638035,
-              548.7582811112059
+              1438.5741718790266,
+              88.46052670320933
             ],
             "bypassed": false,
             "properties": {
@@ -708,6 +723,37 @@
               "button": "right",
               "x": -1300,
               "y": 1195
+            }
+          },
+          {
+            "id": "1d04afd4",
+            "class_name": "IfConditionNodeItem",
+            "node_type": "if_condition",
+            "title": "🔀 If / Compare",
+            "pos": [
+              1149.2825233025374,
+              176.49064341566375
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "if_condition",
+              "var_a": "$i",
+              "operator": ">=",
+              "val_b": "4"
+            }
+          },
+          {
+            "id": "fd237049",
+            "class_name": "StopNodeItem",
+            "node_type": "stop_playback",
+            "title": "⏹ Stop Playback",
+            "pos": [
+              1724.4591390451176,
+              92.63188735467213
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "stop_playback"
             }
           }
         ],
@@ -725,9 +771,9 @@
             "to_socket_idx": 0
           },
           {
-            "from_node": "21659d9a",
-            "from_socket_idx": 1,
-            "to_node": "69d82075",
+            "from_node": "c9f70096",
+            "from_socket_idx": 0,
+            "to_node": "2a926b59",
             "to_socket_idx": 0
           },
           {
@@ -737,9 +783,27 @@
             "to_socket_idx": 0
           },
           {
-            "from_node": "c9f70096",
+            "from_node": "2a926b59",
             "from_socket_idx": 0,
-            "to_node": "2a926b59",
+            "to_node": "1d04afd4",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "1d04afd4",
+            "from_socket_idx": 1,
+            "to_node": "21659d9a",
+            "to_socket_idx": 1
+          },
+          {
+            "from_node": "1d04afd4",
+            "from_socket_idx": 0,
+            "to_node": "69d82075",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "69d82075",
+            "from_socket_idx": 0,
+            "to_node": "fd237049",
             "to_socket_idx": 0
           }
         ],
@@ -749,10 +813,10 @@
   },
   "instances": {
     "1": {
-      "x": 1520,
-      "y": 427,
+      "x": 1402,
+      "y": 391,
       "minimized": false,
-      "selected_macro": "Macro 2",
+      "selected_macro": "loop test",
       "speed": 1.01,
       "repeat": false,
       "width": 591,

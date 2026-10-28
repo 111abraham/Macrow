@@ -1064,16 +1064,35 @@ class PropertyInspector(QWidget):
         layout = QVBoxLayout(box)
         layout.setSpacing(8)
 
-        lbl = QLabel("Loop Repetitions")
+        lbl = QLabel("🔁 Loop & Repeat Controls")
         lbl.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
         lbl.setStyleSheet("color: #6366f1;")
         layout.addWidget(lbl)
 
+        # Infinite loop checkbox (default True)
+        is_inf = bool(node.properties.get("infinite", True))
+        chk_inf = QCheckBox("Infinite Loop (∞)")
+        chk_inf.setObjectName("InfiniteLoopCheckbox")
+        chk_inf.setChecked(is_inf)
+        chk_inf.setStyleSheet("color: #a5b4fc; font-weight: bold; font-size: 11px;")
+        layout.addWidget(chk_inf)
+
         row_cnt = QHBoxLayout()
-        row_cnt.addWidget(QLabel("Repeat Count:"))
+        lbl_cnt = QLabel("Repeat Count:")
+        row_cnt.addWidget(lbl_cnt)
         spin_cnt = QSpinBox()
         spin_cnt.setRange(1, 100000)
         spin_cnt.setValue(int(node.properties.get("count", 5)))
+        spin_cnt.setEnabled(not is_inf)
+
+        def on_inf_toggle(state):
+            checked = (state == Qt.CheckState.Checked.value or state == True)
+            node.properties["infinite"] = checked
+            spin_cnt.setEnabled(not checked)
+            node.update()
+            self.property_changed.emit()
+
+        chk_inf.stateChanged.connect(on_inf_toggle)
 
         def on_cnt_change(v):
             node.properties["count"] = v
@@ -1097,7 +1116,7 @@ class PropertyInspector(QWidget):
         row_var.addWidget(edit_v)
         layout.addLayout(row_var)
 
-        info = QLabel("Body wire runs each iteration; Done wire continues when complete.")
+        info = QLabel("Body wire runs each iteration; Done wire continues when complete. End of body sequence auto-cycles back into the loop without needing a long backward wire.")
         info.setStyleSheet("color: #94a3b8; font-size: 10px;")
         info.setWordWrap(True)
         layout.addWidget(info)

@@ -935,6 +935,109 @@ class TestNodeEditor(unittest.TestCase):
         upstream_3 = view._get_upstream_nodes(node_3)
         self.assertEqual(upstream_3, [node_3, node_2, node_1])
 
+    def test_loop_default_infinite(self):
+        """Test that LoopNodeItem defaults to infinite=True and reflects in summary text."""
+        loop = LoopNodeItem()
+        self.assertTrue(loop.properties.get("infinite", False))
+        self.assertIn("Infinite", loop.get_summary_text())
+
+    def test_loop_auto_cycle_compilation(self):
+        """Test that the end of a loop body sequence auto-cycles without requiring a backward wire."""
+        start = StartNodeItem()
+        loop = LoopNodeItem()
+        click_1 = ActionNodeItem("click", {"x": 10, "y": 10})
+        click_2 = ActionNodeItem("click", {"x": 20, "y": 20})
+        exit_step = ActionNodeItem("delay", {"duration": 100})
+
+        self.scene.add_node(start, QPointF(0, 100))
+        self.scene.add_node(loop, QPointF(150, 100))
+        self.scene.add_node(click_1, QPointF(350, 100))
+        self.scene.add_node(click_2, QPointF(550, 100))
+        self.scene.add_node(exit_step, QPointF(350, 250))
+
+        # Wire: Start -> Loop (In)
+        self.scene.add_connection(start.output_sockets[0], loop.input_sockets[0])
+        # Wire: Loop (Body) -> Click 1 -> Click 2 (NO backward wire from Click 2!)
+        self.scene.add_connection(loop.output_sockets[0], click_1.input_sockets[0])
+        self.scene.add_connection(click_1.output_sockets[0], click_2.input_sockets[0])
+        # Wire: Loop (Done) -> Exit Step
+        self.scene.add_connection(loop.output_sockets[1], exit_step.input_sockets[0])
+
+        compiled = graph_to_macro(self.scene)
+        step_map = {s["id"]: s for s in compiled}
+
+        loop_step = step_map[loop.id]
+        click_2_step = step_map[click_2.id]
+
+        # Click 2 should have auto-cycled its next back to loop.id!
+        self.assertEqual(click_2_step["next"], loop.id)
+        # Loop body_next points to click_1, next points to exit_step
+        self.assertEqual(loop_step["body_next"], click_1.id)
+        self.assertEqual(loop_step["next"], exit_step.id)
+
+    def test_loop_break_out_pattern(self):
+        """Test that an inner condition inside a loop can break out directly to the exit step."""
+        from app.core.player import MacroPlayer
+        from unittest.mock import MagicMock
+        import time
+
+        sim = MagicMock()
+        player = MacroPlayer(simulator=sim)
+
+        executed_steps = []
+        def mock_click(x, y, button="left"):
+            executed_steps.append((x, y))
+
+        sim.click = mock_click
+
+        # Loop (Count=10) -> Click (x=1, y=1) -> If condition ($var == 2) -> True: Break to Exit Click (x=999, y=999)
+        #                                                                 -> False: Cycle back to Loop
+        steps = [
+            {
+                "id": "loop_1",
+                "type": "loop_count",
+                "count": 10,
+                "infinite": False,
+                "var_name": "i",
+                "body_next": "action_click",
+                "next": "done_click",
+                "dt": 10,
+            },
+            {
+                "id": "action_click",
+                "type": "click",
+                "x": 1,
+                "y": 1,
+                "next": "cond_check",
+                "dt": 10,
+            },
+            {
+                "id": "cond_check",
+                "type": "if_condition",
+                "var_a": "$i",
+                "operator": "==",
+                "val_b": "2",
+                "found_next": "done_click",  # Break out directly to Done!
+                "miss_next": "loop_1",       # Keep cycling
+                "dt": 10,
+            },
+            {
+                "id": "done_click",
+                "type": "click",
+                "x": 999,
+                "y": 999,
+                "next": None,
+                "dt": 10,
+            },
+        ]
+
+        player.play(steps, speed=10.0, repeat=False, repeat_count=1)
+        player._thread.join(timeout=3.0)
+
+        # Body click (1, 1) runs for i=0, i=1, i=2 (3 times), then condition is True on i=2 and breaks out to (999, 999)!
+        self.assertEqual(executed_steps.count((1, 1)), 3)
+        self.assertEqual(executed_steps[-1], (999, 999))
+
 
 if __name__ == "__main__":
     unittest.main()

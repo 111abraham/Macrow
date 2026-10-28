@@ -226,8 +226,9 @@ class MacroPlayer:
         step_count = 0
         max_steps = 100000
         loop_counters = {}
+        has_infinite = any(s.get("type") == "loop_count" and s.get("infinite", False) for s in steps)
 
-        while curr_step and not self._stop_requested.is_set() and step_count < max_steps:
+        while curr_step and not self._stop_requested.is_set() and (has_infinite or step_count < max_steps):
             step_count += 1
 
             # Pause handling
@@ -251,14 +252,15 @@ class MacroPlayer:
                 curr_step = step_map.get(next_id)
                 continue
 
-            # Special state handling for Loop (N Times) node
+            # Special state handling for Loop (Repeat Zone) node
             if curr_step.get("type") == "loop_count":
                 lid = curr_step.get("id")
+                is_infinite = bool(curr_step.get("infinite", False))
                 target_count = int(curr_step.get("count", 5))
                 var_name = str(curr_step.get("var_name", "i")).lstrip("$")
 
                 iter_count = loop_counters.get(lid, 0)
-                if iter_count < target_count:
+                if is_infinite or iter_count < target_count:
                     self.variables[var_name] = iter_count
                     self.variables[f"${var_name}"] = iter_count
                     loop_counters[lid] = iter_count + 1

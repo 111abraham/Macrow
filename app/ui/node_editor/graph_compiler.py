@@ -216,6 +216,27 @@ def graph_to_macro(scene: NodeScene) -> List[Dict[str, Any]]:
     visited = set()
     current_dt = 0
 
+    # Auto-cycle detection: For any LoopNodeItem, map the end of its body chain back to the loop
+    # so users don't need to manually draw an ugly backward wire across their canvas!
+    auto_cycle_map: Dict[str, str] = {}
+    for n in scene.nodes:
+        if isinstance(n, LoopNodeItem):
+            lid = getattr(n, "id", None) or hex(id(n))
+            if n.output_sockets and n.output_sockets[0].connections:
+                body_start = n.output_sockets[0].connections[0].end_socket.node
+                curr = body_start
+                visited_chain = set()
+                while curr and curr != n and curr not in visited_chain:
+                    visited_chain.add(curr)
+                    if curr.output_sockets and curr.output_sockets[0].connections:
+                        nxt = curr.output_sockets[0].connections[0].end_socket.node
+                        if nxt == n or nxt in visited_chain:
+                            break
+                        curr = nxt
+                    else:
+                        auto_cycle_map[getattr(curr, "id", None) or hex(id(curr))] = lid
+                        break
+
     # Queue of nodes to process in graph traversal order
     def get_next_nodes(node: BaseNodeItem) -> List[BaseNodeItem]:
         next_nodes = []
@@ -386,6 +407,7 @@ def graph_to_macro(scene: NodeScene) -> List[Dict[str, Any]]:
         elif isinstance(node, LoopNodeItem):
             step["type"] = "loop_count"
             step["count"] = int(props.get("count", 5))
+            step["infinite"] = bool(props.get("infinite", True))
             step["var_name"] = props.get("var_name", "i")
             step["body_next"] = get_target_id(0)
             step["next"] = get_target_id(1)
@@ -396,6 +418,10 @@ def graph_to_macro(scene: NodeScene) -> List[Dict[str, Any]]:
             step["type"] = "stop_playback"
             current_dt += 10
             step["dt"] = current_dt
+
+        # If a step is inside a loop body and has no explicit next connection, auto-cycle back!
+        if step.get("next") is None and node_id in auto_cycle_map:
+            step["next"] = auto_cycle_map[node_id]
 
         compiled_steps.append(step)
 
