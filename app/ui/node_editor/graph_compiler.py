@@ -204,6 +204,9 @@ def macro_to_graph(
                     if len(node.output_sockets) > out_idx and len(target_node.input_sockets) > in_idx:
                         scene.add_connection(node.output_sockets[out_idx], target_node.input_sockets[in_idx])
 
+    if hasattr(scene, "update_loop_bounds"):
+        scene.update_loop_bounds()
+
 
 def graph_to_macro(scene: NodeScene) -> List[Dict[str, Any]]:
     """Traverses the graph starting from StartNodeItem and compiles into macro steps."""

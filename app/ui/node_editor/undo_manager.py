@@ -123,6 +123,9 @@ def deserialize_scene(scene: NodeScene, data: Dict[str, Any]):
         grp_nodes = [id_to_node[nid] for nid in gd.get("node_ids", []) if nid in id_to_node]
         scene.add_group(title=gd.get("title", "Group"), nodes=grp_nodes)
 
+    if hasattr(scene, "update_loop_bounds"):
+        scene.update_loop_bounds()
+
 
 class UndoManager(QObject):
     """Manages undo and redo stacks for the node graph editor."""

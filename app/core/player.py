@@ -443,6 +443,7 @@ class MacroPlayer:
 
         elif st_type == "pixel_color":
             from PyQt6.QtGui import QGuiApplication, QColor
+            from PyQt6.QtCore import QPoint
             px = int(step.get("x", 0))
             py = int(step.get("y", 0))
             target_hex = step.get("color", "#FFFFFF")
@@ -450,10 +451,16 @@ class MacroPlayer:
             tolerance = int(step.get("tolerance", 15))
 
             matches = False
-            screen = QGuiApplication.primaryScreen()
+            pt = QPoint(px, py)
+            screen = QGuiApplication.screenAt(pt)
+            if not screen:
+                screen = QGuiApplication.primaryScreen()
             if screen:
-                cur_img = screen.grabWindow(0, px, py, 1, 1).toImage()
-                if not cur_img.isNull():
+                geo = screen.geometry()
+                lx = int(px - geo.x())
+                ly = int(py - geo.y())
+                cur_img = screen.grabWindow(0, lx, ly, 1, 1).toImage()
+                if not cur_img.isNull() and cur_img.width() > 0 and cur_img.height() > 0:
                     c = cur_img.pixelColor(0, 0)
                     diff = (
                         abs(c.red() - target_col.red())

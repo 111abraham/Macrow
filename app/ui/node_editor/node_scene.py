@@ -80,7 +80,14 @@ class NodeScene(QGraphicsScene):
             node.group.remove_node(node)
 
         self.removeItem(node)
+        self.update_loop_bounds()
         self.scene_modified.emit()
+
+    def update_loop_bounds(self):
+        """Update enclosing bracket bounds for all C-clamp repeat zones."""
+        for n in list(self.nodes):
+            if hasattr(n, "update_clamp_bounds"):
+                n.update_clamp_bounds()
 
     def add_connection(
         self, start_socket: NodeSocketItem, end_socket: NodeSocketItem
@@ -108,6 +115,7 @@ class NodeScene(QGraphicsScene):
         conn = NodeConnection(start_socket, end_socket)
         self.addItem(conn)
         self.connections.append(conn)
+        self.update_loop_bounds()
         self.scene_modified.emit()
         return conn
 
@@ -116,6 +124,7 @@ class NodeScene(QGraphicsScene):
             self.connections.remove(conn)
         conn.clean_up()
         self.removeItem(conn)
+        self.update_loop_bounds()
         self.scene_modified.emit()
 
     def add_group(self, title: str = "Group", nodes: Optional[List[BaseNodeItem]] = None) -> NodeGroupItem:

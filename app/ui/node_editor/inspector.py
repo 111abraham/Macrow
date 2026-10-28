@@ -914,6 +914,19 @@ class PropertyInspector(QWidget):
         row_xy.addWidget(spin_y)
         layout.addLayout(row_xy)
 
+        def on_x_changed(val):
+            node.properties["x"] = val
+            node.update()
+            self.property_changed.emit()
+
+        def on_y_changed(val):
+            node.properties["y"] = val
+            node.update()
+            self.property_changed.emit()
+
+        spin_x.valueChanged.connect(on_x_changed)
+        spin_y.valueChanged.connect(on_y_changed)
+
         # Eye dropper button for sampling coordinate AND color together!
         btn_sample = QPushButton("🎯 Pick Color & Coord (Eye Dropper)")
         btn_sample.setStyleSheet("""
@@ -1025,6 +1038,10 @@ class PropertyInspector(QWidget):
             "Ctrl+A (Select All)",
             "Ctrl+Z (Undo)",
             "Ctrl+S (Save)",
+            "Ctrl+Shift+Esc (Task Manager)",
+            "Ctrl+Alt+Delete (SAS / Security)",
+            "Delete",
+            "Shift+Delete",
             "Enter",
             "Escape",
             "Tab",
@@ -1037,6 +1054,14 @@ class PropertyInspector(QWidget):
 
         edit_combo = QLineEdit(node.properties.get("combo", "Ctrl+C"))
 
+        lbl_cad_note = QLabel(
+            "ℹ️ <b>Windows SAS Note:</b> Windows strictly protects <i>Ctrl+Alt+Delete</i> as a secure system sequence. "
+            "Macrow triggers <code>SendSAS</code> and extended key injection. To open Task Manager directly, prefer <b>Ctrl+Shift+Esc</b>."
+        )
+        lbl_cad_note.setWordWrap(True)
+        lbl_cad_note.setStyleSheet("color: #cbd5e1; background: #334155; padding: 6px; border-radius: 4px; font-size: 11px;")
+        lbl_cad_note.setVisible("delete" in str(node.properties.get("combo", "")).lower() and "ctrl" in str(node.properties.get("combo", "")).lower() and "alt" in str(node.properties.get("combo", "")).lower())
+
         def on_preset_selected(idx):
             if idx < len(presets) - 1:
                 key = presets[idx].split(" ")[0]
@@ -1048,9 +1073,13 @@ class PropertyInspector(QWidget):
 
         layout.addWidget(QLabel("Key Combination:"))
         layout.addWidget(edit_combo)
+        layout.addWidget(lbl_cad_note)
 
         def on_combo_changed(txt):
             node.properties["combo"] = txt
+            norm = txt.lower().replace(" ", "")
+            is_cad = "ctrl" in norm and "alt" in norm and ("del" in norm or "delete" in norm)
+            lbl_cad_note.setVisible(is_cad)
             node.update()
             self.property_changed.emit()
 

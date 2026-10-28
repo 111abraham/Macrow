@@ -568,6 +568,7 @@ class NodeView(QGraphicsView):
         self._shake_triggered = False
 
         super().mouseReleaseEvent(event)
+        self.node_scene.update_loop_bounds()
         if event.button() == Qt.MouseButton.LeftButton:
             self.node_scene.scene_modified.emit()
 

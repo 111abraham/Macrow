@@ -8,6 +8,7 @@ from typing import Optional, List, Dict, Any, TYPE_CHECKING
 from PyQt6.QtCore import Qt, QRectF, QPointF
 from PyQt6.QtGui import (
     QPainter,
+    QPainterPath,
     QColor,
     QPen,
     QBrush,
@@ -107,6 +108,8 @@ class BaseNodeItem(QGraphicsItem):
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
             # Update all connected wires when node moves
             self.update_connected_wires()
+            if self.scene() and hasattr(self.scene(), "update_loop_bounds"):
+                self.scene().update_loop_bounds()
         return super().itemChange(change, value)
 
     def get_summary_text(self) -> str:
@@ -683,30 +686,26 @@ class LoopNodeItem(BaseNodeItem):
         self._layout_sockets()
 
     def get_body_nodes(self) -> List["BaseNodeItem"]:
-        if not self.socket_body.connections:
-            return []
-        first_conn = self.socket_body.connections[0]
-        if not first_conn.end_socket or not first_conn.end_socket.node:
-            return []
-        first_node = first_conn.end_socket.node
-        if first_node == self:
+        if not hasattr(self, "socket_body") or not self.socket_body.connections:
             return []
         nodes = []
-        curr = first_node
         visited = {self}
-        while curr and curr not in visited:
+        queue = []
+        for conn in self.socket_body.connections:
+            if conn.end_socket and conn.end_socket.node and conn.end_socket.node != self:
+                queue.append(conn.end_socket.node)
+        while queue:
+            curr = queue.pop(0)
+            if curr in visited or curr == self:
+                continue
             visited.add(curr)
             nodes.append(curr)
-            if curr.output_sockets and curr.output_sockets[0].connections:
-                nxt_conn = curr.output_sockets[0].connections[0]
-                if not nxt_conn.end_socket or not nxt_conn.end_socket.node:
-                    break
-                nxt = nxt_conn.end_socket.node
-                if nxt == self or nxt in visited:
-                    break
-                curr = nxt
-            else:
-                break
+            for out_sock in curr.output_sockets:
+                for c in out_sock.connections:
+                    if c.end_socket and c.end_socket.node:
+                        target = c.end_socket.node
+                        if target not in visited and target != self:
+                            queue.append(target)
         return nodes
 
     def update_clamp_bounds(self):
@@ -771,7 +770,6 @@ class LoopNodeItem(BaseNodeItem):
 
     def paint(self, painter: QPainter, option, widget=None):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        self.update_clamp_bounds()
 
         w = self.clamp_width
         h = self.clamp_height

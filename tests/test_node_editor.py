@@ -1098,5 +1098,42 @@ class TestNodeEditor(unittest.TestCase):
         self.assertEqual(v_step["miss_next"], loop.id)
 
 
+    def test_loop_node_paint_and_qpainterpath(self):
+        """Test that LoopNodeItem paints cleanly without crashing (QPainterPath imported)."""
+        from PyQt6.QtGui import QPainter, QImage
+        loop = LoopNodeItem()
+        self.scene.add_node(loop, QPointF(100, 100))
+        img = QImage(300, 300, QImage.Format.Format_ARGB32)
+        img.fill(0)
+        painter = QPainter(img)
+        # Should not throw NameError: name 'QPainterPath' is not defined
+        loop.paint(painter, None, None)
+        painter.end()
+
+    def test_input_simulator_extended_keys_and_hotkey(self):
+        """Test InputSimulator hotkey handling for Delete, Ctrl+Shift+Esc, and Ctrl+Alt+Delete."""
+        from app.core.input_simulator import InputSimulator, EXTENDED_KEYS
+        sim = InputSimulator()
+        self.assertIn(0x2E, EXTENDED_KEYS)  # VK_DELETE
+        self.assertIn(0x26, EXTENDED_KEYS)  # VK_UP
+        # Should execute without error
+        sim.hotkey("Delete")
+        sim.hotkey("Ctrl+Shift+Esc")
+        sim.hotkey("Ctrl+Alt+Delete")
+
+    def test_pixel_color_node_properties_and_execution(self):
+        """Test PixelColorNodeItem coordinate and color properties."""
+        from app.core.player import MacroPlayer
+        node = PixelColorNodeItem(properties={"x": 100, "y": 200, "color": "#000000", "tolerance": 15})
+        self.assertEqual(node.properties["x"], 100)
+        self.assertEqual(node.properties["y"], 200)
+        self.assertEqual(node.properties["color"], "#000000")
+
+        # Player step execution should evaluate safely without crashing
+        player = MacroPlayer(None)
+        res = player._execute_step({"type": "pixel_color", "x": 0, "y": 0, "color": "#000000", "tolerance": 50})
+        self.assertIsInstance(res, bool)
+
+
 if __name__ == "__main__":
     unittest.main()

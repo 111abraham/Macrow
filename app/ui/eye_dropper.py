@@ -94,7 +94,31 @@ def get_real_cursor_pos() -> Tuple[int, int]:
 
 
 def get_pixel_color_at(x: int, y: int) -> Tuple[QColor, str, Tuple[int, int, int]]:
-    """Sample exact pixel color from desktop device context at (x, y) safely."""
+    """Sample exact pixel color from desktop at (x, y) across all monitors safely."""
+    try:
+        from PyQt6.QtWidgets import QApplication
+        from PyQt6.QtGui import QGuiApplication, QColor
+        from PyQt6.QtCore import QPoint
+
+        app = QApplication.instance()
+        if app:
+            pt = QPoint(int(x), int(y))
+            screen = QGuiApplication.screenAt(pt)
+            if not screen:
+                screen = QGuiApplication.primaryScreen()
+            if screen:
+                geo = screen.geometry()
+                lx = int(pt.x() - geo.x())
+                ly = int(pt.y() - geo.y())
+                pix = screen.grabWindow(0, lx, ly, 1, 1)
+                img = pix.toImage()
+                if not img.isNull() and img.width() > 0 and img.height() > 0:
+                    c = img.pixelColor(0, 0)
+                    hex_code = f"#{c.red():02X}{c.green():02X}{c.blue():02X}"
+                    return c, hex_code, (c.red(), c.green(), c.blue())
+    except Exception:
+        pass
+
     try:
         hdc = user32.GetDC(None)
         if hdc:
@@ -183,6 +207,10 @@ class CoordinateEyeDropper(QDialog):
 
         self._is_committed = False
 
+        # Capture pristine snapshot of desktop before overlay window opens
+        from app.core.vision import capture_desktop_composite_qimage
+        self.screenshot, self.min_x, self.min_y, self.vw, self.vh = capture_desktop_composite_qimage(None)
+
         # Spans the entire virtual desktop across all monitors including secondary and multi-monitor offsets
         vx = int(user32.GetSystemMetrics(76))  # SM_XVIRTUALSCREEN
         vy = int(user32.GetSystemMetrics(77))  # SM_YVIRTUALSCREEN
@@ -199,14 +227,40 @@ class CoordinateEyeDropper(QDialog):
         self.local_x = loc.x()
         self.local_y = loc.y()
 
-        self.cur_color, self.cur_hex, self.cur_rgb = get_pixel_color_at(self.cur_x, self.cur_y)
-        self.grid_colors = sample_grid_fast(self.cur_x, self.cur_y, 7)
+        self._sample_at(self.cur_x, self.cur_y)
 
         # Update timer for smooth tracking (~33 FPS) without stalling mouse event loop
         self.track_timer = QTimer(self)
         self.track_timer.setInterval(30)
         self.track_timer.timeout.connect(self._update_tracking)
         self.track_timer.start()
+
+    def _sample_at(self, new_x: int, new_y: int):
+        """Samples the pixel color and 7x7 grid at (new_x, new_y)."""
+        if self.screenshot is not None and not self.screenshot.isNull():
+            img_x = int(new_x - self.min_x)
+            img_y = int(new_y - self.min_y)
+            if 0 <= img_x < self.screenshot.width() and 0 <= img_y < self.screenshot.height():
+                self.cur_color = self.screenshot.pixelColor(img_x, img_y)
+                self.cur_hex = f"#{self.cur_color.red():02X}{self.cur_color.green():02X}{self.cur_color.blue():02X}"
+                self.cur_rgb = (self.cur_color.red(), self.cur_color.green(), self.cur_color.blue())
+
+                # 7x7 magnifier grid around cursor
+                grid = []
+                for gy in range(img_y - 3, img_y + 4):
+                    row = []
+                    for gx in range(img_x - 3, img_x + 4):
+                        if 0 <= gx < self.screenshot.width() and 0 <= gy < self.screenshot.height():
+                            row.append(self.screenshot.pixelColor(gx, gy))
+                        else:
+                            row.append(QColor(0, 0, 0))
+                    grid.append(row)
+                self.grid_colors = grid
+                return
+
+        # Fallback to direct screen grab
+        self.cur_color, self.cur_hex, self.cur_rgb = get_pixel_color_at(new_x, new_y)
+        self.grid_colors = sample_grid_fast(new_x, new_y, 7)
 
     def showEvent(self, event):
         super().showEvent(event)
@@ -215,12 +269,12 @@ class CoordinateEyeDropper(QDialog):
         self.setFocus()
 
     def mouseMoveEvent(self, event):
-        # Ultra fast: do NOT query slow GDI functions in mouseMoveEvent!
-        # Update local coordinates and repaint instantly for butter-smooth 144Hz movement.
+        # Update local coordinates and repaint instantly for butter-smooth movement
         pos = event.position().toPoint()
         self.local_x = pos.x()
         self.local_y = pos.y()
         self.cur_x, self.cur_y = get_real_cursor_pos()
+        self._sample_at(self.cur_x, self.cur_y)
         self.update()
 
     def _commit_and_accept(self):
@@ -229,9 +283,11 @@ class CoordinateEyeDropper(QDialog):
             return
         self._is_committed = True
         self.track_timer.stop()
+        self.hide()
+        # Sample one final time at real hardware position
         x, y = get_real_cursor_pos()
-        color, hex_col, rgb = get_pixel_color_at(x, y)
-        self.coord_picked.emit(x, y, hex_col, rgb)
+        self._sample_at(x, y)
+        self.coord_picked.emit(x, y, self.cur_hex, self.cur_rgb)
         self.accept()
 
     def _update_tracking(self):
@@ -250,8 +306,7 @@ class CoordinateEyeDropper(QDialog):
             self.local_x = loc.x()
             self.local_y = loc.y()
 
-            self.cur_color, self.cur_hex, self.cur_rgb = get_pixel_color_at(new_x, new_y)
-            self.grid_colors = sample_grid_fast(new_x, new_y, 7)
+            self._sample_at(new_x, new_y)
             self.update()
         except Exception:
             pass
@@ -293,12 +348,15 @@ class CoordinateEyeDropper(QDialog):
         lx = self.local_x
         ly = self.local_y
 
-        # Crosshair lines point directly through cursor tip (pixel aligned)
+        # Crosshair lines point toward cursor tip with open center (pixel aligned)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
         cross_pen = QPen(QColor(56, 189, 248, 200), 1, Qt.PenStyle.DashLine)
         painter.setPen(cross_pen)
-        painter.drawLine(0, ly, self.width(), ly)
-        painter.drawLine(lx, 0, lx, self.height())
+        gap = 6
+        painter.drawLine(0, ly, max(0, lx - gap), ly)
+        painter.drawLine(min(self.width(), lx + gap), ly, self.width(), ly)
+        painter.drawLine(lx, 0, lx, max(0, ly - gap))
+        painter.drawLine(lx, min(self.height(), ly + gap), lx, self.height())
 
         # Precision reticle with open center at intersection
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)

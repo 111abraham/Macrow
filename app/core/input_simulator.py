@@ -24,12 +24,37 @@ from app.core.win32_api import (
     MOUSEEVENTF_WHEEL,
     MOUSEEVENTF_HWHEEL,
     WHEEL_DELTA,
+    KEYEVENTF_EXTENDEDKEY,
     KEYEVENTF_KEYUP,
     KEYEVENTF_UNICODE,
     SYNTHETIC_EXTRA_INFO,
     set_cursor_pos,
     get_cursor_pos,
 )
+
+# Extended keys that require KEYEVENTF_EXTENDEDKEY on Windows
+EXTENDED_KEYS = {
+    0x2E,  # VK_DELETE
+    0x2D,  # VK_INSERT
+    0x24,  # VK_HOME
+    0x23,  # VK_END
+    0x21,  # VK_PRIOR (PageUp)
+    0x22,  # VK_NEXT (PageDown)
+    0x26,  # VK_UP
+    0x28,  # VK_DOWN
+    0x25,  # VK_LEFT
+    0x27,  # VK_RIGHT
+    0xA3,  # VK_RCONTROL
+    0xA5,  # VK_RMENU (RAlt)
+    0x5B,  # VK_LWIN
+    0x5C,  # VK_RWIN
+    0x5D,  # VK_APPS
+    0x2F,  # VK_HELP
+    0x13,  # VK_PAUSE
+    0x2C,  # VK_SNAPSHOT (PrintScreen)
+    0x90,  # VK_NUMLOCK
+    0x6F,  # VK_DIVIDE (Numpad /)
+}
 
 
 class InputSimulator:
@@ -138,32 +163,38 @@ class InputSimulator:
                     time.sleep(0.015)
 
     def key_down(self, vk_code):
-        """Press down a virtual key code."""
+        """Press down a virtual key code with hardware scan code mapping."""
+        vk = int(vk_code)
+        scan = user32.MapVirtualKeyW(vk, 0)
+        flags = KEYEVENTF_EXTENDEDKEY if vk in EXTENDED_KEYS else 0
         inp = INPUT()
         inp.type = INPUT_KEYBOARD
         inp.u.ki = KEYBDINPUT(
-            wVk=int(vk_code),
-            wScan=0,
-            dwFlags=0,
+            wVk=vk,
+            wScan=scan,
+            dwFlags=flags,
             time=0,
             dwExtraInfo=SYNTHETIC_EXTRA_INFO,
         )
         user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(INPUT))
-        self.keys_held.add(int(vk_code))
+        self.keys_held.add(vk)
 
     def key_up(self, vk_code):
-        """Release a virtual key code."""
+        """Release a virtual key code with hardware scan code mapping."""
+        vk = int(vk_code)
+        scan = user32.MapVirtualKeyW(vk, 0)
+        flags = KEYEVENTF_KEYUP | (KEYEVENTF_EXTENDEDKEY if vk in EXTENDED_KEYS else 0)
         inp = INPUT()
         inp.type = INPUT_KEYBOARD
         inp.u.ki = KEYBDINPUT(
-            wVk=int(vk_code),
-            wScan=0,
-            dwFlags=KEYEVENTF_KEYUP,
+            wVk=vk,
+            wScan=scan,
+            dwFlags=flags,
             time=0,
             dwExtraInfo=SYNTHETIC_EXTRA_INFO,
         )
         user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(INPUT))
-        self.keys_held.discard(int(vk_code))
+        self.keys_held.discard(vk)
 
     def type_unicode_char(self, char):
         """Type a single unicode character cleanly via KEYEVENTF_UNICODE."""
@@ -200,7 +231,17 @@ class InputSimulator:
                 time.sleep(char_delay)
 
     def hotkey(self, combo_str, hold_delay=0.03):
-        """Execute a key combination like 'Ctrl+C', 'Alt+Tab', 'Enter', 'Ctrl+Shift+Esc'."""
+        """Execute a key combination like 'Ctrl+C', 'Alt+Tab', 'Enter', 'Ctrl+Shift+Esc', 'Ctrl+Alt+Delete'."""
+        norm = combo_str.lower().replace(" ", "")
+        if norm in ("ctrl+alt+del", "ctrl+alt+delete", "control+alt+del", "control+alt+delete"):
+            # Attempt official Windows Secure Attention Sequence via sas.dll
+            try:
+                sas_lib = ctypes.windll.LoadLibrary("sas.dll")
+                if hasattr(sas_lib, "SendSAS"):
+                    sas_lib.SendSAS(False)
+            except Exception:
+                pass
+
         vk_map = {
             "ctrl": 0x11, "control": 0x11, "lctrl": 0xA2, "rctrl": 0xA3,
             "alt": 0x12, "menu": 0x12, "lalt": 0xA4, "ralt": 0xA5,
@@ -212,6 +253,7 @@ class InputSimulator:
             "space": 0x20,
             "backspace": 0x08,
             "delete": 0x2E, "del": 0x2E,
+            "insert": 0x2D, "ins": 0x2D,
             "up": 0x26, "down": 0x28, "left": 0x25, "right": 0x27,
             "home": 0x24, "end": 0x23, "pageup": 0x21, "pagedown": 0x22,
         }
