@@ -108,7 +108,7 @@ class PropertyInspector(QWidget):
             QSpinBox::down-button:hover, QDoubleSpinBox::down-button:hover {
                 background-color: #0284c7;
             }
-            QLineEdit, QComboBox {
+            QLineEdit {
                 background-color: #1e293b;
                 color: #f8fafc;
                 border: 1px solid #475569;
@@ -116,8 +116,59 @@ class PropertyInspector(QWidget):
                 padding: 4px 8px;
                 min-height: 22px;
             }
-            QLineEdit:focus, QComboBox:focus {
+            QLineEdit:focus {
                 border: 1px solid #38bdf8;
+            }
+            QComboBox {
+                background-color: #1e293b;
+                color: #f8fafc;
+                border: 1px solid #475569;
+                border-radius: 4px;
+                padding: 4px 28px 4px 8px;
+                min-height: 22px;
+            }
+            QComboBox:focus {
+                border: 1px solid #38bdf8;
+            }
+            QComboBox::drop-down {
+                subcontrol-origin: padding;
+                subcontrol-position: top right;
+                width: 24px;
+                border-left: 1px solid #475569;
+                border-top-right-radius: 4px;
+                border-bottom-right-radius: 4px;
+                background-color: #334155;
+            }
+            QComboBox::drop-down:hover {
+                background-color: #0284c7;
+            }
+            QComboBox::down-arrow {
+                image: none;
+                border-left: 4px solid transparent;
+                border-right: 4px solid transparent;
+                border-top: 5px solid #f8fafc;
+                width: 0;
+                height: 0;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #0f172a;
+                color: #f8fafc;
+                border: 1px solid #38bdf8;
+                border-radius: 4px;
+                selection-background-color: #6366f1;
+                selection-color: #ffffff;
+                outline: none;
+                padding: 4px;
+                min-width: 150px;
+            }
+            QComboBox QAbstractItemView::item {
+                min-height: 22px;
+                padding: 4px 8px;
+                border-radius: 3px;
+            }
+            QComboBox QAbstractItemView::item:selected {
+                background-color: #6366f1;
+                color: #ffffff;
             }
         """)
 
@@ -162,7 +213,9 @@ class PropertyInspector(QWidget):
         self.content_layout.addWidget(lbl)
         self.content_layout.addStretch()
 
-    def set_node(self, node: Optional[BaseNodeItem]):
+    def set_node(self, node: Optional[BaseNodeItem], force: bool = False):
+        if node is self.current_node and not force and self.content_layout.count() > 1:
+            return
         self.current_node = node
         if not node:
             self._show_empty_state()
@@ -225,22 +278,30 @@ class PropertyInspector(QWidget):
         self.content_layout.addStretch()
 
     def _get_known_variables(self) -> List[str]:
-        vars_set = {"$i", "$x", "$y"}
+        vars_set = {"$i", "$x", "$y", "$pixel_match", "$last_condition"}
         sc = getattr(self, "node_scene", None) or getattr(self, "scene", None)
-        if sc and hasattr(sc, "nodes"):
-            for n in sc.nodes:
-                if isinstance(n, LoopNodeItem):
-                    vn = str(n.properties.get("var_name", "i")).strip()
-                    if vn:
-                        vars_set.add(f"${vn.lstrip('$')}")
-                elif isinstance(n, MathNodeItem):
-                    vn = str(n.properties.get("var_name", "")).strip()
-                    if vn:
-                        vars_set.add(f"${vn.lstrip('$')}")
-                elif isinstance(n, PixelColorNodeItem):
-                    vars_set.add("$pixel_match")
-                elif isinstance(n, IfConditionNodeItem):
-                    vars_set.add("$last_condition")
+        if sc:
+            if hasattr(sc, "custom_variables") and sc.custom_variables:
+                for cv in sc.custom_variables:
+                    if cv:
+                        vars_set.add(f"${cv.lstrip('$')}")
+            if hasattr(sc, "nodes"):
+                for n in sc.nodes:
+                    if isinstance(n, LoopNodeItem):
+                        vn = str(n.properties.get("var_name", "i")).strip()
+                        if vn:
+                            vars_set.add(f"${vn.lstrip('$')}")
+                    elif isinstance(n, MathNodeItem):
+                        vn = str(n.properties.get("var_name", "")).strip()
+                        if vn:
+                            vars_set.add(f"${vn.lstrip('$')}")
+                    # Also scan every property value in any node for variables ($var)
+                    if hasattr(n, "properties") and isinstance(n.properties, dict):
+                        for val in n.properties.values():
+                            if isinstance(val, str) and val.strip().startswith("$"):
+                                clean_v = val.strip().split(" ")[0].split("+")[0].split("-")[0].strip()
+                                if clean_v.startswith("$"):
+                                    vars_set.add(clean_v)
         return sorted(list(vars_set))
 
     def _create_param_input(
@@ -375,6 +436,9 @@ class PropertyInspector(QWidget):
             update_style()
             val_str = txt.strip()
             if val_str.startswith("$"):
+                sc = getattr(self, "node_scene", None) or getattr(self, "scene", None)
+                if sc and hasattr(sc, "register_custom_variable"):
+                    sc.register_custom_variable(val_str)
                 on_change_callback(val_str)
             else:
                 try:
@@ -473,6 +537,9 @@ class PropertyInspector(QWidget):
                     vn = name.strip()
                     if not vn.startswith("$"):
                         vn = f"${vn}"
+                    sc = getattr(self, "node_scene", None) or getattr(self, "scene", None)
+                    if sc and hasattr(sc, "register_custom_variable"):
+                        sc.register_custom_variable(vn)
                     edit.setText(vn)
 
             act_cust = menu.addAction("➕ Custom Variable...")
@@ -1064,7 +1131,12 @@ class PropertyInspector(QWidget):
         edit_var = QLineEdit(node.properties.get("var_name", "count"))
 
         def on_var_change(txt):
-            node.properties["var_name"] = txt.lstrip("$")
+            clean_name = txt.lstrip("$").strip()
+            node.properties["var_name"] = clean_name
+            if clean_name:
+                sc = getattr(self, "node_scene", None) or getattr(self, "scene", None)
+                if sc and hasattr(sc, "register_custom_variable"):
+                    sc.register_custom_variable(f"${clean_name}")
             node.update()
             self.property_changed.emit()
 
@@ -1310,7 +1382,20 @@ class PropertyInspector(QWidget):
         ]
         combo_preset.addItems(presets)
 
-        edit_combo = QLineEdit(node.properties.get("combo", "Ctrl+C"))
+        curr_combo = str(node.properties.get("combo", "Ctrl+C")).strip()
+        matched_idx = -1
+        for i, p in enumerate(presets):
+            if p.split(" ")[0].lower() == curr_combo.lower():
+                matched_idx = i
+                break
+        combo_preset.blockSignals(True)
+        if matched_idx >= 0:
+            combo_preset.setCurrentIndex(matched_idx)
+        else:
+            combo_preset.setCurrentIndex(len(presets) - 1)
+        combo_preset.blockSignals(False)
+
+        edit_combo = QLineEdit(curr_combo)
 
         cad_frame = QFrame()
         cad_frame.setStyleSheet("background: #0f172a; border: 1px solid #475569; border-radius: 6px; padding: 6px;")
@@ -1354,6 +1439,9 @@ class PropertyInspector(QWidget):
             if idx < len(presets) - 1:
                 key = presets[idx].split(" ")[0]
                 edit_combo.setText(key)
+            elif idx == len(presets) - 1:
+                edit_combo.setFocus()
+                edit_combo.selectAll()
 
         combo_preset.currentIndexChanged.connect(on_preset_selected)
         layout.addWidget(QLabel("Preset:"))
@@ -1368,6 +1456,20 @@ class PropertyInspector(QWidget):
             norm = txt.lower().replace(" ", "")
             is_cad = "ctrl" in norm and "alt" in norm and ("del" in norm or "delete" in norm)
             cad_frame.setVisible(is_cad)
+
+            # Sync preset combo box
+            combo_preset.blockSignals(True)
+            m_idx = -1
+            for i, p in enumerate(presets):
+                if p.split(" ")[0].lower() == txt.strip().lower():
+                    m_idx = i
+                    break
+            if m_idx >= 0:
+                combo_preset.setCurrentIndex(m_idx)
+            else:
+                combo_preset.setCurrentIndex(len(presets) - 1)
+            combo_preset.blockSignals(False)
+
             node.update()
             self.property_changed.emit()
 
@@ -1421,7 +1523,12 @@ class PropertyInspector(QWidget):
         edit_v = QLineEdit(node.properties.get("var_name", "i"))
 
         def on_var_change(txt):
-            node.properties["var_name"] = txt.lstrip("$")
+            clean_name = txt.lstrip("$").strip()
+            node.properties["var_name"] = clean_name
+            if clean_name:
+                sc = getattr(self, "node_scene", None) or getattr(self, "scene", None)
+                if sc and hasattr(sc, "register_custom_variable"):
+                    sc.register_custom_variable(f"${clean_name}")
             node.update()
             self.property_changed.emit()
 

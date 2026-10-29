@@ -709,7 +709,16 @@ class LoopNodeItem(BaseNodeItem):
                 continue
             visited.add(curr)
             nodes.append(curr)
-            for out_sock in curr.output_sockets:
+
+            # If curr is a nested LoopNodeItem, its internal body nodes belong to curr's own jaw.
+            # Do NOT traverse into curr's socket_body; only follow curr's socket_done to continue
+            # traversing subsequent nodes at OUR loop level.
+            if isinstance(curr, LoopNodeItem):
+                out_sockets = [curr.socket_done] if hasattr(curr, "socket_done") else []
+            else:
+                out_sockets = curr.output_sockets
+
+            for out_sock in out_sockets:
                 for c in out_sock.connections:
                     if c.end_socket and c.end_socket.node:
                         target = c.end_socket.node
@@ -762,8 +771,10 @@ class LoopNodeItem(BaseNodeItem):
             if not getattr(self, "_in_body_sync", False):
                 self._in_body_sync = True
                 for b_node in self.get_body_nodes():
-                    b_node.setPos(b_node.pos() + delta)
-                    b_node.update_connected_wires()
+                    # Only move nodes that are not already being moved by Qt's selection drag
+                    if not b_node.isSelected():
+                        b_node.setPos(b_node.pos() + delta)
+                        b_node.update_connected_wires()
                 self._in_body_sync = False
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
             self.update_connected_wires()

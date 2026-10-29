@@ -180,10 +180,11 @@ class MacroNodeEditorWindow(QMainWindow):
         self.examples_btn = QPushButton("📚 Examples ▾")
         self.examples_btn.setToolTip("Load working example node setups to test and explore")
         ex_menu = QMenu(self)
-        ex_menu.addAction("🔁 1. Auto-Clicker Loop (5x with Delay)", lambda: self._load_example_preset("auto_clicker"))
-        ex_menu.addAction("🎯 2. Loop Until Image Found (Breakout)", lambda: self._load_example_preset("loop_until_image"))
-        ex_menu.addAction("🔢 3. Coordinate Step with Math ($y = $y + 50)", lambda: self._load_example_preset("math_grid"))
-        ex_menu.addAction("🎨 4. Pixel Color Polling (Wait until Green)", lambda: self._load_example_preset("pixel_polling"))
+        ex_menu.addAction("📋 1. Form Auto-Filler & Exporter (DblClick, Type, Hotkeys, Delay)", lambda: self._load_example_preset("form_filler"))
+        ex_menu.addAction("🎮 2. Boss Combat Guard (HP Pixel Check, Vision AI, If Logic, Ability, Zoom)", lambda: self._load_example_preset("game_bot"))
+        ex_menu.addAction("🖱️ 3. Inventory Drag-and-Drop Sorter (Mouse Down, Drag, Mouse Up, Math)", lambda: self._load_example_preset("drag_drop_sorter"))
+        ex_menu.addAction("⚡ 4. Discrete Key Hold & Multi-Select (Key Down, Key Up, Click, Hotkeys)", lambda: self._load_example_preset("key_strummer_clipboard"))
+        ex_menu.addAction("🔄 5. Nested Loops & Coordinate Grid (C-Clamp inside C-Clamp)", lambda: self._load_example_preset("nested_grid_scanner"))
         self.examples_btn.setMenu(ex_menu)
         toolbar.addWidget(self.examples_btn)
 
@@ -286,7 +287,7 @@ class MacroNodeEditorWindow(QMainWindow):
             self._has_unsaved_changes = True
             self.status_bar.showMessage(f"Toggled bypass on {count} node(s) (B).")
             if self.inspector.current_node:
-                self.inspector.set_node(self.inspector.current_node)
+                self.inspector.set_node(self.inspector.current_node, force=True)
         else:
             self.status_bar.showMessage("Select node(s) to bypass or unbypass (B).")
 
@@ -427,7 +428,7 @@ class MacroNodeEditorWindow(QMainWindow):
     def _sync_inspector_after_state_restore(self):
         sel = self.scene.selectedItems()
         node = next((n for n in sel if isinstance(n, BaseNodeItem)), None)
-        self.inspector.set_node(node)
+        self.inspector.set_node(node, force=True)
 
     def _update_undo_redo_ui(self):
         if hasattr(self, "undo_btn"):
@@ -486,96 +487,217 @@ class MacroNodeEditorWindow(QMainWindow):
         start = StartNodeItem()
         self.scene.add_node(start, QPointF(50, 150))
 
-        if preset_key == "auto_clicker":
-            # Example 1: Simple Repeat Zone (5x) auto-clicker
+        if preset_key == "form_filler":
+            # Preset 1: Automated Form Filler & Report Exporter
+            # Nodes: Start -> Hotkey (Win+D) -> Action (DblClick) -> Action (Delay) -> Loop (5x) -> Action (Type) -> Hotkey (Tab) -> Hotkey (Ctrl+S) -> Stop
+            h_desk = HotkeyNodeItem(properties={"combo": "Win+D"})
+            self.scene.add_node(h_desk, QPointF(250, 150))
+
+            dbl_clk = ActionNodeItem("dblclick", {"x": 350, "y": 200, "button": "left"})
+            self.scene.add_node(dbl_clk, QPointF(470, 150))
+
+            del_init = ActionNodeItem("delay", {"duration": 400})
+            self.scene.add_node(del_init, QPointF(710, 150))
+
+            loop = LoopNodeItem(properties={"count": 5, "infinite": False, "var_name": "row"})
+            self.scene.add_node(loop, QPointF(950, 120))
+
+            txt_type = ActionNodeItem("type", {"text": "Record #$row: Validated"})
+            self.scene.add_node(txt_type, QPointF(1070, 180))
+
+            h_tab = HotkeyNodeItem(properties={"combo": "Tab"})
+            self.scene.add_node(h_tab, QPointF(1310, 180))
+
+            del_row = ActionNodeItem("delay", {"duration": 150})
+            self.scene.add_node(del_row, QPointF(1530, 180))
+
+            h_save = HotkeyNodeItem(properties={"combo": "Ctrl+S"})
+            self.scene.add_node(h_save, QPointF(1770, 180))
+
+            stop = StopNodeItem()
+            self.scene.add_node(stop, QPointF(2010, 320))
+
+            self.scene.add_connection(start.output_sockets[0], h_desk.input_sockets[0])
+            self.scene.add_connection(h_desk.output_sockets[0], dbl_clk.input_sockets[0])
+            self.scene.add_connection(dbl_clk.output_sockets[0], del_init.input_sockets[0])
+            self.scene.add_connection(del_init.output_sockets[0], loop.input_sockets[0])
+            self.scene.add_connection(loop.output_sockets[0], txt_type.input_sockets[0])
+            self.scene.add_connection(txt_type.output_sockets[0], h_tab.input_sockets[0])
+            self.scene.add_connection(h_tab.output_sockets[0], del_row.input_sockets[0])
+            self.scene.add_connection(del_row.output_sockets[0], h_save.input_sockets[0])
+            self.scene.add_connection(loop.output_sockets[1], stop.input_sockets[0])
+
+        elif preset_key == "game_bot":
+            # Preset 2: Boss Combat Guard
+            # Nodes: Start -> Loop (Combat) -> PixelColor (HP Check) -> Vision AI (Boss) -> IfCondition (Mana) -> Click (Attack) -> Wheel (Zoom) -> Miss: Hotkey (Potion)
+            loop = LoopNodeItem(properties={"count": 20, "infinite": True, "var_name": "wave"})
+            self.scene.add_node(loop, QPointF(260, 120))
+
+            pix_hp = PixelColorNodeItem(properties={"x": 220, "y": 45, "color": "#10B981", "tolerance": 15})
+            self.scene.add_node(pix_hp, QPointF(380, 180))
+
+            vis_boss = VisionNodeItem("wait_image", properties={"template": "boss_target.png", "confidence": 0.85, "timeout": 1.0, "break_loop_on_found": False})
+            self.scene.add_node(vis_boss, QPointF(640, 180))
+
+            if_mana = IfConditionNodeItem(properties={"var_name": "mana", "operator": ">=", "compare_val": "25"})
+            self.scene.add_node(if_mana, QPointF(920, 180))
+
+            atk_click = ActionNodeItem("click", {"x": 960, "y": 540, "button": "left"})
+            self.scene.add_node(atk_click, QPointF(1180, 180))
+
+            zoom_wheel = ActionNodeItem("wheel", {"deltaY": -120})
+            self.scene.add_node(zoom_wheel, QPointF(1420, 180))
+
+            wait_mana = ActionNodeItem("delay", {"duration": 300})
+            self.scene.add_node(wait_mana, QPointF(1180, 290))
+
+            pot_hotkey = HotkeyNodeItem(properties={"combo": "1"})
+            self.scene.add_node(pot_hotkey, QPointF(640, 310))
+
+            del_pot = ActionNodeItem("delay", {"duration": 250})
+            self.scene.add_node(del_pot, QPointF(880, 310))
+
+            stop = StopNodeItem()
+            self.scene.add_node(stop, QPointF(1680, 340))
+
+            self.scene.add_connection(start.output_sockets[0], loop.input_sockets[0])
+            self.scene.add_connection(loop.output_sockets[0], pix_hp.input_sockets[0])
+            # Match (HP is green/good) -> proceed to visual targeting
+            self.scene.add_connection(pix_hp.output_sockets[0], vis_boss.input_sockets[0])
+            self.scene.add_connection(vis_boss.output_sockets[0], if_mana.input_sockets[0])
+            self.scene.add_connection(if_mana.output_sockets[0], atk_click.input_sockets[0])
+            self.scene.add_connection(atk_click.output_sockets[0], zoom_wheel.input_sockets[0])
+            self.scene.add_connection(if_mana.output_sockets[1], wait_mana.input_sockets[0])
+            # Miss (HP low) -> drink potion
+            self.scene.add_connection(pix_hp.output_sockets[1], pot_hotkey.input_sockets[0])
+            self.scene.add_connection(pot_hotkey.output_sockets[0], del_pot.input_sockets[0])
+            self.scene.add_connection(loop.output_sockets[1], stop.input_sockets[0])
+
+        elif preset_key == "drag_drop_sorter":
+            # Preset 3: Inventory Drag-and-Drop Sorter
+            # Nodes: Start -> Math ($src_y = 250) -> Loop (4x) -> Move (Hover) -> Mouse Down -> Move (Drag) -> Mouse Up -> Math ($src_y += 60) -> Delay -> Stop
+            init_y = MathNodeItem(properties={"var_name": "src_y", "operation": "set", "value": "250"})
+            self.scene.add_node(init_y, QPointF(250, 150))
+
+            loop = LoopNodeItem(properties={"count": 4, "infinite": False, "var_name": "slot"})
+            self.scene.add_node(loop, QPointF(490, 120))
+
+            mv_hover = ActionNodeItem("move", {"x": 400, "y": "$src_y", "smooth": False, "direct_jump": True})
+            self.scene.add_node(mv_hover, QPointF(610, 180))
+
+            ms_down = ActionNodeItem("down", {"button": "left"})
+            self.scene.add_node(ms_down, QPointF(850, 180))
+
+            mv_drag = ActionNodeItem("move", {"x": 800, "y": "$src_y", "smooth": True, "direct_jump": False})
+            self.scene.add_node(mv_drag, QPointF(1090, 180))
+
+            ms_up = ActionNodeItem("up", {"button": "left"})
+            self.scene.add_node(ms_up, QPointF(1330, 180))
+
+            step_y = MathNodeItem(properties={"var_name": "src_y", "operation": "add", "value": "60"})
+            self.scene.add_node(step_y, QPointF(1570, 180))
+
+            del_step = ActionNodeItem("delay", {"duration": 150})
+            self.scene.add_node(del_step, QPointF(1810, 180))
+
+            stop = StopNodeItem()
+            self.scene.add_node(stop, QPointF(2050, 340))
+
+            self.scene.add_connection(start.output_sockets[0], init_y.input_sockets[0])
+            self.scene.add_connection(init_y.output_sockets[0], loop.input_sockets[0])
+            self.scene.add_connection(loop.output_sockets[0], mv_hover.input_sockets[0])
+            self.scene.add_connection(mv_hover.output_sockets[0], ms_down.input_sockets[0])
+            self.scene.add_connection(ms_down.output_sockets[0], mv_drag.input_sockets[0])
+            self.scene.add_connection(mv_drag.output_sockets[0], ms_up.input_sockets[0])
+            self.scene.add_connection(ms_up.output_sockets[0], step_y.input_sockets[0])
+            self.scene.add_connection(step_y.output_sockets[0], del_step.input_sockets[0])
+            self.scene.add_connection(loop.output_sockets[1], stop.input_sockets[0])
+
+        elif preset_key == "key_strummer_clipboard":
+            # Preset 4: Discrete Key Hold & Multi-Select
+            # Nodes: Start -> Key Down (Shift) -> Click 1 -> Click 2 -> Key Up (Shift) -> Hotkey (Ctrl+C) -> Delay -> Hotkey (Ctrl+Shift+Esc) -> Stop
+            kd_shift = ActionNodeItem("key_down", {"key": "Shift"})
+            self.scene.add_node(kd_shift, QPointF(250, 150))
+
+            clk_1 = ActionNodeItem("click", {"x": 450, "y": 300, "button": "left"})
+            self.scene.add_node(clk_1, QPointF(490, 150))
+
+            clk_2 = ActionNodeItem("click", {"x": 450, "y": 500, "button": "left"})
+            self.scene.add_node(clk_2, QPointF(730, 150))
+
+            ku_shift = ActionNodeItem("key_up", {"key": "Shift"})
+            self.scene.add_node(ku_shift, QPointF(970, 150))
+
+            h_copy = HotkeyNodeItem(properties={"combo": "Ctrl+C"})
+            self.scene.add_node(h_copy, QPointF(1210, 150))
+
+            del_clip = ActionNodeItem("delay", {"duration": 300})
+            self.scene.add_node(del_clip, QPointF(1450, 150))
+
+            h_task = HotkeyNodeItem(properties={"combo": "Ctrl+Shift+Esc"})
+            self.scene.add_node(h_task, QPointF(1690, 150))
+
+            stop = StopNodeItem()
+            self.scene.add_node(stop, QPointF(1930, 150))
+
+            self.scene.add_connection(start.output_sockets[0], kd_shift.input_sockets[0])
+            self.scene.add_connection(kd_shift.output_sockets[0], clk_1.input_sockets[0])
+            self.scene.add_connection(clk_1.output_sockets[0], clk_2.input_sockets[0])
+            self.scene.add_connection(clk_2.output_sockets[0], ku_shift.input_sockets[0])
+            self.scene.add_connection(ku_shift.output_sockets[0], h_copy.input_sockets[0])
+            self.scene.add_connection(h_copy.output_sockets[0], del_clip.input_sockets[0])
+            self.scene.add_connection(del_clip.output_sockets[0], h_task.input_sockets[0])
+            self.scene.add_connection(h_task.output_sockets[0], stop.input_sockets[0])
+
+        elif preset_key == "nested_grid_scanner":
+            # Preset 5: Nested Loops & Coordinate Grid (C-Clamp inside C-Clamp)
+            # Nodes: Start -> Math (Init $row) -> Outer Loop (Rows) -> Inner Loop (Columns) -> Click -> Delay -> Step Row -> Stop
+            init_r = MathNodeItem(properties={"var_name": "row", "operation": "set", "value": "1"})
+            self.scene.add_node(init_r, QPointF(250, 150))
+
+            loop_outer = LoopNodeItem(properties={"count": 3, "infinite": False, "var_name": "r"})
+            self.scene.add_node(loop_outer, QPointF(490, 120))
+
+            loop_inner = LoopNodeItem(properties={"count": 3, "infinite": False, "var_name": "c"})
+            self.scene.add_node(loop_inner, QPointF(610, 180))
+
+            clk_cell = ActionNodeItem("click", {"x": 500, "y": 300, "button": "left"})
+            self.scene.add_node(clk_cell, QPointF(730, 240))
+
+            del_cell = ActionNodeItem("delay", {"duration": 100})
+            self.scene.add_node(del_cell, QPointF(970, 240))
+
+            step_r = MathNodeItem(properties={"var_name": "row", "operation": "add", "value": "1"})
+            self.scene.add_node(step_r, QPointF(1250, 320))
+
+            stop = StopNodeItem()
+            self.scene.add_node(stop, QPointF(1510, 420))
+
+            self.scene.add_connection(start.output_sockets[0], init_r.input_sockets[0])
+            self.scene.add_connection(init_r.output_sockets[0], loop_outer.input_sockets[0])
+            # Outer loop body executes Inner loop
+            self.scene.add_connection(loop_outer.output_sockets[0], loop_inner.input_sockets[0])
+            # Inner loop body executes Cell Click + Delay
+            self.scene.add_connection(loop_inner.output_sockets[0], clk_cell.input_sockets[0])
+            self.scene.add_connection(clk_cell.output_sockets[0], del_cell.input_sockets[0])
+            # Inner loop Done leads to Outer row increment
+            self.scene.add_connection(loop_inner.output_sockets[1], step_r.input_sockets[0])
+            # Outer loop Done exits to Stop
+            self.scene.add_connection(loop_outer.output_sockets[1], stop.input_sockets[0])
+
+        elif preset_key == "auto_clicker":
             loop = LoopNodeItem(properties={"count": 5, "infinite": False, "var_name": "i"})
             self.scene.add_node(loop, QPointF(280, 120))
-
             click = ActionNodeItem("click", {"x": 500, "y": 300, "button": "left"})
             self.scene.add_node(click, QPointF(400, 180))
-
             delay = ActionNodeItem("delay", {"duration": 250})
             self.scene.add_node(delay, QPointF(640, 180))
-
             stop = StopNodeItem()
             self.scene.add_node(stop, QPointF(920, 320))
-
             self.scene.add_connection(start.output_sockets[0], loop.input_sockets[0])
             self.scene.add_connection(loop.output_sockets[0], click.input_sockets[0])
             self.scene.add_connection(click.output_sockets[0], delay.input_sockets[0])
             self.scene.add_connection(loop.output_sockets[1], stop.input_sockets[0])
-
-        elif preset_key == "loop_until_image":
-            # Example 2: Loop Until Image Found (Breakout)
-            loop = LoopNodeItem(properties={"count": 10, "infinite": True, "var_name": "i"})
-            self.scene.add_node(loop, QPointF(280, 120))
-
-            scroll = ActionNodeItem("wheel", {"deltaY": -300})
-            self.scene.add_node(scroll, QPointF(400, 180))
-
-            delay = ActionNodeItem("delay", {"duration": 500})
-            self.scene.add_node(delay, QPointF(640, 180))
-
-            vision = VisionNodeItem("wait_image", {"template": "", "confidence": 0.85, "timeout": 1.0, "break_loop_on_found": True})
-            self.scene.add_node(vision, QPointF(880, 180))
-
-            click_found = ActionNodeItem("click", {"x": 960, "y": 540, "button": "left"})
-            self.scene.add_node(click_found, QPointF(1180, 340))
-
-            self.scene.add_connection(start.output_sockets[0], loop.input_sockets[0])
-            self.scene.add_connection(loop.output_sockets[0], scroll.input_sockets[0])
-            self.scene.add_connection(scroll.output_sockets[0], delay.input_sockets[0])
-            self.scene.add_connection(delay.output_sockets[0], vision.input_sockets[0])
-            self.scene.add_connection(loop.output_sockets[1], click_found.input_sockets[0])
-
-        elif preset_key == "math_grid":
-            # Example 3: Loop with Math ($y coordinate increment)
-            init_math = MathNodeItem(properties={"var_name": "y", "operation": "set", "value": "200"})
-            self.scene.add_node(init_math, QPointF(250, 150))
-
-            loop = LoopNodeItem(properties={"count": 4, "infinite": False, "var_name": "row"})
-            self.scene.add_node(loop, QPointF(480, 120))
-
-            click = ActionNodeItem("click", {"x": 500, "y": "$y", "button": "left"})
-            self.scene.add_node(click, QPointF(600, 180))
-
-            delay = ActionNodeItem("delay", {"duration": 200})
-            self.scene.add_node(delay, QPointF(840, 180))
-
-            step_math = MathNodeItem(properties={"var_name": "y", "operation": "add", "value": "60"})
-            self.scene.add_node(step_math, QPointF(1080, 180))
-
-            stop = StopNodeItem()
-            self.scene.add_node(stop, QPointF(1340, 340))
-
-            self.scene.add_connection(start.output_sockets[0], init_math.input_sockets[0])
-            self.scene.add_connection(init_math.output_sockets[0], loop.input_sockets[0])
-            self.scene.add_connection(loop.output_sockets[0], click.input_sockets[0])
-            self.scene.add_connection(click.output_sockets[0], delay.input_sockets[0])
-            self.scene.add_connection(delay.output_sockets[0], step_math.input_sockets[0])
-            self.scene.add_connection(loop.output_sockets[1], stop.input_sockets[0])
-
-        elif preset_key == "pixel_polling":
-            # Example 4: Loop with Pixel Color Check (Poll until green)
-            loop = LoopNodeItem(properties={"count": 100, "infinite": True, "var_name": "attempt"})
-            self.scene.add_node(loop, QPointF(280, 120))
-
-            pix_chk = PixelColorNodeItem(properties={"x": 500, "y": 300, "color": "#10B981", "tolerance": 15})
-            self.scene.add_node(pix_chk, QPointF(400, 180))
-
-            delay_retry = ActionNodeItem("delay", {"duration": 500})
-            self.scene.add_node(delay_retry, QPointF(660, 260))
-
-            click_done = ActionNodeItem("click", {"x": 500, "y": 300, "button": "left"})
-            self.scene.add_node(click_done, QPointF(920, 340))
-
-            self.scene.add_connection(start.output_sockets[0], loop.input_sockets[0])
-            self.scene.add_connection(loop.output_sockets[0], pix_chk.input_sockets[0])
-            # Match (socket 0) connects to post-loop action
-            self.scene.add_connection(pix_chk.output_sockets[0], click_done.input_sockets[0])
-            # Mismatch (socket 1) loops through delay_retry
-            self.scene.add_connection(pix_chk.output_sockets[1], delay_retry.input_sockets[0])
-            self.scene.add_connection(loop.output_sockets[1], click_done.input_sockets[0])
 
         self.scene.update_loop_bounds()
         self.undo_manager.push_state()
@@ -789,7 +911,7 @@ class MacroNodeEditorWindow(QMainWindow):
                     node.update()
                     changed_count += 1
             if self.inspector.current_node:
-                self.inspector.set_node(self.inspector.current_node)
+                self.inspector.set_node(self.inspector.current_node, force=True)
             self.status_bar.showMessage(f"Updated {changed_count} Move node(s) to Direct Jump = {target_val}.")
 
         btn_apply_current.clicked.connect(apply_to_existing)

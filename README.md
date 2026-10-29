@@ -81,3 +81,48 @@ python build.py
 - Click `+` on the title bar to spawn independent Macrow panels.
 - Each instance maintains its own selected macro, playback speed, repeat options, and position.
 - **Single-Cursor FIFO Scheduler**: Coordinates physical mouse cursor access among instances so macros don't fight over the pointer.
+
+### 7. Visual Node Flow Editor & Automation Customizer
+Macrow includes a visual node-based macro customizer (Node Editor) that translates raw recorded macros into interactive flowchart graphs and compiles graphs back into high-speed automation scripts.
+
+- **🧱 Lego Mindstorms-Style C-Clamp Repeat Zone**:
+  - **Dual Jaw Bracket Architecture**: Top arm accepts input (`In`) and feeds into the loop's internal mouth (`Body`). Bottom shelf provides `Loop In` and the loop termination exit socket (`Done`).
+  - **Automatic Dynamic Bounding**: The bracket automatically resizes its mouth horizontally and vertically to cleanly frame all enclosed action nodes.
+  - **Nested Repeat Zones**: Place repeat zones inside other repeat zones (C-clamp inside C-clamp). Scoped containment prevents outer loop translations from double-moving or displacing inner body nodes.
+  - **Auto-Cycle Body Flow**: The end of a loop body sequence automatically cycles back into the loop start without requiring a clutter of backwards return wires.
+  - **Infinite vs. Counted Modes**: Toggle between infinite loops (`∞`) and precise iteration counts with custom index variables (`$i`, `$row`, `$wave`).
+
+- **🎛️ Universal Parameter Inputs & Macro-Wide Variable Memory**:
+  - **Default Integer Typing (`123 Int ▾`)**: Parameter inputs default to integer type with quick mouse wheel scrubbing (scroll up/down to step values, hold `Shift` for x10).
+  - **Dynamic Syntax Badging**: Visual badge automatically transforms between `123 Int ▾`, `0.0 Float ▾`, `abc Str ▾`, and `$ Var ▾` based on input value.
+  - **Macro-Wide Custom Variable Memory**: Any custom variable defined in a Math node, Loop counter, or typed anywhere (e.g. `$target_hp`, `$row`, `$slot`) is automatically remembered macro-wide and appears in the variable picker dropdown of every node in that macro.
+  - **Undo/Redo Persistence**: Custom variable registers persist through serialization, deserialization, undo (`Ctrl+Z`), and redo (`Ctrl+Y`).
+
+- **🧩 Complete 16+ Node Action & Logic Suite**:
+  - **Mouse Actions**: Click, Double Click, Mouse Down (Hold), Mouse Up (Release), Mouse Move (Smooth curve trajectory or Direct Jump), Mouse Wheel Scroll.
+  - **Keyboard Actions**: Key Down (Hold), Key Up (Release), Type Text (with live `$variable` substitution), Key Combination Hotkeys (`Ctrl+C`, `Ctrl+V`, `Win+D`, `Ctrl+Shift+Esc`, etc.).
+  - **OS Security Restriction Handling (SAS)**: Explicit presets and options for `Ctrl+Alt+Delete` and Task Manager invocation.
+  - **Logic & Branching**:
+    - **If / Compare Condition**: Compare variable values against numbers or strings with `True →` and `False →` output paths.
+    - **Pixel Color Verification**: Live screen eyedropper samples pixel coordinates and hex color with configurable color tolerance, splitting into `Match →` and `Miss →` branches.
+    - **Math & Variable Assignment**: Increment (`+= 1`), Decrement (`-= 1`), Set (`= value`), Add (`+= value`), Subtract, Multiply, and Random range (`rand(min..max)`).
+    - **Vision AI / Screen Search**: Wait for template image on screen with confidence threshold, timeout, and loop breakout.
+    - **Stop Playback**: Explicit termination node.
+
+- **🪄 Houdini-Inspired Canvas Gestures**:
+  - `Tab`: Opens Quick-Add Node popup directly under the mouse cursor.
+  - `Y + Drag`: Knife tool with glowing crimson laser trail to sever wires.
+  - `A + Drag`: Aligns upstream or downstream connected branches horizontally.
+  - `Ctrl + Drag` / `Shift + Drag`: Moves entire downstream or upstream connected branches.
+  - `B`: Toggles bypass on selected node(s).
+  - `Alt + Click/Drag`: Duplicates selected node(s) in-place.
+  - Rapid Shake: Shaking a connected node rapidly unplugs it from its wires.
+  - Wire Auto-Splice: Dropping an unconnected node onto a wire splices the node in-between.
+  - Interactive Snap Wire: Dynamic candidate socket glow when wire tip approaches.
+
+- **📚 Varied Real-World Example Presets**:
+  1. **📋 Form Auto-Filler & Exporter**: Minimizes to desktop, double-clicks document, types variable text (`Record #$row: Complete`), advances fields with Tab, and saves with `Ctrl+S`.
+  2. **🎮 Boss Combat Guard**: Outer combat loop, pixel color HP bar monitor, Vision AI target recognition, mana condition evaluation, ability clicks, and camera zoom scroll.
+  3. **🖱️ Inventory Drag-and-Drop Sorter**: Coordinate math initialization, mouse down grab, smooth drag move, mouse up release, coordinate stepping, and delay.
+  4. **⚡ Discrete Key Hold & Multi-Select**: Key down Shift hold, shift-click multi-selection, key up Shift release, and clipboard copy hotkeys.
+  5. **🔄 Nested Loops & Coordinate Grid**: Nested C-clamp repeat zone within C-clamp repeat zone, mathematical cell indexing, and row progression.

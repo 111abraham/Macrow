@@ -73,6 +73,7 @@ def serialize_scene(scene: NodeScene) -> Dict[str, Any]:
         "nodes": nodes_data,
         "connections": connections_data,
         "groups": groups_data,
+        "custom_variables": list(getattr(scene, "custom_variables", [])),
     }
 
 
@@ -122,6 +123,14 @@ def deserialize_scene(scene: NodeScene, data: Dict[str, Any]):
     for gd in data.get("groups", []):
         grp_nodes = [id_to_node[nid] for nid in gd.get("node_ids", []) if nid in id_to_node]
         scene.add_group(title=gd.get("title", "Group"), nodes=grp_nodes)
+
+    # 4. Restore Macro Custom Variables
+    scene.custom_variables = set(data.get("custom_variables", []))
+    for n in scene.nodes:
+        if hasattr(n, "properties") and isinstance(n.properties, dict):
+            for val in n.properties.values():
+                if isinstance(val, str) and val.strip().startswith("$"):
+                    scene.custom_variables.add(val.strip())
 
     if hasattr(scene, "update_loop_bounds"):
         scene.update_loop_bounds()

@@ -36,6 +36,7 @@ class NodeScene(QGraphicsScene):
         self.nodes: List[BaseNodeItem] = []
         self.connections: List[NodeConnection] = []
         self.groups: List[NodeGroupItem] = []
+        self.custom_variables: Set[str] = set()
 
         # Interactive wiring & snapping state
         self._dragging_connection: Optional[NodeConnection] = None
@@ -54,11 +55,27 @@ class NodeScene(QGraphicsScene):
                 break
         self.node_selected.emit(node)
 
+    def register_custom_variable(self, var_name: str):
+        """Registers a custom variable so it is remembered macro-wide across all node parameter dropdowns."""
+        if not var_name:
+            return
+        vn = str(var_name).strip()
+        if not vn.startswith("$"):
+            vn = f"${vn}"
+        if vn and vn not in self.custom_variables:
+            self.custom_variables.add(vn)
+            self.scene_modified.emit()
+
     def add_node(self, node: BaseNodeItem, pos: Optional[QPointF] = None) -> BaseNodeItem:
         if pos:
             node.setPos(pos)
         self.addItem(node)
         self.nodes.append(node)
+        # Harvest any custom variables from node properties
+        if hasattr(node, "properties") and isinstance(node.properties, dict):
+            for k, val in node.properties.items():
+                if isinstance(val, str) and val.strip().startswith("$"):
+                    self.register_custom_variable(val.strip())
         self.scene_modified.emit()
         return node
 

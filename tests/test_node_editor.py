@@ -1245,6 +1245,129 @@ class TestNodeEditor(unittest.TestCase):
         edit.wheelEvent(wheel_event)
         self.assertEqual(edit.text(), "101")
 
+    def test_nested_loop_movement_stability(self):
+        """Test moving a loop containing another loop does not double-move or displace inner nodes."""
+        loop_outer = LoopNodeItem()
+        self.scene.add_node(loop_outer, QPointF(100, 100))
+
+        loop_inner = LoopNodeItem()
+        self.scene.add_node(loop_inner, QPointF(200, 200))
+
+        action_inner = ActionNodeItem("click", {"x": 10, "y": 10})
+        self.scene.add_node(action_inner, QPointF(300, 300))
+
+        self.scene.add_connection(loop_outer.socket_body, loop_inner.socket_in)
+        self.scene.add_connection(loop_inner.socket_body, action_inner.input_sockets[0])
+
+        # Outer loop body nodes should contain inner loop, but NOT inner loop's private children
+        self.assertEqual(len(loop_outer.get_body_nodes()), 1)
+        self.assertEqual(loop_outer.get_body_nodes()[0], loop_inner)
+        self.assertEqual(len(loop_inner.get_body_nodes()), 1)
+        self.assertEqual(loop_inner.get_body_nodes()[0], action_inner)
+
+        # Move outer loop by (50, 50)
+        loop_outer.setPos(loop_outer.pos() + QPointF(50, 50))
+        self.assertEqual(loop_outer.pos(), QPointF(150, 150))
+        self.assertEqual(loop_inner.pos(), QPointF(250, 250))
+        # Inner action must move by exactly (50, 50), not (100, 100)!
+        self.assertEqual(action_inner.pos(), QPointF(350, 350))
+
+        # Move inner loop directly by (25, 25)
+        loop_inner.setPos(loop_inner.pos() + QPointF(25, 25))
+        self.assertEqual(loop_outer.pos(), QPointF(150, 150))
+        self.assertEqual(loop_inner.pos(), QPointF(275, 275))
+        self.assertEqual(action_inner.pos(), QPointF(375, 375))
+
+    def test_macro_wide_custom_variable_memory(self):
+        """Test custom variables added to any node are remembered across macro and available in inspector dropdowns."""
+        from app.ui.node_editor.inspector import PropertyInspector
+        from app.ui.node_editor.undo_manager import serialize_scene, deserialize_scene
+
+        # 1. Register custom variable in scene
+        self.scene.register_custom_variable("$player_gold")
+        self.assertIn("$player_gold", self.scene.custom_variables)
+
+        # 2. Check inspector known variables lists it
+        inspector = PropertyInspector(self.scene)
+        known = inspector._get_known_variables()
+        self.assertIn("$player_gold", known)
+
+        # 3. Add node with embedded variable in properties
+        move_node = ActionNodeItem("move", {"x": "$target_x", "y": 300})
+        self.scene.add_node(move_node)
+        known_after = inspector._get_known_variables()
+        self.assertIn("$target_x", known_after)
+
+        # 4. Serialization / Deserialization preserves macro-wide custom variables
+        snapshot = serialize_scene(self.scene)
+        self.assertIn("custom_variables", snapshot)
+        self.assertIn("$player_gold", snapshot["custom_variables"])
+
+        new_scene = NodeScene()
+        deserialize_scene(new_scene, snapshot)
+        self.assertIn("$player_gold", new_scene.custom_variables)
+        self.assertIn("$target_x", new_scene.custom_variables)
+
+    def test_hotkey_preset_and_inspector_no_flicker(self):
+        """Test HotkeyNodeItem preset synchronization and PropertyInspector stability without layout flicker."""
+        from app.ui.node_editor.inspector import PropertyInspector
+        from PyQt6.QtWidgets import QComboBox, QLineEdit
+
+        hotkey = HotkeyNodeItem(properties={"combo": "Ctrl+Shift+Esc"})
+        self.scene.add_node(hotkey, QPointF(100, 100))
+
+        inspector = PropertyInspector(self.scene)
+        inspector.set_node(hotkey)
+
+        # Find combo_preset and verify it synchronized to Ctrl+Shift+Esc
+        combo_boxes = inspector.findChildren(QComboBox)
+        preset_combo = combo_boxes[0]
+        self.assertIn("Ctrl+Shift+Esc", preset_combo.currentText())
+
+        # Test set_node on already selected node does not destroy/rebuild content
+        child_count_before = len(inspector.content_widget.findChildren(object))
+        inspector.set_node(hotkey, force=False)
+        child_count_after = len(inspector.content_widget.findChildren(object))
+        self.assertEqual(child_count_before, child_count_after)
+
+    def test_all_preset_examples_load_successfully(self):
+        """Test all 5 varied multi-node example presets load cleanly and encompass all node types."""
+        from app.ui.node_editor.editor_window import MacroNodeEditorWindow
+
+        win = MacroNodeEditorWindow(macro_name="test_macro", macro_steps=[])
+        presets = ["form_filler", "game_bot", "drag_drop_sorter", "key_strummer_clipboard", "nested_grid_scanner"]
+
+        all_seen_types = set()
+        for p in presets:
+            win._load_example_preset(p, confirm=False)
+            self.assertGreater(len(win.scene.nodes), 3)
+            self.assertGreater(len(win.scene.connections), 2)
+            for n in win.scene.nodes:
+                all_seen_types.add(n.node_type)
+                # Check bounding rect and layout do not crash
+                self.assertGreater(n.width, 0)
+                self.assertGreater(n.height, 0)
+
+        # Verify key variety covered
+        self.assertIn("start", all_seen_types)
+        self.assertIn("click", all_seen_types)
+        self.assertIn("dblclick", all_seen_types)
+        self.assertIn("down", all_seen_types)
+        self.assertIn("up", all_seen_types)
+        self.assertIn("move", all_seen_types)
+        self.assertIn("delay", all_seen_types)
+        self.assertIn("type", all_seen_types)
+        self.assertIn("key_down", all_seen_types)
+        self.assertIn("key_up", all_seen_types)
+        self.assertIn("wheel", all_seen_types)
+        self.assertIn("hotkey", all_seen_types)
+        self.assertIn("loop_count", all_seen_types)
+        self.assertIn("if_condition", all_seen_types)
+        self.assertIn("pixel_color", all_seen_types)
+        self.assertIn("math_op", all_seen_types)
+        self.assertIn("stop_playback", all_seen_types)
+        self.assertIn("wait_image", all_seen_types)
+
 
 if __name__ == "__main__":
     unittest.main()
