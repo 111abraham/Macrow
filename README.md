@@ -34,8 +34,11 @@ python build.py
 - **Effortless Edge Resizing**: Generous 10px grab zone around all borders plus a dedicated bottom-right resize grip (`QSizeGrip`).
 - **Live Cursor Readout**: Continuous real-time `(X, Y)` coordinate readout on the title bar that keeps updating across the screen and over the panel itself.
 - **Clickable Opacity Slider**: Adjust transparency from 20% to 100% to see charts and windows behind it—the panel **remains 100% clickable at any opacity level**.
-- **Collapsible Title Bar (Minimize `—`)**: Click `—` to collapse the body into just the compact title bar displaying current coordinates. Click `□` to restore. Remembers size and minimized state across restarts.
+- **Native Taskbar Integration & Clean Minimization**: Configured with `WS_EX_APPWINDOW` and DWM styles. Minimizes cleanly into the Windows taskbar without leaving residual bottom-left boxes, and suspends topmost during minimization so the taskbar icon stays persistent and reliable.
+- **Maximize / Restore (`□` / `❐`) & Double-Click**: Full maximize support in the title bar that adapts to any monitor size without artificial width capping. Double-clicking the title bar toggles maximize / restore.
+- **Dock-to-Top Aero Snap**: Drag the title bar to the top edge of any monitor to automatically snap to full screen; drag downward to smoothly restore floating window size centered on the cursor.
 - **Smooth Mouse Wheel Scrolling**: Scroll the mouse wheel anywhere over the panel to browse controls smoothly.
+- **Independent Taskbar Entry for Node Customizer**: When opened simultaneously with Macrow, the Node Customizer has its own independent taskbar button and icon for effortless multitasking.
 
 ### 2. Low-Level Macro Recorder
 - **Low-Level Windows Hook (`WH_MOUSE_LL` & `WH_KEYBOARD_LL`)**: Captures mouse and keyboard input at the OS kernel level, ensuring widgets calling `preventDefault()` cannot suppress clicks or drags.
@@ -98,9 +101,16 @@ Macrow includes a visual node-based macro customizer (Node Editor) that translat
   - **Macro-Wide Custom Variable Memory**: Any custom variable defined in a Math node, Loop counter, or typed anywhere (e.g. `$target_hp`, `$row`, `$slot`) is automatically remembered macro-wide and appears in the variable picker dropdown of every node in that macro.
   - **Undo/Redo Persistence**: Custom variable registers persist through serialization, deserialization, undo (`Ctrl+Z`), and redo (`Ctrl+Y`).
 
-- **🧩 Complete 16+ Node Action & Logic Suite**:
+- **🧩 Complete 18+ Node Action & Logic Suite**:
   - **Mouse Actions**: Click, Double Click, Mouse Down (Hold), Mouse Up (Release), Mouse Move (Smooth curve trajectory or Direct Jump), Mouse Wheel Scroll.
-  - **Keyboard Actions**: Key Down (Hold), Key Up (Release), Type Text (with live `$variable` substitution), Key Combination Hotkeys (`Ctrl+C`, `Ctrl+V`, `Win+D`, `Ctrl+Shift+Esc`, etc.).
+  - **Keyboard Actions & Full Key Catalog**:
+    - **Key Press (Tap)**: Presses and releases any key with accurate timing.
+    - **Key Down (Hold)**: Holds down any key continuously (e.g. for modifier chords, dragging, or gaming movement).
+    - **Key Up (Release)**: Releases any held key.
+    - **Complete Keyboard Coverage**: All letters (`A`–`Z`), numbers (`0`–`9`), full numeric keypad (`Num 0`–`Num 9`, `Num +`, `Num -`, `Num *`, `Num /`, `Num .`, `Num Enter`, `Num Lock`), function keys (`F1`–`F24`), navigation (`Enter`, `Esc`, `Tab`, `Space`, `Backspace`, `Delete`, `Insert`, `Home`, `End`, `Page Up`, `Page Down`), arrow keys, modifiers (`Shift`, `Ctrl`, `Alt`, `Win`, `Caps Lock`, `Scroll Lock`), symbols (`;`, `=`, `,`, `-`, `.`, `/`, `` ` ``, `[`, `\`, `]`, `'`), and media keys.
+    - **Categorized Key Picker & 1-Click Quick Picks**: Categorized dropdown list plus instant 1-click pills for most common keys (`Enter`, `Space`, `Tab`, `Esc`, `Shift`, `Ctrl`, `Alt`, etc.).
+    - **Type Text**: Type strings with real-time `$variable` substitution.
+    - **Key Combination Hotkeys**: Multi-key combinations (`Ctrl+C`, `Ctrl+V`, `Win+D`, `Ctrl+Shift+Esc`, etc.).
   - **OS Security Restriction Handling (SAS)**: Explicit presets and options for `Ctrl+Alt+Delete` and Task Manager invocation.
   - **Logic & Branching**:
     - **If / Compare Condition**: Compare variable values against numbers or strings with `True →` and `False →` output paths.

@@ -31,6 +31,7 @@ from app.core.win32_api import (
     set_cursor_pos,
     get_cursor_pos,
 )
+from app.core.key_catalog import get_vk_for_key
 
 # Extended keys that require KEYEVENTF_EXTENDEDKEY on Windows
 EXTENDED_KEYS = {
@@ -53,6 +54,7 @@ EXTENDED_KEYS = {
     0x13,  # VK_PAUSE
     0x2C,  # VK_SNAPSHOT (PrintScreen)
     0x90,  # VK_NUMLOCK
+    0x6F,  # VK_DIVIDE (Numpad /)
     0x6F,  # VK_DIVIDE (Numpad /)
 }
 
@@ -196,6 +198,13 @@ class InputSimulator:
         user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(INPUT))
         self.keys_held.discard(vk)
 
+    def key_press(self, vk_code, delay=0.015):
+        """Tap a key: key_down -> small delay -> key_up."""
+        self.key_down(vk_code)
+        if delay > 0:
+            time.sleep(delay)
+        self.key_up(vk_code)
+
     def type_unicode_char(self, char):
         """Type a single unicode character cleanly via KEYEVENTF_UNICODE."""
         utf16_code = ord(char)
@@ -279,7 +288,10 @@ class InputSimulator:
         parts = [p.strip().lower() for p in combo_str.split("+") if p.strip()]
         vks = []
         for part in parts:
-            if part in vk_map:
+            vk_cat = get_vk_for_key(part)
+            if vk_cat is not None:
+                vks.append(vk_cat)
+            elif part in vk_map:
                 vks.append(vk_map[part])
             elif len(part) == 1:
                 vks.append(ord(part.upper()))

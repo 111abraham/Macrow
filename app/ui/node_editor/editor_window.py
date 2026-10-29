@@ -64,12 +64,21 @@ class MacroNodeEditorWindow(QMainWindow):
         self._has_unsaved_changes = False
 
         self.setWindowTitle(f"Macrow - Node Customizer [{macro_name}]")
+        self.setWindowFlags(Qt.WindowType.Window)
         self.setWindowIcon(get_app_icon())
         self.resize(1180, 740)
         self.setMinimumSize(850, 500)
 
         self._init_ui()
         self._load_macro_graph()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        try:
+            from app.core.win32_api import setup_app_window
+            setup_app_window(int(self.winId()))
+        except Exception:
+            pass
 
     def _init_ui(self):
         # Dark modern styling
@@ -141,16 +150,27 @@ class MacroNodeEditorWindow(QMainWindow):
         add_menu = QMenu(self)
         
         # Mouse Actions
+        add_menu.addSection("MOUSE ACTIONS")
         add_menu.addAction("🖱 Mouse Click", lambda: self._add_action_node("click"))
         add_menu.addAction("🖱 Double Click", lambda: self._add_action_node("dblclick"))
+        add_menu.addAction("🖱 Mouse Down (Hold)", lambda: self._add_action_node("down"))
+        add_menu.addAction("🖱 Mouse Up (Release)", lambda: self._add_action_node("up"))
         add_menu.addAction("🏹 Mouse Move", lambda: self._add_action_node("move"))
         add_menu.addAction("📜 Mouse Wheel Scroll", lambda: self._add_action_node("wheel"))
         add_menu.addAction("⏳ Delay / Wait", lambda: self._add_action_node("delay"))
-        add_menu.addAction("🔤 Type Text", lambda: self._add_action_node("type"))
+        add_menu.addSeparator()
+
+        # Keyboard Actions
+        add_menu.addSection("KEYBOARD ACTIONS")
+        add_menu.addAction("⌨ Key Press (Tap)", lambda: self._add_key_node("key_press"))
+        add_menu.addAction("⌨ Key Down (Hold)", lambda: self._add_key_node("key_down"))
+        add_menu.addAction("⌨ Key Up (Release)", lambda: self._add_key_node("key_up"))
         add_menu.addAction("⌨ Key Combo (Hotkey)", lambda: self._add_custom_node(HotkeyNodeItem()))
+        add_menu.addAction("🔤 Type Text", lambda: self._add_action_node("type"))
         add_menu.addSeparator()
 
         # Logic & Conditions
+        add_menu.addSection("LOGIC & CONDITIONS")
         add_menu.addAction("🔀 If / Compare Condition", lambda: self._add_custom_node(IfConditionNodeItem()))
         add_menu.addAction("🎨 Pixel Color Check", lambda: self._add_custom_node(PixelColorNodeItem()))
         add_menu.addAction("🔁 Loop (N Times)", lambda: self._add_custom_node(LoopNodeItem()))
@@ -446,6 +466,17 @@ class MacroNodeEditorWindow(QMainWindow):
                 default_direct = self.config.get_editor_setting("default_direct_move", True)
             props["direct_jump"] = default_direct
         node = ActionNodeItem(action_type=action_type, properties=props)
+        self.scene.add_node(node, center)
+        self.scene.clearSelection()
+        node.setSelected(True)
+        self.status_bar.showMessage(f"Added {node.title} node.")
+
+    def _add_key_node(self, action_type: str = "key_press"):
+        """Add discrete Key Press (Tap), Key Down (Hold), or Key Up (Release) node."""
+        center = self.view.mapToScene(self.view.viewport().rect().center())
+        default_key = "Shift" if action_type in ("key_down", "key_up") else "Enter"
+        default_vk = 16 if action_type in ("key_down", "key_up") else 13
+        node = ActionNodeItem(action_type=action_type, properties={"key": default_key, "vk": default_vk})
         self.scene.add_node(node, center)
         self.scene.clearSelection()
         node.setSelected(True)

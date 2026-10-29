@@ -28,7 +28,13 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QTimer, QPoint, QRect, pyqtSignal, QObject, QEvent
 from PyQt6.QtGui import QIcon, QCursor, QGuiApplication
 
-from app.core.win32_api import get_cursor_pos, init_dpi_awareness, set_window_click_through
+from app.core.win32_api import (
+    get_cursor_pos,
+    init_dpi_awareness,
+    set_window_click_through,
+    setup_app_window,
+    set_window_topmost,
+)
 from app.core.input_simulator import InputSimulator
 from app.core.recorder import MacroRecorder
 from app.core.player import MacroPlayer
@@ -147,6 +153,13 @@ class MacrowPanel(QWidget):
         self.resize(320, default_h)
         self._unminimized_height = default_h
 
+    def showEvent(self, event):
+        super().showEvent(event)
+        try:
+            setup_app_window(int(self.winId()))
+        except Exception:
+            pass
+
     def _init_ui(self):
         outer_layout = QVBoxLayout(self)
         outer_layout.setContentsMargins(4, 4, 4, 4)  # 4px margin gives clean edge-grab zone
@@ -238,6 +251,13 @@ class MacrowPanel(QWidget):
         self.min_btn.setToolTip("Minimize Macrow to taskbar")
         self.min_btn.clicked.connect(self.showMinimized)
         layout.addWidget(self.min_btn)
+
+        # Maximize / Restore button
+        self.max_btn = QPushButton("□")
+        self.max_btn.setObjectName("TitleBtn")
+        self.max_btn.setToolTip("Maximize Macrow (or double-click title bar)")
+        self.max_btn.clicked.connect(self.toggle_maximize)
+        layout.addWidget(self.max_btn)
 
         # Close button
         self.close_btn = QPushButton("✕")
@@ -880,7 +900,7 @@ class MacrowPanel(QWidget):
     def _on_shared_config_changed(self, new_data):
         self._refresh_macros_dropdown()
 
-    # Minimize / Restore to Taskbar
+    # Minimize / Restore to Taskbar & Window State Management
     def toggle_minimize(self, force_minimized=None):
         """Minimize or restore the Macrow window to/from the Windows taskbar."""
         if force_minimized is True:
@@ -893,8 +913,60 @@ class MacrowPanel(QWidget):
             else:
                 self.showMinimized()
 
+    def toggle_maximize(self):
+        """Toggle between maximized full-screen state and floating normal state."""
+        if self.isMaximized():
+            self.showNormal()
+        else:
+            self._normal_geom = self.geometry()
+            self.setMaximumSize(16777215, 16777215)
+            self.showMaximized()
+            if hasattr(self, "max_btn"):
+                self.max_btn.setText("❐")
+                self.max_btn.setToolTip("Restore down")
+
+    def showNormal(self):
+        """Restore window to floating normal state with configured size bounds."""
+        screen = QGuiApplication.primaryScreen()
+        if screen:
+            avail = screen.availableGeometry()
+            self.setMaximumWidth(min(700, avail.width() - 40))
+            self.setMaximumHeight(max(300, avail.height() - 40))
+        super().showNormal()
+        if hasattr(self, "max_btn"):
+            self.max_btn.setText("□")
+            self.max_btn.setToolTip("Maximize Macrow (or double-click title bar)")
+
     def changeEvent(self, event):
         super().changeEvent(event)
+        if event.type() == QEvent.Type.WindowStateChange:
+            try:
+                hwnd = int(self.winId())
+                if self.isMinimized():
+                    # Temporarily remove topmost when minimized so Windows hides it cleanly to taskbar
+                    # without leaving a 160x24 residual floating box at bottom-left
+                    set_window_topmost(hwnd, False)
+                else:
+                    # Restore topmost when unminimized
+                    set_window_topmost(hwnd, True)
+                    if hasattr(self, "max_btn"):
+                        if self.isMaximized():
+                            self.max_btn.setText("❐")
+                            self.max_btn.setToolTip("Restore down")
+                        else:
+                            self.max_btn.setText("□")
+                            self.max_btn.setToolTip("Maximize Macrow (or double-click title bar)")
+            except Exception:
+                pass
+
+    def mouseDoubleClickEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            pos = event.position().toPoint()
+            if hasattr(self, "title_bar") and pos.y() <= self.title_bar.height() + 4:
+                self.toggle_maximize()
+                event.accept()
+                return
+        super().mouseDoubleClickEvent(event)
 
     # Robust Edge Resizing & Window Dragging via EventFilter
     def _get_resize_mode(self, pos):
@@ -986,6 +1058,32 @@ class MacrowPanel(QWidget):
         )
         self.setCursor(Qt.CursorShape.ArrowCursor)
 
+    def _handle_drag_move(self, global_pos: QPoint):
+        """Handle window dragging with smooth tear-down from maximized state."""
+        if self.isMaximized():
+            orig_w = getattr(self, "_normal_geom", None).width() if hasattr(self, "_normal_geom") else 340
+            self.showNormal()
+            cursor_x = global_pos.x()
+            new_x = cursor_x - orig_w // 2
+            new_y = max(0, global_pos.y() - 10)
+            self.move(new_x, new_y)
+            self._drag_start_pos = QPoint(orig_w // 2, 10)
+            return
+
+        new_pos = global_pos - self._drag_start_pos
+        self.move(new_pos)
+        self.cfg.update_instance_settings(self.instance_id, x=new_pos.x(), y=new_pos.y())
+
+    def _finish_drag(self, global_pos: QPoint):
+        """Release drag and snap/dock to top of screen to maximize if dragged to upper edge."""
+        self._is_dragging = False
+        screen = QGuiApplication.screenAt(global_pos) or QGuiApplication.primaryScreen()
+        top_bound = screen.availableGeometry().top() if screen else 0
+        if global_pos.y() <= top_bound + 4 and not self.isMaximized():
+            self.toggle_maximize()
+        else:
+            self.cfg.update_instance_settings(self.instance_id, x=self.x(), y=self.y())
+
     def eventFilter(self, watched, event):
         """Intercept mouse events on container and scroll viewport for 100% reliable edge resizing."""
         ev_type = event.type()
@@ -994,12 +1092,11 @@ class MacrowPanel(QWidget):
         if self._is_dragging:
             if ev_type == QEvent.Type.MouseMove:
                 global_pos = event.globalPosition().toPoint()
-                new_pos = global_pos - self._drag_start_pos
-                self.move(new_pos)
+                self._handle_drag_move(global_pos)
                 return True
             elif ev_type == QEvent.Type.MouseButtonRelease:
-                self._is_dragging = False
-                self.cfg.update_instance_settings(self.instance_id, x=self.x(), y=self.y())
+                global_pos = event.globalPosition().toPoint()
+                self._finish_drag(global_pos)
                 return True
 
         if ev_type in (QEvent.Type.MouseMove, QEvent.Type.MouseButtonPress, QEvent.Type.MouseButtonRelease):
@@ -1050,7 +1147,6 @@ class MacrowPanel(QWidget):
                 event.accept()
                 return
         super().mousePressEvent(event)
-        super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
         global_pos = event.globalPosition().toPoint()
@@ -1060,9 +1156,7 @@ class MacrowPanel(QWidget):
             return
 
         if self._is_dragging:
-            new_pos = global_pos - self._drag_start_pos
-            self.move(new_pos)
-            self.cfg.update_instance_settings(self.instance_id, x=new_pos.x(), y=new_pos.y())
+            self._handle_drag_move(global_pos)
             event.accept()
             return
 
@@ -1082,8 +1176,8 @@ class MacrowPanel(QWidget):
             return
 
         if self._is_dragging:
-            self._is_dragging = False
-            self.cfg.update_instance_settings(self.instance_id, x=self.x(), y=self.y())
+            global_pos = event.globalPosition().toPoint()
+            self._finish_drag(global_pos)
             event.accept()
             return
 

@@ -19,6 +19,7 @@ from PyQt6.QtGui import (
 from PyQt6.QtWidgets import QGraphicsItem
 
 from app.ui.node_editor.node_socket import NodeSocketItem
+from app.core.key_catalog import get_name_for_vk
 
 if TYPE_CHECKING:
     from app.ui.node_editor.node_group import NodeGroupItem
@@ -211,9 +212,10 @@ class ActionNodeItem(BaseNodeItem):
         "up": QColor(99, 102, 241),         # Indigo
         "move": QColor(168, 85, 247),       # Purple
         "delay": QColor(245, 158, 11),      # Amber
+        "key_press": QColor(244, 63, 94),   # Rose / Coral
         "key_down": QColor(236, 72, 153),   # Pink
-        "key_up": QColor(244, 114, 182),    # Light pink
-        "type": QColor(217, 70, 239),       # Fuchsia
+        "key_up": QColor(217, 70, 239),     # Fuchsia
+        "type": QColor(168, 85, 247),       # Purple
         "wheel": QColor(99, 102, 241),      # Indigo
         "action": QColor(71, 85, 105),      # Slate
     }
@@ -225,8 +227,9 @@ class ActionNodeItem(BaseNodeItem):
         "up": "🖱 Mouse Up (Release)",
         "move": "🏹 Mouse Move",
         "delay": "⏳ Delay Wait",
-        "key_down": "⌨ Key Press",
-        "key_up": "⌨ Key Release",
+        "key_press": "⌨ Key Press (Tap)",
+        "key_down": "⌨ Key Down (Hold)",
+        "key_up": "⌨ Key Up (Release)",
         "type": "🔤 Type Text",
         "wheel": "📜 Mouse Wheel",
         "action": "⚙ Custom Action",
@@ -287,10 +290,18 @@ class ActionNodeItem(BaseNodeItem):
             txt = str(self.properties.get("value", ""))
             disp = (txt[:18] + "..") if len(txt) > 20 else txt
             return f"Type text:\n\"{disp}\""
-        elif at in ("key_down", "key_up"):
-            vk = self.properties.get("vk", "")
-            action_desc = "Press" if at == "key_down" else "Release"
-            return f"{action_desc} VK: {vk}"
+        elif at in ("key_press", "key_down", "key_up"):
+            vk = self.properties.get("vk")
+            key_name = self.properties.get("key")
+            if not key_name and vk:
+                key_name = get_name_for_vk(vk)
+            disp = key_name if key_name else (f"VK {vk}" if vk else "Unset")
+            if at == "key_press":
+                return f"Tap Key: {disp}\n(Press & Release)"
+            elif at == "key_down":
+                return f"Hold Key: {disp}\n(Key Down)"
+            else:
+                return f"Release Key: {disp}\n(Key Up)"
         elif at == "wheel":
             raw_dy = self.properties.get("deltaY", 120)
             try:

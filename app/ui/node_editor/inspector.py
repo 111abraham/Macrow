@@ -38,6 +38,7 @@ from app.ui.node_editor.node_items import (
     LoopNodeItem,
     StopNodeItem,
 )
+from app.core.key_catalog import KEY_CATALOG_GROUPS, get_name_for_vk, get_vk_for_key
 from app.ui.snippet_tool import ScreenSnipper
 from app.ui.eye_dropper import CoordinateEyeDropper
 
@@ -575,8 +576,9 @@ class PropertyInspector(QWidget):
             ("move", "🏹 Mouse Move"),
             ("delay", "⏳ Delay Wait"),
             ("type", "🔤 Type Text"),
-            ("key_down", "⌨ Key Press"),
-            ("key_up", "⌨ Key Release"),
+            ("key_press", "⌨ Key Press (Tap)"),
+            ("key_down", "⌨ Key Down (Hold)"),
+            ("key_up", "⌨ Key Up (Release)"),
             ("wheel", "📜 Mouse Wheel"),
         ]
         curr_idx = 0
@@ -599,7 +601,7 @@ class PropertyInspector(QWidget):
         self.content_layout.addWidget(type_box)
 
         # 2. Specific controls based on action type
-        if at in ("click", "dblclick", "down", "up", "move") or at not in ("delay", "type", "key_down", "key_up", "wheel"):
+        if at in ("click", "dblclick", "down", "up", "move") or at not in ("delay", "type", "key_press", "key_down", "key_up", "wheel"):
             coord_box = QFrame()
             coord_box.setStyleSheet("background: #1e293b; border-radius: 6px; padding: 8px;")
             cb_layout = QVBoxLayout(coord_box)
@@ -807,18 +809,42 @@ class PropertyInspector(QWidget):
 
             self.content_layout.addWidget(type_box)
 
-        elif at in ("key_down", "key_up"):
+        elif at in ("key_press", "key_down", "key_up"):
             k_box = QFrame()
             k_box.setStyleSheet("background: #1e293b; border-radius: 6px; padding: 8px;")
             kb_layout = QVBoxLayout(k_box)
             kb_layout.setSpacing(8)
 
-            lbl_k = QLabel("Keyboard Keystroke")
+            title_desc = "Key Press (Tap)" if at == "key_press" else ("Key Down (Hold)" if at == "key_down" else "Key Up (Release)")
+            lbl_k = QLabel(f"⌨ {title_desc}")
             lbl_k.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
             lbl_k.setStyleSheet("color: #f472b6;")
             kb_layout.addWidget(lbl_k)
 
-            # Virtual Key code
+            # Common quick-select key pills
+            kb_layout.addWidget(QLabel("Quick Pick:"))
+            pills_flow = QHBoxLayout()
+            pills_flow.setSpacing(4)
+            pills_row1 = QHBoxLayout()
+            pills_row1.setSpacing(4)
+            quick_keys = [
+                ("Enter", 0x0D),
+                ("Space", 0x20),
+                ("Tab", 0x09),
+                ("Esc", 0x1B),
+                ("Backspace", 0x08),
+                ("Delete", 0x2E),
+            ]
+            quick_keys_row2 = [
+                ("Shift", 0x10),
+                ("Ctrl", 0x11),
+                ("Alt", 0x12),
+                ("A", 0x41),
+                ("Num 0", 0x60),
+                ("F5", 0x74),
+            ]
+
+            # Virtual Key spinbox
             row_vk = QHBoxLayout()
             row_vk.addWidget(QLabel("Virtual Key (VK):"))
             spin_vk = QSpinBox()
@@ -829,54 +855,83 @@ class PropertyInspector(QWidget):
                 vk_val = 13
             spin_vk.setValue(vk_val)
             row_vk.addWidget(spin_vk)
-            kb_layout.addLayout(row_vk)
 
-            # Common keys presets
+            # Categorized complete keys dropdown
             combo_keys = QComboBox()
-            key_presets = [
-                ("Enter (Return)", 13),
-                ("Escape", 27),
-                ("Tab", 9),
-                ("Space", 32),
-                ("Backspace", 8),
-                ("Delete", 46),
-                ("Arrow Up", 38),
-                ("Arrow Down", 40),
-                ("Arrow Left", 37),
-                ("Arrow Right", 39),
-                ("Shift", 16),
-                ("Control", 17),
-                ("Alt", 18),
-                ("Windows Key", 91),
-                ("F1", 112), ("F2", 113), ("F3", 114), ("F4", 115),
-                ("F5", 116), ("F6", 117), ("F7", 118), ("F8", 119),
-                ("F9", 120), ("F10", 121), ("F11", 122), ("F12", 123),
-            ]
-            for kname, vk_code in key_presets:
-                combo_keys.addItem(f"{kname} (VK {vk_code})", vk_code)
+            combo_keys.setMaxVisibleItems(25)
+            
+            # Populate from complete KEY_CATALOG_GROUPS
+            model = combo_keys.model()
+            item_row = 0
+            for group_name, keys in KEY_CATALOG_GROUPS:
+                combo_keys.addItem(f"── {group_name} ──", None)
+                if model:
+                    item = model.index(item_row, 0)
+                    if hasattr(model, "itemFromIndex"):
+                        std_item = model.itemFromIndex(item)
+                        if std_item:
+                            std_item.setEnabled(False)
+                            std_item.setForeground(QColor("#38bdf8"))
+                item_row += 1
+                for kname, vk_code in keys:
+                    combo_keys.addItem(f"   {kname} (VK {vk_code})", vk_code)
+                    item_row += 1
 
-            # Set current preset if matches
-            cur_vk = vk_val
-            for i in range(combo_keys.count()):
-                if combo_keys.itemData(i) == cur_vk:
-                    combo_keys.setCurrentIndex(i)
-                    break
+            # Select matching item
+            def _sync_combo_to_vk(code):
+                for i in range(combo_keys.count()):
+                    if combo_keys.itemData(i) == code:
+                        combo_keys.blockSignals(True)
+                        combo_keys.setCurrentIndex(i)
+                        combo_keys.blockSignals(False)
+                        break
 
-            def on_key_preset(idx):
-                code = combo_keys.itemData(idx)
-                if code:
-                    spin_vk.setValue(code)
+            _sync_combo_to_vk(vk_val)
 
-            combo_keys.currentIndexChanged.connect(on_key_preset)
-            kb_layout.addWidget(QLabel("Key Preset:"))
-            kb_layout.addWidget(combo_keys)
-
-            def on_vk_change(v):
-                node.properties["vk"] = v
+            def _apply_key(name: str, code: int):
+                node.properties["key"] = name
+                node.properties["vk"] = code
+                spin_vk.blockSignals(True)
+                spin_vk.setValue(code)
+                spin_vk.blockSignals(False)
+                _sync_combo_to_vk(code)
                 node.update()
                 self.property_changed.emit()
 
+            # Build pill buttons
+            for kname, vk_code in quick_keys:
+                btn = QPushButton(kname)
+                btn.setStyleSheet("background: #334155; color: #f1f5f9; font-size: 10px; padding: 2px 5px; border-radius: 3px;")
+                btn.clicked.connect(lambda _, n=kname, c=vk_code: _apply_key(n, c))
+                pills_row1.addWidget(btn)
+            kb_layout.addLayout(pills_row1)
+
+            pills_row2 = QHBoxLayout()
+            pills_row2.setSpacing(4)
+            for kname, vk_code in quick_keys_row2:
+                btn = QPushButton(kname)
+                btn.setStyleSheet("background: #334155; color: #f1f5f9; font-size: 10px; padding: 2px 5px; border-radius: 3px;")
+                btn.clicked.connect(lambda _, n=kname, c=vk_code: _apply_key(n, c))
+                pills_row2.addWidget(btn)
+            kb_layout.addLayout(pills_row2)
+
+            def on_key_preset(idx):
+                code = combo_keys.itemData(idx)
+                if code is not None:
+                    raw_text = combo_keys.itemText(idx).strip()
+                    clean_name = raw_text.split(" (")[0].strip()
+                    _apply_key(clean_name, code)
+
+            combo_keys.currentIndexChanged.connect(on_key_preset)
+            kb_layout.addWidget(QLabel("Full Key Catalog (All Keys & Numpad):"))
+            kb_layout.addWidget(combo_keys)
+
+            def on_vk_change(v):
+                c_name = get_name_for_vk(v)
+                _apply_key(c_name, v)
+
             spin_vk.valueChanged.connect(on_vk_change)
+            kb_layout.addLayout(row_vk)
 
             self.content_layout.addWidget(k_box)
 

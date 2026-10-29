@@ -396,7 +396,10 @@ def graph_to_macro(scene: NodeScene) -> List[Dict[str, Any]]:
                 current_dt += 120
                 step["dt"] = current_dt
 
-            elif action_type in ("key_down", "key_up"):
+            elif action_type in ("key_press", "key_down", "key_up", "key"):
+                key_name = props.get("key", "")
+                if key_name:
+                    step["key"] = key_name
                 try:
                     step["vk"] = int(props.get("vk", 0)) if props.get("vk") else 0
                 except (ValueError, TypeError):

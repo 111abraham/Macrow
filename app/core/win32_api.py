@@ -67,12 +67,26 @@ GWL_STYLE = -16
 GWL_EXSTYLE = -20
 ES_PASSWORD = 0x0020
 
-# Window Extended Styles for Click-Through / Overlay
+# Window Extended Styles for Click-Through / Overlay / Taskbar
 WS_EX_TOPMOST = 0x00000008
 WS_EX_TRANSPARENT = 0x00000020
 WS_EX_TOOLWINDOW = 0x00000080
+WS_EX_APPWINDOW = 0x00040000
 WS_EX_LAYERED = 0x00080000
 WS_EX_NOACTIVATE = 0x08000000
+
+# Standard window styles for DWM and taskbar management
+WS_MINIMIZEBOX = 0x00020000
+WS_MAXIMIZEBOX = 0x00010000
+WS_SYSMENU = 0x00080000
+
+# SetWindowPos flags
+HWND_TOPMOST = -1
+HWND_NOTOPMOST = -2
+SWP_NOSIZE = 0x0001
+SWP_NOMOVE = 0x0002
+SWP_NOACTIVATE = 0x0010
+SWP_FRAMECHANGED = 0x0020
 
 
 # Structures
@@ -219,6 +233,20 @@ user32.GetWindowThreadProcessId.restype = wintypes.DWORD
 user32.GetWindowLongW.argtypes = [wintypes.HWND, ctypes.c_int]
 user32.GetWindowLongW.restype = wintypes.LONG
 
+user32.SetWindowLongW.argtypes = [wintypes.HWND, ctypes.c_int, wintypes.LONG]
+user32.SetWindowLongW.restype = wintypes.LONG
+
+user32.SetWindowPos.argtypes = [
+    wintypes.HWND,
+    wintypes.HWND,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    wintypes.UINT,
+]
+user32.SetWindowPos.restype = wintypes.BOOL
+
 user32.GetForegroundWindow.argtypes = []
 user32.GetForegroundWindow.restype = wintypes.HWND
 
@@ -316,3 +344,38 @@ def set_window_click_through(hwnd, enable=True):
     except Exception as e:
         print(f"Error toggling click-through on {hwnd}: {e}")
         return False
+
+
+def setup_app_window(hwnd: int) -> bool:
+    """
+    Configure a window (including frameless windows) as a first-class Windows application window.
+    Applies WS_EX_APPWINDOW to extended style and WS_MINIMIZEBOX, WS_MAXIMIZEBOX, WS_SYSMENU
+    to standard style.
+    This guarantees:
+      - Appears on the Windows taskbar with its own icon.
+      - Minimizes directly into the taskbar without leaving a 160x24 residual box at bottom-left.
+      - Integrates properly with the Windows DWM taskbar shell.
+    """
+    try:
+        h = wintypes.HWND(int(hwnd))
+        ex_style = user32.GetWindowLongW(h, GWL_EXSTYLE)
+        user32.SetWindowLongW(h, GWL_EXSTYLE, ex_style | WS_EX_APPWINDOW)
+
+        style = user32.GetWindowLongW(h, GWL_STYLE)
+        user32.SetWindowLongW(h, GWL_STYLE, style | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU)
+
+        user32.SetWindowPos(h, 0, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_FRAMECHANGED)
+        return True
+    except Exception as e:
+        return False
+
+
+def set_window_topmost(hwnd: int, topmost: bool = True) -> bool:
+    """Toggle topmost status for a window via Win32 SetWindowPos."""
+    try:
+        h = wintypes.HWND(int(hwnd))
+        insert_after = wintypes.HWND(HWND_TOPMOST if topmost else HWND_NOTOPMOST)
+        return bool(user32.SetWindowPos(h, insert_after, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE))
+    except Exception:
+        return False
+

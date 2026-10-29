@@ -8,6 +8,7 @@ import time
 import threading
 from app.core.input_simulator import InputSimulator
 from app.core.vision import find_template_on_screen, wait_for_template_on_screen
+from app.core.key_catalog import get_vk_for_key
 
 
 class MacroPlayer:
@@ -335,6 +336,20 @@ class MacroPlayer:
         except (ValueError, TypeError):
             return val_str
 
+    def _resolve_vk(self, step):
+        vk = step.get("vk")
+        if vk is not None:
+            try:
+                vk_int = int(vk)
+                if 1 <= vk_int <= 255:
+                    return vk_int
+            except (ValueError, TypeError):
+                pass
+        key_name = step.get("key")
+        if key_name:
+            return get_vk_for_key(key_name)
+        return None
+
     def _execute_step(self, step):
         if step.get("_unplugged", False):
             return False
@@ -387,14 +402,20 @@ class MacroPlayer:
                 self.simulator.type_text(val)
             return True
 
+        elif st_type in ("key_press", "key"):
+            vk = self._resolve_vk(step)
+            if vk is not None:
+                self.simulator.key_press(vk)
+            return True
+
         elif st_type == "key_down":
-            vk = step.get("vk")
+            vk = self._resolve_vk(step)
             if vk is not None:
                 self.simulator.key_down(vk)
             return True
 
         elif st_type == "key_up":
-            vk = step.get("vk")
+            vk = self._resolve_vk(step)
             if vk is not None:
                 self.simulator.key_up(vk)
             return True

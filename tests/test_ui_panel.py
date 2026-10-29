@@ -194,6 +194,46 @@ class TestUIPanel(unittest.TestCase):
 
         editor.close()
 
+    def test_panel_maximize_and_restore(self):
+        self.assertIsNotNone(self.panel.max_btn)
+        self.assertEqual(self.panel.max_btn.text(), "□")
+
+        # Toggle maximize
+        self.panel.toggle_maximize()
+        self.assertTrue(self.panel.isMaximized())
+        self.assertEqual(self.panel.max_btn.text(), "❐")
+
+        # Toggle restore
+        self.panel.toggle_maximize()
+        self.assertFalse(self.panel.isMaximized())
+        self.assertEqual(self.panel.max_btn.text(), "□")
+
+    def test_panel_dock_to_top_snap(self):
+        # 1. Simulating drag release near top of screen (y <= 4)
+        self.panel.showNormal()
+        self.panel._is_dragging = True
+        self.panel._finish_drag(QPoint(100, 2))
+        self.assertTrue(self.panel.isMaximized())
+
+        # 2. Dragging downward while maximized smoothly restores normal window
+        self.panel._is_dragging = True
+        self.panel._handle_drag_move(QPoint(300, 50))
+        self.assertFalse(self.panel.isMaximized())
+
+    def test_panel_taskbar_setup_and_window_state(self):
+        from app.core.win32_api import setup_app_window, set_window_topmost
+        hwnd = int(self.panel.winId())
+        self.assertTrue(setup_app_window(hwnd))
+        self.assertTrue(set_window_topmost(hwnd, False))
+        self.assertTrue(set_window_topmost(hwnd, True))
+
+    def test_editor_window_independent_window_flag(self):
+        from app.ui.node_editor import MacroNodeEditorWindow
+        editor = MacroNodeEditorWindow("TestFlags", [])
+        # Guarantees own independent taskbar presence
+        self.assertTrue(bool(editor.windowFlags() & Qt.WindowType.Window))
+        editor.close()
+
 
 if __name__ == "__main__":
     unittest.main()
