@@ -1206,6 +1206,45 @@ class TestNodeEditor(unittest.TestCase):
         self.assertEqual(player._resolve_coord("$x"), 550)
         self.assertEqual(player._resolve_coord("$y"), 380)
 
+    def test_param_input_type_badge_and_menu(self):
+        """Test parameter input data type options, wheel adjustment, and variable menu."""
+        from app.ui.node_editor.inspector import PropertyInspector
+        from PyQt6.QtWidgets import QPushButton, QLineEdit
+        from PyQt6.QtGui import QWheelEvent
+        from PyQt6.QtCore import QPointF, QPoint
+
+        inspector = PropertyInspector(self.scene)
+        self.assertEqual(inspector.scene, self.scene)
+
+        captured_vals = []
+        widget, edit = inspector._create_param_input(
+            current_val=500,
+            on_change_callback=lambda v: captured_vals.append(v),
+            default_type="int"
+        )
+        self.assertEqual(edit.text(), "500")
+
+        # Check type button
+        btn_type = widget.findChild(QPushButton)
+        self.assertIsNotNone(btn_type)
+        self.assertIn("Int", btn_type.text())
+
+        # Test setting a variable switches type badge to Var
+        edit.setText("$custom_var")
+        self.assertIn("Var", btn_type.text())
+        self.assertIn("$custom_var", captured_vals)
+
+        # Test wheel event increment on numeric value
+        edit.setText("100")
+        wheel_event = QWheelEvent(
+            QPointF(10, 10), QPointF(10, 10),
+            QPoint(0, 0), QPoint(0, 120),
+            Qt.MouseButton.NoButton, Qt.KeyboardModifier.NoModifier,
+            Qt.ScrollPhase.NoScrollPhase, False
+        )
+        edit.wheelEvent(wheel_event)
+        self.assertEqual(edit.text(), "101")
+
 
 if __name__ == "__main__":
     unittest.main()

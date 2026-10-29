@@ -53,6 +53,7 @@ class PropertyInspector(QWidget):
     def __init__(self, scene: NodeScene, parent=None):
         super().__init__(parent)
         self.node_scene = scene
+        self.scene = scene
         self.current_node: Optional[BaseNodeItem] = None
 
         # Allow flexible resizing from right to left via QSplitter
@@ -225,8 +226,9 @@ class PropertyInspector(QWidget):
 
     def _get_known_variables(self) -> List[str]:
         vars_set = {"$i", "$x", "$y"}
-        if self.scene:
-            for n in self.scene.nodes:
+        sc = getattr(self, "node_scene", None) or getattr(self, "scene", None)
+        if sc and hasattr(sc, "nodes"):
+            for n in sc.nodes:
                 if isinstance(n, LoopNodeItem):
                     vn = str(n.properties.get("var_name", "i")).strip()
                     if vn:
@@ -247,9 +249,11 @@ class PropertyInspector(QWidget):
         on_change_callback: Callable[[Any], None],
         placeholder: str = "0 or $var",
         tooltip: str = "Enter a number or variable (e.g. $y, $i)",
+        default_type: str = "int",
     ) -> Tuple[QWidget, QLineEdit]:
-        """Creates a hybrid parameter input that accepts numbers or variables ($var),
-        with interactive variable styling and a quick [$] insertion menu.
+        """Creates a hybrid parameter input that defaults to 'int' data type,
+        with quick mouse-wheel scrolling, dynamic syntax badge, and a comprehensive
+        Data Type & Variable selection dropdown.
         """
         container = QWidget()
         layout = QHBoxLayout(container)
@@ -261,9 +265,28 @@ class PropertyInspector(QWidget):
         edit.setPlaceholderText(placeholder)
         edit.setToolTip(tooltip)
 
-        def update_style():
+        btn_type = QPushButton()
+        btn_type.setCursor(Qt.CursorShape.PointingHandCursor)
+
+        def get_current_type() -> str:
             txt = edit.text().strip()
             if txt.startswith("$"):
+                return "var"
+            if not txt:
+                return default_type
+            try:
+                int(txt)
+                return "int"
+            except ValueError:
+                try:
+                    float(txt)
+                    return "float"
+                except ValueError:
+                    return "str"
+
+        def update_style():
+            curr_t = get_current_type()
+            if curr_t == "var":
                 edit.setStyleSheet("""
                     QLineEdit {
                         background-color: #2e1065;
@@ -274,6 +297,23 @@ class PropertyInspector(QWidget):
                         font-family: 'Consolas', 'Segoe UI', monospace;
                         font-weight: bold;
                         font-size: 11px;
+                    }
+                """)
+                btn_type.setText("$ Var ▾")
+                btn_type.setToolTip("Data Type: Variable ($var). Click to change type or select variable.")
+                btn_type.setStyleSheet("""
+                    QPushButton {
+                        background-color: #3b0764;
+                        color: #e9d5ff;
+                        font-weight: bold;
+                        font-size: 10px;
+                        border: 1px solid #9333ea;
+                        border-radius: 4px;
+                        padding: 3px 7px;
+                    }
+                    QPushButton:hover {
+                        background-color: #581c87;
+                        border-color: #c084fc;
                     }
                 """)
             else:
@@ -291,8 +331,45 @@ class PropertyInspector(QWidget):
                         border-color: #38bdf8;
                     }
                 """)
+                type_label = "123 Int ▾" if curr_t == "int" else ("0.0 Float ▾" if curr_t == "float" else "abc Str ▾")
+                btn_type.setText(type_label)
+                btn_type.setToolTip(f"Data Type: {curr_t.capitalize()} (Default: {default_type}). Click to switch type or pick variable.")
+                btn_type.setStyleSheet("""
+                    QPushButton {
+                        background-color: #1e293b;
+                        color: #94a3b8;
+                        font-weight: 600;
+                        font-size: 10px;
+                        border: 1px solid #475569;
+                        border-radius: 4px;
+                        padding: 3px 7px;
+                    }
+                    QPushButton:hover {
+                        background-color: #334155;
+                        color: #f1f5f9;
+                        border-color: #64748b;
+                    }
+                """)
 
         update_style()
+
+        # Handle mouse wheel scrolling for quick integer/number adjustment (spinbox feel)
+        def handle_wheel(event: QWheelEvent):
+            txt = edit.text().strip()
+            if not txt.startswith("$"):
+                try:
+                    val = int(txt) if "." not in txt else float(txt)
+                    step = 10 if (event.modifiers() & Qt.KeyboardModifier.ShiftModifier) else 1
+                    delta = 1 if event.angleDelta().y() > 0 else -1
+                    new_val = val + (delta * step)
+                    edit.setText(str(int(new_val) if isinstance(val, int) else round(new_val, 2)))
+                    event.accept()
+                    return
+                except ValueError:
+                    pass
+            QLineEdit.wheelEvent(edit, event)
+
+        edit.wheelEvent = handle_wheel
 
         def on_text(txt):
             update_style()
@@ -313,28 +390,7 @@ class PropertyInspector(QWidget):
         edit.textChanged.connect(on_text)
         layout.addWidget(edit, 1)
 
-        btn_var = QPushButton("$")
-        btn_var.setToolTip("Insert a variable (e.g. $i, $y, $x)")
-        btn_var.setStyleSheet("""
-            QPushButton {
-                background-color: #1e1b4b;
-                color: #c084fc;
-                font-weight: bold;
-                font-family: 'Segoe UI', sans-serif;
-                font-size: 11px;
-                border: 1px solid #4338ca;
-                border-radius: 4px;
-                padding: 3px 6px;
-                min-width: 20px;
-            }
-            QPushButton:hover {
-                background-color: #312e81;
-                color: #e9d5ff;
-                border-color: #818cf8;
-            }
-        """)
-
-        def show_var_menu():
+        def show_type_menu():
             menu = QMenu(container)
             menu.setStyleSheet("""
                 QMenu {
@@ -351,25 +407,81 @@ class PropertyInspector(QWidget):
                     background-color: #6366f1;
                     color: white;
                 }
+                QMenu::separator {
+                    height: 1px;
+                    background-color: #334155;
+                    margin: 4px 0px;
+                }
             """)
-            known = self._get_known_variables()
-            for v in known:
-                menu.addAction(v, lambda var_name=v: edit.setText(var_name))
+
+            curr_t = get_current_type()
+
+            # Data Type Section Header
+            act_header_dt = menu.addAction("── DATA TYPE (Default: Integer) ──")
+            act_header_dt.setEnabled(False)
+
+            # Option 1: Integer (Default)
+            is_int = (curr_t == "int")
+            act_int = menu.addAction(f"{'✔ ' if is_int else '   '}123 Integer (int)  [Default]")
+            def set_int(_=False):
+                txt = edit.text().strip()
+                if txt.startswith("$") or not txt:
+                    edit.setText("0")
+                else:
+                    try:
+                        edit.setText(str(int(float(txt))))
+                    except ValueError:
+                        edit.setText("0")
+            act_int.triggered.connect(set_int)
+
+            # Option 2: Decimal (Float)
+            is_float = (curr_t == "float")
+            act_float = menu.addAction(f"{'✔ ' if is_float else '   '}0.0 Decimal (float)")
+            def set_float(_=False):
+                txt = edit.text().strip()
+                try:
+                    edit.setText(str(float(txt.lstrip("$") or 0.0)))
+                except ValueError:
+                    edit.setText("0.0")
+            act_float.triggered.connect(set_float)
+
+            # Option 3: Text (String)
+            is_str = (curr_t == "str")
+            act_str = menu.addAction(f"{'✔ ' if is_str else '   '}abc Text (str)")
+            def set_str(_=False):
+                txt = edit.text().strip().lstrip("$")
+                edit.setText(txt or "text")
+            act_str.triggered.connect(set_str)
 
             menu.addSeparator()
-            def add_custom_var():
-                name, ok = QInputDialog.getText(container, "Insert Variable", "Variable name (e.g. my_var or $y):")
+
+            # Variable Section Header
+            act_header_var = menu.addAction("── INSERT VARIABLE ($) ──")
+            act_header_var.setEnabled(False)
+
+            known = self._get_known_variables()
+            for v in known:
+                is_active = (edit.text().strip() == v)
+                act_v = menu.addAction(f"{'✔ ' if is_active else '   '}$ {v}")
+                act_v.triggered.connect(lambda checked=False, var_name=v: edit.setText(var_name))
+
+            menu.addSeparator()
+
+            def add_custom_var(_=False):
+                name, ok = QInputDialog.getText(container, "Insert Variable", "Variable name (e.g. count or $y):")
                 if ok and name.strip():
                     vn = name.strip()
                     if not vn.startswith("$"):
                         vn = f"${vn}"
                     edit.setText(vn)
 
-            menu.addAction("➕ Custom Variable...", add_custom_var)
-            menu.exec(btn_var.mapToGlobal(QPoint(0, btn_var.height())))
+            act_cust = menu.addAction("➕ Custom Variable...")
+            act_cust.triggered.connect(add_custom_var)
 
-        btn_var.clicked.connect(show_var_menu)
-        layout.addWidget(btn_var)
+            menu.exec(btn_type.mapToGlobal(QPoint(0, btn_type.height())))
+
+        btn_type.clicked.connect(lambda checked=False: show_type_menu())
+        layout.addWidget(btn_type)
 
         return container, edit
 
