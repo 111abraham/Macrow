@@ -816,48 +816,50 @@
     "Macro 1": {
       "steps": [
         {
-          "id": "a139f9e0",
+          "id": "a282aff4",
+          "type": "click",
+          "next": "b0c51dd2",
+          "x": -1238,
+          "y": 763,
+          "button": "left",
+          "dt": 100
+        },
+        {
+          "id": "b0c51dd2",
           "type": "loop_count",
           "count": 5,
           "infinite": true,
           "var_name": "i",
-          "body_next": "97e5e68d",
+          "body_next": "c5f173bd",
           "next": null,
-          "dt": 10
+          "dt": 110
         },
         {
-          "id": "97e5e68d",
+          "id": "c5f173bd",
           "type": "pixel_color",
           "x": 500,
           "y": 300,
-          "color": "#FFAA00",
-          "tolerance": 15,
+          "color": "#ACACAC",
+          "tolerance": 3,
           "use_region": true,
-          "region_x": -1316,
-          "region_y": 79,
-          "region_w": 248,
-          "region_h": 375,
-          "found_next": "61564ffb",
-          "miss_next": "a139f9e0",
-          "dt": 30
+          "region_x": -1884,
+          "region_y": 732,
+          "region_w": 67,
+          "region_h": 170,
+          "found_next": "b6a2189d",
+          "miss_next": "b0c51dd2",
+          "dt": 130
         },
         {
-          "id": "61564ffb",
+          "id": "b6a2189d",
           "type": "key_press",
-          "next": "bc90e261",
-          "key": "Windows Key",
-          "vk": 91,
-          "dt": 80
-        },
-        {
-          "id": "bc90e261",
-          "type": "delay",
-          "next": "a139f9e0",
-          "duration": 500,
-          "dt": 580
+          "next": "b0c51dd2",
+          "key": "Space",
+          "vk": 32,
+          "dt": 180
         }
       ],
-      "duration": 580,
+      "duration": 180,
       "graph_data": {
         "nodes": [
           {
@@ -866,8 +868,8 @@
             "node_type": "start",
             "title": "▶ Start",
             "pos": [
-              638.3708223063522,
-              -767.6665975618597
+              476.5994025539528,
+              -193.40107443193045
             ],
             "bypassed": false,
             "properties": {}
@@ -878,8 +880,8 @@
             "node_type": "loop_count",
             "title": "🔁 Repeat Zone (Loop)",
             "pos": [
-              691.9762398390449,
-              131.6530875642703
+              539.1864167141382,
+              128.46996624916812
             ],
             "bypassed": false,
             "properties": {
@@ -895,8 +897,8 @@
             "node_type": "hotkey",
             "title": "⌨ Key Combination",
             "pos": [
-              1560.022300464591,
-              182.84600691724086
+              1407.2324773396842,
+              179.66288560213866
             ],
             "bypassed": false,
             "properties": {
@@ -910,8 +912,8 @@
             "node_type": "wait_image",
             "title": "⏱ Wait For Image",
             "pos": [
-              799.4706512142463,
-              189.18440430998157
+              646.6808280893397,
+              186.00128299487938
             ],
             "bypassed": false,
             "properties": {
@@ -962,8 +964,8 @@
             "node_type": "wait_image",
             "title": "⏱ Wait For Image",
             "pos": [
-              1092.93761831019,
-              301.81493163995555
+              940.1477951852833,
+              298.6318103248534
             ],
             "bypassed": false,
             "properties": {
@@ -982,8 +984,8 @@
             "node_type": "wait_image",
             "title": "⏱ Wait For Image",
             "pos": [
-              1394.891004811005,
-              405.1537513896294
+              1242.1011816860982,
+              401.9706300745272
             ],
             "bypassed": false,
             "properties": {
@@ -1002,8 +1004,8 @@
             "node_type": "wait_image",
             "title": "⏱ Wait For Image",
             "pos": [
-              1652.986228662255,
-              527.0564387925452
+              1500.1964055373483,
+              523.873317477443
             ],
             "bypassed": false,
             "properties": {
@@ -1022,8 +1024,8 @@
             "node_type": "wait_image",
             "title": "⏱ Wait For Image",
             "pos": [
-              1917.4306514058462,
-              652.4665946381313
+              1764.6408282809396,
+              649.283473323029
             ],
             "bypassed": false,
             "properties": {
@@ -1143,8 +1145,8 @@
             "node_type": "hotkey",
             "title": "⌨ Key Combination",
             "pos": [
-              1688.690229183724,
-              294.72434005960935
+              1535.9004060588175,
+              291.5412187445072
             ],
             "bypassed": false,
             "properties": {
@@ -1158,8 +1160,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              1104.1980993586935,
-              184.1262400753152
+              951.4082762337869,
+              180.943118760213
             ],
             "bypassed": false,
             "properties": {
@@ -1173,8 +1175,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              1370.9486832886043,
-              289.257352565339
+              1218.1588601636977,
+              286.07423125023683
             ],
             "bypassed": false,
             "properties": {
@@ -1188,8 +1190,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              1645.544872628218,
-              414.78703912059103
+              1492.7550495033113,
+              411.6039178054889
             ],
             "bypassed": false,
             "properties": {
@@ -1203,8 +1205,8 @@
             "node_type": "hotkey",
             "title": "⌨ Key Combination",
             "pos": [
-              1884.8303644263056,
-              402.99369471351434
+              1732.040541301399,
+              399.8105733984122
             ],
             "bypassed": false,
             "properties": {
@@ -1218,8 +1220,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              1927.0451947283707,
-              535.6878184841183
+              1774.255371603464,
+              532.5046971690161
             ],
             "bypassed": false,
             "properties": {
@@ -1233,8 +1235,8 @@
             "node_type": "hotkey",
             "title": "⌨ Key Combination",
             "pos": [
-              2164.526197282227,
-              536.5258987866638
+              2011.73637415732,
+              533.3427774715616
             ],
             "bypassed": false,
             "properties": {
@@ -1248,8 +1250,8 @@
             "node_type": "hotkey",
             "title": "⌨ Key Combination",
             "pos": [
-              2437.5532655399,
-              682.4541594071444
+              2284.7634424149937,
+              679.2710380920422
             ],
             "bypassed": false,
             "properties": {
@@ -1263,8 +1265,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              2200.072262986044,
-              681.616079104599
+              2047.2824398611365,
+              678.4329577894968
             ],
             "bypassed": false,
             "properties": {
@@ -1303,29 +1305,6 @@
               "action_type": "key_up",
               "hold_duration": 0,
               "auto_repeat": true
-            }
-          },
-          {
-            "id": "34e1656a",
-            "class_name": "PixelColorNodeItem",
-            "node_type": "pixel_color",
-            "title": "🎨 Pixel Color Check",
-            "pos": [
-              1340.685489043478,
-              -962.7657865234128
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "pixel_color",
-              "x": -1200,
-              "y": 266,
-              "color": "#FFAA00",
-              "tolerance": 15,
-              "use_region": true,
-              "region_x": -1284,
-              "region_y": 97,
-              "region_w": 230,
-              "region_h": 345
             }
           },
           {
@@ -1405,13 +1384,154 @@
               "action_type": "pixel_color",
               "x": 500,
               "y": 300,
-              "color": "#FFAA00",
+              "color": "#FFF000",
               "tolerance": 15,
               "use_region": true,
-              "region_x": -1316,
-              "region_y": 79,
-              "region_w": 248,
-              "region_h": 375
+              "region_x": -1423,
+              "region_y": 106,
+              "region_w": 297,
+              "region_h": 379
+            }
+          },
+          {
+            "id": "b0c51dd2",
+            "class_name": "LoopNodeItem",
+            "node_type": "loop_count",
+            "title": "🔁 Repeat Zone (Loop)",
+            "pos": [
+              949.2823752947157,
+              -218.9032528395797
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "loop_count",
+              "infinite": true,
+              "count": 5,
+              "var_name": "i"
+            }
+          },
+          {
+            "id": "c5f173bd",
+            "class_name": "PixelColorNodeItem",
+            "node_type": "pixel_color",
+            "title": "🎨 Pixel Color Check",
+            "pos": [
+              1047.0563076303254,
+              -178.77717421826935
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "pixel_color",
+              "x": 500,
+              "y": 300,
+              "color": "#ACACAC",
+              "tolerance": 3,
+              "use_region": true,
+              "region_x": -1884,
+              "region_y": 732,
+              "region_w": 67,
+              "region_h": 170
+            }
+          },
+          {
+            "id": "b6a2189d",
+            "class_name": "ActionNodeItem",
+            "node_type": "key_press",
+            "title": "⌨ Key Press (Tap)",
+            "pos": [
+              1302.8189897480868,
+              -162.9513846753435
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "key_press",
+              "key": "Space",
+              "vk": 32
+            }
+          },
+          {
+            "id": "a282aff4",
+            "class_name": "ActionNodeItem",
+            "node_type": "click",
+            "title": "🖱 Mouse Click",
+            "pos": [
+              709.3390382446521,
+              -213.978282691657
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "click",
+              "x": -1238,
+              "y": 763
+            }
+          },
+          {
+            "id": "5b8e4bb8",
+            "class_name": "PixelColorNodeItem",
+            "node_type": "pixel_color",
+            "title": "🎨 Pixel Color Check",
+            "pos": [
+              1047.0563076303254,
+              -178.77717421826935
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "pixel_color",
+              "x": 500,
+              "y": 300,
+              "color": "#ACACAC",
+              "tolerance": 3,
+              "use_region": true,
+              "region_x": -1884,
+              "region_y": 732,
+              "region_w": 67,
+              "region_h": 170
+            }
+          },
+          {
+            "id": "65f41f39",
+            "class_name": "PixelColorNodeItem",
+            "node_type": "pixel_color",
+            "title": "🎨 Pixel Color Check",
+            "pos": [
+              1047.0563076303254,
+              -178.77717421826935
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "pixel_color",
+              "x": 500,
+              "y": 300,
+              "color": "#ACACAC",
+              "tolerance": 3,
+              "use_region": true,
+              "region_x": -1884,
+              "region_y": 766,
+              "region_w": 67,
+              "region_h": 137
+            }
+          },
+          {
+            "id": "6a65bb05",
+            "class_name": "PixelColorNodeItem",
+            "node_type": "pixel_color",
+            "title": "🎨 Pixel Color Check",
+            "pos": [
+              665.4670396019292,
+              -424.275164837937
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "pixel_color",
+              "x": 500,
+              "y": 300,
+              "color": "#ACACAC",
+              "tolerance": 3,
+              "use_region": true,
+              "region_x": -1884,
+              "region_y": 732,
+              "region_w": 67,
+              "region_h": 170
             }
           }
         ],
@@ -1585,12 +1705,6 @@
             "to_socket_idx": 0
           },
           {
-            "from_node": "d1b64dc2",
-            "from_socket_idx": 0,
-            "to_node": "a139f9e0",
-            "to_socket_idx": 0
-          },
-          {
             "from_node": "a139f9e0",
             "from_socket_idx": 0,
             "to_node": "97e5e68d",
@@ -1607,12 +1721,42 @@
             "from_socket_idx": 1,
             "to_node": "a139f9e0",
             "to_socket_idx": 1
+          },
+          {
+            "from_node": "c5f173bd",
+            "from_socket_idx": 0,
+            "to_node": "b6a2189d",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "b0c51dd2",
+            "from_socket_idx": 0,
+            "to_node": "c5f173bd",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "c5f173bd",
+            "from_socket_idx": 1,
+            "to_node": "b0c51dd2",
+            "to_socket_idx": 1
+          },
+          {
+            "from_node": "d1b64dc2",
+            "from_socket_idx": 0,
+            "to_node": "a282aff4",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "a282aff4",
+            "from_socket_idx": 0,
+            "to_node": "b0c51dd2",
+            "to_socket_idx": 0
           }
         ],
         "groups": [],
         "custom_variables": [
-          "$count",
-          "$y"
+          "$y",
+          "$count"
         ]
       }
     },
@@ -2713,14 +2857,14 @@
   },
   "instances": {
     "1": {
-      "x": -823,
-      "y": 742,
+      "x": 1289,
+      "y": 232,
       "minimized": false,
       "selected_macro": "Macro 1",
       "speed": 0.98,
       "repeat": false,
-      "width": 515,
-      "height": 538
+      "width": 721,
+      "height": 688
     }
   },
   "hotkeys": {

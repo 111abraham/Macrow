@@ -64,14 +64,46 @@ class PropertyInspector(QWidget):
 
         # Bounding box highlight overlay for screen visualization
         self.region_overlay = RegionHighlightOverlay()
+        self._updating_from_overlay = False
+        self.edit_rx = None
+        self.edit_ry = None
+        self.edit_rw = None
+        self.edit_rh = None
+        self.region_overlay.region_changed.connect(self._on_overlay_region_changed)
+        self.region_overlay.region_committed.connect(self._on_overlay_region_changed)
 
         self._init_ui()
 
         # Connect scene selection change
         self.node_scene.node_selected.connect(self.set_node)
 
+    def _on_overlay_region_changed(self, x: int, y: int, w: int, h: int):
+        """Syncs on-screen interactive overlay edge dragging/resizing with Property Inspector."""
+        target = self.current_node
+        if isinstance(target, PixelColorNodeItem) and target.properties.get("use_region", False):
+            self._updating_from_overlay = True
+            try:
+                target.properties["region_x"] = x
+                target.properties["region_y"] = y
+                target.properties["region_w"] = w
+                target.properties["region_h"] = h
+                if getattr(self, "edit_rx", None):
+                    self.edit_rx.setText(str(x))
+                if getattr(self, "edit_ry", None):
+                    self.edit_ry.setText(str(y))
+                if getattr(self, "edit_rw", None):
+                    self.edit_rw.setText(str(w))
+                if getattr(self, "edit_rh", None):
+                    self.edit_rh.setText(str(h))
+                target.update()
+                self.property_changed.emit()
+            finally:
+                self._updating_from_overlay = False
+
     def _update_region_overlay(self, node: Optional[BaseNodeItem] = None):
         """Highlights the node's search bounding box on screen if use_region is enabled."""
+        if getattr(self, "_updating_from_overlay", False):
+            return
         target = node if node is not None else self.current_node
         if isinstance(target, PixelColorNodeItem):
             if target.properties.get("use_region", False):
@@ -220,6 +252,10 @@ class PropertyInspector(QWidget):
         self._show_empty_state()
 
     def _clear_content(self):
+        self.edit_rx = None
+        self.edit_ry = None
+        self.edit_rw = None
+        self.edit_rh = None
         while self.content_layout.count():
             item = self.content_layout.takeAt(0)
             w = item.widget()
@@ -1467,6 +1503,12 @@ class PropertyInspector(QWidget):
         row_reg_wh.addWidget(widget_rh)
         reg_layout.addLayout(row_reg_wh)
 
+        # Cache editors so on-screen drag resizing updates inspector inputs live
+        self.edit_rx = edit_rx
+        self.edit_ry = edit_ry
+        self.edit_rw = edit_rw
+        self.edit_rh = edit_rh
+
         row_reg_btns = QHBoxLayout()
         btn_drag_box = QPushButton("📐 Drag Bounding Box on Screen")
         btn_drag_box.setStyleSheet("""
@@ -1611,14 +1653,16 @@ class PropertyInspector(QWidget):
                 node.properties["region_y"] = y
                 node.properties["region_w"] = w
                 node.properties["region_h"] = h
-                if hasattr(snipper, "full_screenshot") and not snipper.full_screenshot.isNull():
+                c_hex = getattr(snipper, "last_sampled_color", None)
+                if not c_hex and hasattr(snipper, "full_screenshot") and not snipper.full_screenshot.isNull():
                     lx = x - getattr(snipper, "vx", 0) + w // 2
                     ly = y - getattr(snipper, "vy", 0) + h // 2
                     if 0 <= lx < snipper.full_screenshot.width() and 0 <= ly < snipper.full_screenshot.height():
                         c_hex = snipper.full_screenshot.pixelColor(lx, ly).name().upper()
-                        edit_hex.setText(c_hex)
-                        node.properties["color"] = c_hex
-                        swatch_lbl.setStyleSheet(f"background-color: {c_hex}; border: 1px solid #ffffff; border-radius: 4px;")
+                if c_hex:
+                    edit_hex.setText(c_hex)
+                    node.properties["color"] = c_hex
+                    swatch_lbl.setStyleSheet(f"background-color: {c_hex}; border: 1px solid #ffffff; border-radius: 4px;")
                 node.update()
                 self._update_region_overlay(node)
                 self.property_changed.emit()

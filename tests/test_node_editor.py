@@ -1499,6 +1499,63 @@ class TestNodeEditor(unittest.TestCase):
         # Clean up
         inspector.region_overlay.close()
 
+    def test_safe_overlay_color_distance(self):
+        from app.ui.indicator import get_safe_overlay_color
+        # Test across various shades (dark, bright, vibrant, gray)
+        for hex_code in ["#535353", "#FFFFFF", "#000000", "#FF0000", "#00FF00", "#0000FF", "#38BDF8"]:
+            safe, target = get_safe_overlay_color(hex_code)
+            self.assertTrue(safe.isValid())
+            self.assertTrue(target.isValid())
+            dist = abs(safe.red() - target.red()) + abs(safe.green() - target.green()) + abs(safe.blue() - target.blue())
+            # Manhattan distance should be comfortably large (> 120) to prevent false positives
+            self.assertGreater(dist, 120, f"Distance {dist} too low for {hex_code}")
+
+    def test_region_highlight_interactive_drag_sync(self):
+        from app.ui.node_editor.inspector import PropertyInspector
+        scene = NodeScene()
+        inspector = PropertyInspector(scene)
+        pnode = PixelColorNodeItem(properties={
+            "use_region": True,
+            "region_x": 100,
+            "region_y": 120,
+            "region_w": 200,
+            "region_h": 150,
+            "color": "#38BDF8",
+        })
+        scene.add_node(pnode)
+        inspector.set_node(pnode)
+
+        # Trigger overlay region change signal (simulating drag / resize)
+        inspector.region_overlay.region_changed.emit(140, 160, 250, 190)
+
+        self.assertEqual(pnode.properties["region_x"], 140)
+        self.assertEqual(pnode.properties["region_y"], 160)
+        self.assertEqual(pnode.properties["region_w"], 250)
+        self.assertEqual(pnode.properties["region_h"], 190)
+        if inspector.edit_rx:
+            self.assertEqual(inspector.edit_rx.text(), "140")
+            self.assertEqual(inspector.edit_ry.text(), "160")
+            self.assertEqual(inspector.edit_rw.text(), "250")
+            self.assertEqual(inspector.edit_rh.text(), "190")
+
+        inspector.region_overlay.close()
+
+    def test_coordinate_eye_dropper_multi_overlay_init(self):
+        from app.ui.eye_dropper import CoordinateEyeDropper
+        dropper = CoordinateEyeDropper(parent=None)
+        # Should create overlays matching connected screens
+        self.assertGreaterEqual(len(dropper.overlays), 1)
+
+        picked_data = []
+        dropper.coord_picked.connect(lambda x, y, h, rgb: picked_data.append((x, y, h, rgb)))
+        dropper.commit(123, 456, "#AABBCC", (170, 187, 204))
+
+        self.assertEqual(len(picked_data), 1)
+        self.assertEqual(picked_data[0], (123, 456, "#AABBCC", (170, 187, 204)))
+        self.assertEqual(dropper.cur_x, 123)
+        self.assertEqual(dropper.cur_y, 456)
+        self.assertEqual(dropper.cur_hex, "#AABBCC")
+
 
 if __name__ == "__main__":
     unittest.main()

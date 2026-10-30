@@ -28,6 +28,7 @@ Desktop.ini
 # Temporary and test artifacts
 *.tmp
 *.bak
+*.old.exe
 *.log
 test_red.png
 test_config.json
