@@ -299,6 +299,10 @@ class ActionNodeItem(BaseNodeItem):
             if at == "key_press":
                 return f"Tap Key: {disp}\n(Press & Release)"
             elif at == "key_down":
+                hold_dur = self.properties.get("hold_duration", 0)
+                rep = " [Repeat]" if self.properties.get("auto_repeat", False) else ""
+                if hold_dur:
+                    return f"Hold Key: {disp}\n({hold_dur}ms{rep})"
                 return f"Hold Key: {disp}\n(Key Down)"
             else:
                 return f"Release Key: {disp}\n(Key Up)"
@@ -367,8 +371,14 @@ class VisionNodeItem(BaseNodeItem):
 
     def _load_thumbnail(self):
         tmpl = self.properties.get("template", "")
-        if tmpl and os.path.exists(tmpl):
-            pix = QPixmap(tmpl)
+        raw_paths = [p.strip() for p in str(tmpl).split(";") if p.strip()]
+        valid_paths = [p for p in raw_paths if os.path.exists(p)]
+        if not valid_paths:
+            self.thumbnail_pixmap = None
+            return
+
+        if len(valid_paths) == 1:
+            pix = QPixmap(valid_paths[0])
             if not pix.isNull():
                 self.thumbnail_pixmap = pix.scaled(
                     120, 44, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation
@@ -376,21 +386,63 @@ class VisionNodeItem(BaseNodeItem):
             else:
                 self.thumbnail_pixmap = None
         else:
-            self.thumbnail_pixmap = None
+            # Composite thumbnail for multi-image OR variants
+            comp_w = 126
+            comp_h = 44
+            composite = QPixmap(comp_w, comp_h)
+            composite.fill(QColor(15, 23, 42))
+            p = QPainter(composite)
+            count = min(3, len(valid_paths))
+            sub_w = comp_w // count
+            for idx in range(count):
+                sub_pix = QPixmap(valid_paths[idx])
+                if not sub_pix.isNull():
+                    scaled = sub_pix.scaled(
+                        sub_w - 4, comp_h - 4, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation
+                    )
+                    sx = idx * sub_w + (sub_w - scaled.width()) // 2
+                    sy = (comp_h - scaled.height()) // 2
+                    p.drawPixmap(sx, sy, scaled)
+                if idx < count - 1:
+                    p.setPen(QColor(51, 65, 85))
+                    p.drawLine((idx + 1) * sub_w, 4, (idx + 1) * sub_w, comp_h - 4)
+            p.end()
+            self.thumbnail_pixmap = composite
 
-    def update_template(self, image_path: str):
-        self.properties["template"] = image_path
+    def update_template(self, image_path: str, append: bool = False):
+        if append:
+            cur = str(self.properties.get("template", "")).strip()
+            cur_list = [p.strip() for p in cur.split(";") if p.strip()]
+            if image_path not in cur_list:
+                cur_list.append(image_path)
+            self.properties["template"] = ";".join(cur_list)
+        else:
+            self.properties["template"] = image_path
+        self._load_thumbnail()
+        self.update()
+
+    def remove_template_variant(self, image_path: str):
+        cur = str(self.properties.get("template", "")).strip()
+        cur_list = [p.strip() for p in cur.split(";") if p.strip() and p.strip() != image_path]
+        self.properties["template"] = ";".join(cur_list)
         self._load_thumbnail()
         self.update()
 
     def get_summary_text(self) -> str:
         conf = int(self.properties.get("confidence", 0.85) * 100)
         tout = float(self.properties.get("timeout", 5.0))
+        tmpl = self.properties.get("template", "")
+        n_tmpl = len([p.strip() for p in str(tmpl).split(";") if p.strip()])
+        tmpl_info = f"{n_tmpl} Imgs (OR)" if n_tmpl > 1 else ""
+
         if self.properties.get("break_loop_on_found", False):
-            return f"🎯 Loop Until Found • {tout:g}s • ≥{conf}%"
+            extra = f" • {tmpl_info}" if tmpl_info else ""
+            return f"🎯 Loop Until Found • {tout:g}s • ≥{conf}%{extra}"
         act = str(self.properties.get("action", "none")).capitalize()
         btn = str(self.properties.get("button", "left")).capitalize()
         act_str = f"{act} ({btn})" if act != "None" else "None"
+        if tmpl_info:
+            return f"Wait: {tout:g}s • ≥{conf}% • {tmpl_info}"
         return f"Wait: {tout:g}s  •  ≥{conf}%  •  {act_str}"
 
     def paint(self, painter: QPainter, option, widget=None):

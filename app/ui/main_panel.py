@@ -142,16 +142,14 @@ class MacrowPanel(QWidget):
         screen = QGuiApplication.primaryScreen()
         if screen:
             avail = screen.availableGeometry()
-            avail_w = avail.width()
             avail_h = avail.height()
-            self.setMaximumWidth(min(700, avail_w - 40))
-            self.setMaximumHeight(max(300, avail_h - 40))
             default_h = max(260, min(440, avail_h - 100))
         else:
             default_h = 440
 
         self.resize(320, default_h)
         self._unminimized_height = default_h
+        self._normal_geom = self.geometry()
 
     def showEvent(self, event):
         super().showEvent(event)
@@ -517,6 +515,14 @@ class MacrowPanel(QWidget):
 
         layout.addLayout(repeat_row)
 
+        # Click-through overlay option (off by default so pause/stop buttons remain fully clickable)
+        opts_row = QHBoxLayout()
+        self.click_through_check = QCheckBox("Click-through overlay")
+        self.click_through_check.setToolTip("When checked, mouse clicks pass through this window to underlying apps during playback.\nStop with Alt+S or F12.")
+        opts_row.addWidget(self.click_through_check)
+        opts_row.addStretch()
+        layout.addLayout(opts_row)
+
         # Status badge row
         status_row = QHBoxLayout()
         status_lbl = QLabel("Status:")
@@ -755,12 +761,18 @@ class MacrowPanel(QWidget):
         self.macro_combo.setEnabled(not is_playing)
         self.del_macro_btn.setEnabled(not is_playing)
 
+        use_click_through = getattr(self, "click_through_check", None) and self.click_through_check.isChecked()
+
         if state == MacroPlayer.STATE_PLAYING:
             self.pause_btn.setText("⏸ Pause")
-            # Always hard-coded click-through: clicks pass directly to the underlying app
-            set_window_click_through(self.winId(), True)
-            self.status_badge.setText("SEE-THROUGH (Alt+S)")
-            self.status_badge.setObjectName("StatusBadgeRunning")
+            if use_click_through:
+                set_window_click_through(self.winId(), True)
+                self.status_badge.setText("SEE-THROUGH (Alt+S)")
+                self.status_badge.setObjectName("StatusBadgeRunning")
+            else:
+                set_window_click_through(self.winId(), False)
+                self.status_badge.setText("PLAYING")
+                self.status_badge.setObjectName("StatusBadgeRunning")
         elif state == MacroPlayer.STATE_PAUSED:
             self.status_badge.setText("PAUSED")
             self.status_badge.setObjectName("StatusBadgeWarning")
@@ -927,12 +939,21 @@ class MacrowPanel(QWidget):
 
     def showNormal(self):
         """Restore window to floating normal state with configured size bounds."""
-        screen = QGuiApplication.primaryScreen()
-        if screen:
-            avail = screen.availableGeometry()
-            self.setMaximumWidth(min(700, avail.width() - 40))
-            self.setMaximumHeight(max(300, avail.height() - 40))
         super().showNormal()
+        if hasattr(self, "_normal_geom") and self._normal_geom and self._normal_geom.isValid():
+            screen = (
+                QGuiApplication.screenAt(self._normal_geom.center())
+                or QGuiApplication.screenAt(QCursor.pos())
+                or QGuiApplication.primaryScreen()
+            )
+            if screen:
+                avail = screen.availableGeometry()
+                norm = QRect(self._normal_geom)
+                norm_w = min(norm.width(), avail.width())
+                norm_h = min(norm.height(), avail.height())
+                norm_x = max(avail.left(), min(norm.x(), avail.right() - norm_w))
+                norm_y = max(avail.top(), min(norm.y(), avail.bottom() - norm_h))
+                self.setGeometry(norm_x, norm_y, norm_w, norm_h)
         if hasattr(self, "max_btn"):
             self.max_btn.setText("□")
             self.max_btn.setToolTip("Maximize Macrow (or double-click title bar)")
@@ -981,11 +1002,6 @@ class MacrowPanel(QWidget):
         on_right = x >= w - m
         on_top = y <= m
         on_bottom = y >= h - m
-
-        # Title bar area is dedicated to window dragging, not top-edge resize
-        if hasattr(self, "title_bar") and y <= self.title_bar.height() + 2:
-            if not (on_left or on_right):
-                return None
 
         if on_bottom and on_right:
             return "bottom_right"
@@ -1061,13 +1077,36 @@ class MacrowPanel(QWidget):
     def _handle_drag_move(self, global_pos: QPoint):
         """Handle window dragging with smooth tear-down from maximized state."""
         if self.isMaximized():
-            orig_w = getattr(self, "_normal_geom", None).width() if hasattr(self, "_normal_geom") else 340
-            self.showNormal()
-            cursor_x = global_pos.x()
-            new_x = cursor_x - orig_w // 2
-            new_y = max(0, global_pos.y() - 10)
-            self.move(new_x, new_y)
+            if hasattr(self, "_drag_start_global"):
+                dy = global_pos.y() - self._drag_start_global.y()
+                dx = abs(global_pos.x() - self._drag_start_global.x())
+                if dy < 12 and dx < 15:
+                    return
+
+            screen = QGuiApplication.screenAt(global_pos) or QGuiApplication.primaryScreen()
+            avail = screen.availableGeometry() if screen else QRect(0, 0, 1920, 1080)
+
+            orig_w = (
+                self._normal_geom.width()
+                if (hasattr(self, "_normal_geom") and self._normal_geom and self._normal_geom.isValid())
+                else 340
+            )
+            orig_h = (
+                self._normal_geom.height()
+                if (hasattr(self, "_normal_geom") and self._normal_geom and self._normal_geom.isValid())
+                else 440
+            )
+            orig_w = max(self.minimumWidth(), min(orig_w, avail.width() - 40))
+            orig_h = max(self.minimumHeight(), min(orig_h, avail.height() - 40))
+
+            super().showNormal()
+            new_x = max(avail.left(), min(global_pos.x() - orig_w // 2, avail.right() - orig_w))
+            new_y = max(avail.top(), global_pos.y() - 10)
+            self.setGeometry(new_x, new_y, orig_w, orig_h)
             self._drag_start_pos = QPoint(orig_w // 2, 10)
+            if hasattr(self, "max_btn"):
+                self.max_btn.setText("□")
+                self.max_btn.setToolTip("Maximize Macrow (or double-click title bar)")
             return
 
         new_pos = global_pos - self._drag_start_pos
@@ -1079,7 +1118,7 @@ class MacrowPanel(QWidget):
         self._is_dragging = False
         screen = QGuiApplication.screenAt(global_pos) or QGuiApplication.primaryScreen()
         top_bound = screen.availableGeometry().top() if screen else 0
-        if global_pos.y() <= top_bound + 4 and not self.isMaximized():
+        if global_pos.y() <= top_bound + 8 and not self.isMaximized():
             self.toggle_maximize()
         else:
             self.cfg.update_instance_settings(self.instance_id, x=self.x(), y=self.y())
@@ -1108,14 +1147,14 @@ class MacrowPanel(QWidget):
                 if self._is_resizing:
                     self._handle_resize_move(global_pos)
                     return True
-                if mode:
+                if mode and not self.isMaximized():
                     self._set_resize_cursor(mode)
                     return True
                 else:
                     self.setCursor(Qt.CursorShape.ArrowCursor)
 
             elif ev_type == QEvent.Type.MouseButtonPress:
-                if event.button() == Qt.MouseButton.LeftButton and mode:
+                if event.button() == Qt.MouseButton.LeftButton and mode and not self.isMaximized():
                     self._is_resizing = mode
                     self._resize_start_pos = global_pos
                     self._resize_start_geom = self.geometry()
@@ -1132,18 +1171,18 @@ class MacrowPanel(QWidget):
         if event.button() == Qt.MouseButton.LeftButton:
             pos = event.position().toPoint()
 
-            # Dragging title bar has priority over edge-resizing
-            if pos.y() <= self.title_bar.height() + 4 and not (pos.x() <= self.RESIZE_MARGIN or pos.x() >= self.width() - self.RESIZE_MARGIN):
-                self._is_dragging = True
-                self._drag_start_pos = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
-                event.accept()
-                return
-
             mode = self._get_resize_mode(pos)
-            if mode:
+            if mode and not self.isMaximized():
                 self._is_resizing = mode
                 self._resize_start_pos = event.globalPosition().toPoint()
                 self._resize_start_geom = self.geometry()
+                event.accept()
+                return
+
+            if hasattr(self, "title_bar") and pos.y() <= self.title_bar.height() + 4:
+                self._is_dragging = True
+                self._drag_start_pos = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+                self._drag_start_global = event.globalPosition().toPoint()
                 event.accept()
                 return
         super().mousePressEvent(event)

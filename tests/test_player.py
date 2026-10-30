@@ -115,6 +115,33 @@ class TestMacroPlayer(unittest.TestCase):
         # Verify that only miss_action was clicked, not found_action
         self.mock_sim.click.assert_called_once_with(300, 400, "left")
 
+    def test_delay_responsive_stop(self):
+        # 10 second delay step must abort immediately on stop()
+        steps = [
+            {"id": "step1", "type": "delay", "duration": 10000, "next": None},
+        ]
+        t0 = time.perf_counter()
+        self.player.play(steps, speed=1.0, repeat=False)
+        time.sleep(0.04)
+        self.player.stop()
+        elapsed = time.perf_counter() - t0
+        self.assertLess(elapsed, 0.4)
+        self.assertFalse(self.player.is_playing())
+
+    def test_key_down_hold_and_auto_repeat(self):
+        # key_down with 100ms hold and auto_repeat
+        step = {
+            "type": "key_down",
+            "key": "Space",
+            "vk": 32,
+            "hold_duration": 100,
+            "auto_repeat": True,
+        }
+        self.player._execute_step(step)
+        # Should have called key_down multiple times (initial + pulses) and key_up once
+        self.assertGreaterEqual(self.mock_sim.key_down.call_count, 2)
+        self.mock_sim.key_up.assert_called_with(32)
+
     def test_unplugged_node_skipped(self):
         steps = [
             {"id": "step1", "type": "click", "x": 50, "y": 50, "button": "left", "next": "step2"},

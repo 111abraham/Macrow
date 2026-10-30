@@ -215,8 +215,9 @@ class MacroPlayer:
             if self._stop_requested.is_set():
                 break
 
-            # Execute the step
-            self._execute_step(step)
+            # Execute the step (linear pass already waited target_dt_ms, so delay step does not double-sleep)
+            if step.get("type") != "delay":
+                self._execute_step(step)
 
             if self.on_progress:
                 self.on_progress(i + 1, total_steps)
@@ -412,6 +413,27 @@ class MacroPlayer:
             vk = self._resolve_vk(step)
             if vk is not None:
                 self.simulator.key_down(vk)
+                hold_dur = self._resolve_coord(step.get("hold_duration", 0), default=0)
+                auto_repeat = bool(step.get("auto_repeat", False))
+                if hold_dur > 0:
+                    wait_sec = (hold_dur / 1000.0) / self.speed
+                    start_t = time.perf_counter()
+                    last_pulse = start_t
+                    while (time.perf_counter() - start_t) < wait_sec:
+                        if self._stop_requested.is_set():
+                            self.simulator.key_up(vk)
+                            return False
+                        if self._pause_requested.is_set():
+                            self._resume_event.wait()
+                            if self._stop_requested.is_set():
+                                self.simulator.key_up(vk)
+                                return False
+                        now = time.perf_counter()
+                        if auto_repeat and (now - last_pulse) >= 0.045:
+                            self.simulator.key_down(vk)
+                            last_pulse = now
+                        time.sleep(0.010)
+                    self.simulator.key_up(vk)
             return True
 
         elif st_type == "key_up":
@@ -424,7 +446,17 @@ class MacroPlayer:
             dur_raw = step.get("duration", 0)
             dur_ms = self._resolve_coord(dur_raw, default=0)
             if dur_ms > 0:
-                time.sleep((dur_ms / 1000.0) / self.speed)
+                wait_sec = (dur_ms / 1000.0) / self.speed
+                start_t = time.perf_counter()
+                while (time.perf_counter() - start_t) < wait_sec:
+                    if self._stop_requested.is_set():
+                        return False
+                    if self._pause_requested.is_set():
+                        self._resume_event.wait()
+                        if self._stop_requested.is_set():
+                            return False
+                    rem = wait_sec - (time.perf_counter() - start_t)
+                    time.sleep(min(max(0.001, rem), 0.015))
             return True
 
         elif st_type in ("find_image", "wait_image", "wait", "waitforimage"):
@@ -442,7 +474,7 @@ class MacroPlayer:
                     template_path,
                     confidence=confidence,
                     timeout_sec=timeout_sec,
-                    poll_interval_sec=0.25,
+                    poll_interval_sec=0.03,
                     region=region,
                     stop_check_fn=lambda: self._stop_requested.is_set(),
                 )

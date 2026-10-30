@@ -94,6 +94,17 @@ class TestVision(unittest.TestCase):
         res = find_template_on_screen("", confidence=0.85)
         self.assertIsNone(res)
 
+    def test_parse_template_targets(self):
+        from app.core.vision import parse_template_targets
+        # Semicolon delimited string
+        targets = parse_template_targets("path1.png; path2.png ;  path3.png")
+        self.assertEqual(targets, ["path1.png", "path2.png", "path3.png"])
+        # List input
+        targets_list = parse_template_targets(["a.png", "b.png"])
+        self.assertEqual(targets_list, ["a.png", "b.png"])
+        # Empty string
+        self.assertEqual(parse_template_targets(""), [])
+
 
 if __name__ == "__main__":
     unittest.main()

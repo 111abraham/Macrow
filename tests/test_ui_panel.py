@@ -220,6 +220,28 @@ class TestUIPanel(unittest.TestCase):
         self.panel._handle_drag_move(QPoint(300, 50))
         self.assertFalse(self.panel.isMaximized())
 
+    def test_top_edge_resize_mode(self):
+        # Cursor at top edge within resize margin must return "top" mode
+        mode = self.panel._get_resize_mode(QPoint(150, 2))
+        self.assertEqual(mode, "top")
+        # Corner top-left and top-right
+        self.assertEqual(self.panel._get_resize_mode(QPoint(2, 2)), "top_left")
+        self.assertEqual(self.panel._get_resize_mode(QPoint(self.panel.width() - 2, 2)), "top_right")
+
+    def test_click_through_toggle_and_player_state(self):
+        # Default: click-through check is unchecked
+        self.assertFalse(self.panel.click_through_check.isChecked())
+        # Transitioning to PLAYING must keep click-through OFF so buttons remain clickable
+        self.panel._on_player_state_changed(self.panel.player.STATE_PLAYING)
+        self.assertEqual(self.panel.status_badge.text(), "PLAYING")
+        self.panel._on_player_state_changed(self.panel.player.STATE_IDLE)
+
+        # When explicitly checked, SEE-THROUGH mode is activated
+        self.panel.click_through_check.setChecked(True)
+        self.panel._on_player_state_changed(self.panel.player.STATE_PLAYING)
+        self.assertEqual(self.panel.status_badge.text(), "SEE-THROUGH (Alt+S)")
+        self.panel._on_player_state_changed(self.panel.player.STATE_IDLE)
+
     def test_panel_taskbar_setup_and_window_state(self):
         from app.core.win32_api import setup_app_window, set_window_topmost
         hwnd = int(self.panel.winId())

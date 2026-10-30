@@ -31,12 +31,12 @@ python build.py
 
 ### 1. Floating, Resizable & Always-on-Top Panel
 - **Always-on-Top**: Floats above all windows and full-screen applications.
-- **Effortless Edge Resizing**: Generous 10px grab zone around all borders plus a dedicated bottom-right resize grip (`QSizeGrip`).
+- **Effortless 8-Direction Edge Resizing**: Generous grab zone around all borders—including top edge, corners, sides, and dedicated bottom-right grip (`QSizeGrip`).
+- **Multi-Screen & Maximize / Restore (`□` / `❐`)**: Full maximize support in the title bar that adapts to any monitor size without artificial width/height warping. Double-clicking the title bar toggles maximize / restore.
+- **Dock-to-Top Aero Snap & Smooth Tear-Off**: Drag the title bar to the top edge of any monitor to automatically snap to full screen; drag downward smoothly to restore floating window size centered on the cursor without crashing.
 - **Live Cursor Readout**: Continuous real-time `(X, Y)` coordinate readout on the title bar that keeps updating across the screen and over the panel itself.
-- **Clickable Opacity Slider**: Adjust transparency from 20% to 100% to see charts and windows behind it—the panel **remains 100% clickable at any opacity level**.
-- **Native Taskbar Integration & Clean Minimization**: Configured with `WS_EX_APPWINDOW` and DWM styles. Minimizes cleanly into the Windows taskbar without leaving residual bottom-left boxes, and suspends topmost during minimization so the taskbar icon stays persistent and reliable.
-- **Maximize / Restore (`□` / `❐`) & Double-Click**: Full maximize support in the title bar that adapts to any monitor size without artificial width capping. Double-clicking the title bar toggles maximize / restore.
-- **Dock-to-Top Aero Snap**: Drag the title bar to the top edge of any monitor to automatically snap to full screen; drag downward to smoothly restore floating window size centered on the cursor.
+- **Clickable Opacity Slider**: Adjust transparency from 20% to 100% to see charts and windows behind it—the panel remains interactive at any opacity level.
+- **Native Taskbar Integration & Clean Minimization**: Configured with `WS_EX_APPWINDOW` and DWM styles. Minimizes cleanly into the Windows taskbar without leaving residual bottom-left boxes.
 - **Smooth Mouse Wheel Scrolling**: Scroll the mouse wheel anywhere over the panel to browse controls smoothly.
 - **Independent Taskbar Entry for Node Customizer**: When opened simultaneously with Macrow, the Node Customizer has its own independent taskbar button and icon for effortless multitasking.
 
@@ -52,18 +52,15 @@ python build.py
 - **Max Step Safeguard**: 6000-step ceiling to prevent runaway memory usage.
 - **Naming Dialog**: Prompt with pre-filled names (`Macro 1`, `Macro 2`...), where **Enter** saves and **Esc** discards.
 
-### 3. Macro Playback Engine (Speed, Loop & Repeat X Times)
-- **Accurate Relative Timing**: Replays steps using exact original relative `dt` timing.
+### 3. Macro Playback Engine (Speed, Loop, Pause/Stop & Click-Through)
+- **Accurate Relative Timing & Interruption**: Replays steps using exact relative `dt` timing with sliced responsive delays (checks stop/pause signals every 15ms).
+- **Fully Interactive Pause & Stop Buttons**: The Pause and Stop buttons are 100% clickable and responsive at all times during playback.
+- **Optional Click-Through Overlay**: Toggleable `Click-through overlay` checkbox allows clicks to pass directly through the panel to the game or desktop beneath whenever desired (`Alt+S` or `F12` to halt).
 - **Speed Slider (0.25x to 3.0x)**: Fast-forward or slow-down macro execution.
 - **Repeat Options**:
   - **Repeat until Stop (loop)**: Continuously loops the macro until you click Stop or press `Alt + S`.
   - **Repeat X Times**: Enter a custom number of repetitions (e.g., 2, 5, 100). The status badge tracks progress (e.g. `Pass 2/5 (18/84)`).
-- **Built-in Click-Through to App During Playback (See-Through Mode)**:
-  - Hard-coded by default: as soon as you press Play, the panel automatically becomes **100% click-through** (`WS_EX_TRANSPARENT`)!
-  - Real OS mouse clicks and drags pass directly through the panel to the trading chart, browser, or game underneath as if the panel isn't even there!
-  - You can still see the coordinates and playback status HUD on screen without any clicks being blocked or intercepted.
-  - When playback finishes or when **Alt + S** (or **F12**) is pressed, click-through is instantly disabled and normal interactive controls return immediately.
-- **Visual Red Dot Indicator**: A non-activating, click-through overlay displays a pulsing red dot at the exact click location during playback.
+- **Visual Red Dot Indicator**: A non-activating overlay displays a pulsing red dot at the exact click location during playback.
 - **Fluid Drags**: Drags replay with held mouse button states and intermediate trajectory steps.
 
 ### 4. 2-Key Emergency Stop & Safety
@@ -105,7 +102,7 @@ Macrow includes a visual node-based macro customizer (Node Editor) that translat
   - **Mouse Actions**: Click, Double Click, Mouse Down (Hold), Mouse Up (Release), Mouse Move (Smooth curve trajectory or Direct Jump), Mouse Wheel Scroll.
   - **Keyboard Actions & Full Key Catalog**:
     - **Key Press (Tap)**: Presses and releases any key with accurate timing.
-    - **Key Down (Hold)**: Holds down any key continuously (e.g. for modifier chords, dragging, or gaming movement).
+    - **Key Down (Hold)**: Holds down any key continuously. Now features direct configurable `Hold Duration (ms)` and `Auto-repeat` typematic pulse emulation (every 45ms) for smooth gaming, movement, and continuous typing without needing external delay chains.
     - **Key Up (Release)**: Releases any held key.
     - **Complete Keyboard Coverage**: All letters (`A`–`Z`), numbers (`0`–`9`), full numeric keypad (`Num 0`–`Num 9`, `Num +`, `Num -`, `Num *`, `Num /`, `Num .`, `Num Enter`, `Num Lock`), function keys (`F1`–`F24`), navigation (`Enter`, `Esc`, `Tab`, `Space`, `Backspace`, `Delete`, `Insert`, `Home`, `End`, `Page Up`, `Page Down`), arrow keys, modifiers (`Shift`, `Ctrl`, `Alt`, `Win`, `Caps Lock`, `Scroll Lock`), symbols (`;`, `=`, `,`, `-`, `.`, `/`, `` ` ``, `[`, `\`, `]`, `'`), and media keys.
     - **Categorized Key Picker & 1-Click Quick Picks**: Categorized dropdown list plus instant 1-click pills for most common keys (`Enter`, `Space`, `Tab`, `Esc`, `Shift`, `Ctrl`, `Alt`, etc.).
@@ -116,7 +113,11 @@ Macrow includes a visual node-based macro customizer (Node Editor) that translat
     - **If / Compare Condition**: Compare variable values against numbers or strings with `True →` and `False →` output paths.
     - **Pixel Color Verification**: Live screen eyedropper samples pixel coordinates and hex color with configurable color tolerance, splitting into `Match →` and `Miss →` branches.
     - **Math & Variable Assignment**: Increment (`+= 1`), Decrement (`-= 1`), Set (`= value`), Add (`+= value`), Subtract, Multiply, and Random range (`rand(min..max)`).
-    - **Vision AI / Screen Search**: Wait for template image on screen with confidence threshold, timeout, and loop breakout.
+    - **Vision AI / Screen Search with Multi-Template OR Recognition**:
+      - **Instant Parallel OR Detection**: Add multiple template variants (e.g. single cactus, double cactus, triple cactus) to a single `Wait For Image` node via `➕ Snip Variant (OR)`. All templates are matched against a single frame in parallel in ~3ms.
+      - **In-Memory Grayscale Cache**: PNGs are decoded once and cached in memory, eliminating redundant disk I/O and boosting frame rates.
+      - **Early Scale-1 Exit & High-Frequency Polling**: Evaluates every 30ms (~33 FPS) with instant 1:1 match detection, delivering ultra-low latency reaction times for fast runner games.
+      - **Variant Manager**: Visual gallery in the Property Inspector to inspect each template and remove variants (`✖`) with one click.
     - **Stop Playback**: Explicit termination node.
 
 - **🪄 Houdini-Inspired Canvas Gestures**:

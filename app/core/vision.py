@@ -244,6 +244,52 @@ def qimage_to_numpy_gray(qimg: QImage) -> np.ndarray:
     return arr
 
 
+# In-memory template cache: path -> (mtime, gray_numpy_array)
+_TEMPLATE_CACHE: Dict[str, Tuple[float, np.ndarray]] = {}
+
+
+def get_template_gray_cached(template_input: Any) -> Optional[np.ndarray]:
+    """Retrieve pre-decoded grayscale numpy array for a template, using in-memory cache to eliminate disk I/O."""
+    if template_input is None:
+        return None
+    if isinstance(template_input, np.ndarray):
+        return template_input if len(template_input.shape) == 2 else bgra_to_gray(template_input)
+    if isinstance(template_input, QImage):
+        return qimage_to_numpy_gray(template_input)
+    if isinstance(template_input, str):
+        path = template_input.strip()
+        if not path or not os.path.exists(path):
+            return None
+        try:
+            mtime = os.path.getmtime(path)
+            cached = _TEMPLATE_CACHE.get(path)
+            if cached and cached[0] == mtime:
+                return cached[1]
+            qimg = QImage(path)
+            if qimg.isNull():
+                return None
+            gray = qimage_to_numpy_gray(qimg)
+            if gray.size > 0:
+                _TEMPLATE_CACHE[path] = (mtime, gray)
+                return gray
+        except Exception:
+            return None
+    return None
+
+
+def parse_template_targets(template_input: Any) -> list:
+    """Parse single or multiple template paths (supporting list or semicolon separation for OR conditions)."""
+    if isinstance(template_input, (list, tuple)):
+        return [t for t in template_input if t]
+    if isinstance(template_input, str):
+        if ";" in template_input:
+            return [t.strip() for t in template_input.split(";") if t.strip()]
+        if "," in template_input and not os.path.exists(template_input):
+            return [t.strip() for t in template_input.split(",") if t.strip()]
+        return [template_input.strip()] if template_input.strip() else []
+    return [template_input] if template_input else []
+
+
 def load_image_as_qimage(image_path_or_qimg: Any) -> Optional[QImage]:
     """Load image from filepath or return as QImage."""
     if not image_path_or_qimg:
@@ -363,8 +409,8 @@ def match_template_multiscale(
             best_loc = max_loc
             best_w, best_h = tw, th
 
-            # If 1:1 match already satisfies high confidence, return immediately
-            if best_score >= max(confidence, 0.88):
+            # If 1:1 match already satisfies confidence, return immediately (avoids redundant scale sweeps)
+            if best_score >= confidence:
                 return (best_loc, best_score, (best_w, best_h))
 
             # 2. Multi-scale search (covers Windows display scaling: 125%, 150%, 80%, 110%, etc.)
@@ -389,7 +435,7 @@ def match_template_multiscale(
                     best_score = score
                     best_loc = s_max_loc
                     best_w, best_h = new_w, new_h
-                    if best_score >= 0.96:
+                    if best_score >= max(0.92, confidence):
                         break
 
             return (best_loc, best_score, (best_w, best_h))
@@ -416,45 +462,54 @@ def find_template_on_screen(
     confidence: float = 0.8,
     region: Optional[Tuple[int, int, int, int]] = None,
 ) -> Optional[Tuple[int, int, int, int, float]]:
-    """Searches for template on the current desktop screen using thread-safe capture.
+    """Searches for template on the current desktop screen using high-speed cached matching.
+    Supports single template path/image or multiple targets (list or semicolon-delimited) for OR logic.
     If region is specified (rx, ry, rw, rh), restricts search to that screen area.
     
     Returns (center_x, center_y, width, height, score) or None if score < confidence.
     """
-    if not template_img_or_path:
+    targets = parse_template_targets(template_img_or_path)
+    if not targets:
         return None
 
     try:
-        template_qimg = load_image_as_qimage(template_img_or_path)
-        if template_qimg is None or template_qimg.isNull():
-            return None
-
-        # Thread-safe screen capture across all connected monitors
+        # Thread-safe screen capture across all connected monitors (performed ONCE per frame)
         bgra, rx, ry, rw, rh = capture_screen_win32_bgra(region)
         if bgra is None or rw <= 0 or rh <= 0:
             return None
 
         screen_arr = bgra_to_gray(bgra)
-        template_arr = qimage_to_numpy_gray(template_qimg)
-
-        th, tw = template_arr.shape
         sh, sw = screen_arr.shape
-        if th > sh or tw > sw or th <= 0 or tw <= 0:
-            return None
 
-        (match_x, match_y), score, (matched_w, matched_h) = match_template_multiscale(
-            screen_arr, template_arr, confidence=confidence
-        )
+        best_result: Optional[Tuple[int, int, int, int, float]] = None
 
-        if math.isnan(score) or math.isinf(score) or score < confidence or score <= 0.0:
-            return None
+        # Test each template in the target list (OR condition matching)
+        for tmpl_target in targets:
+            template_arr = get_template_gray_cached(tmpl_target)
+            if template_arr is None or template_arr.size == 0:
+                continue
 
-        abs_x = rx + match_x
-        abs_y = ry + match_y
-        center_x = abs_x + matched_w // 2
-        center_y = abs_y + matched_h // 2
+            th, tw = template_arr.shape
+            if th > sh or tw > sw or th <= 0 or tw <= 0:
+                continue
 
-        return (center_x, center_y, matched_w, matched_h, score)
+            (match_x, match_y), score, (matched_w, matched_h) = match_template_multiscale(
+                screen_arr, template_arr, confidence=confidence
+            )
+
+            if not math.isnan(score) and not math.isinf(score) and score >= confidence and score > 0.0:
+                abs_x = rx + match_x
+                abs_y = ry + match_y
+                center_x = abs_x + matched_w // 2
+                center_y = abs_y + matched_h // 2
+                res = (center_x, center_y, matched_w, matched_h, score)
+                if best_result is None or score > best_result[4]:
+                    best_result = res
+                # High-confidence early match exit
+                if score >= 0.92:
+                    return best_result
+
+        return best_result
     except Exception:
         return None
 
@@ -463,18 +518,16 @@ def wait_for_template_on_screen(
     template_img_or_path: Any,
     confidence: float = 0.8,
     timeout_sec: float = 10.0,
-    poll_interval_sec: float = 0.25,
+    poll_interval_sec: float = 0.03,
     region: Optional[Tuple[int, int, int, int]] = None,
     stop_check_fn: Optional[Any] = None,
 ) -> Optional[Tuple[int, int, int, int, float]]:
-    """Polls the screen waiting for template to appear within timeout_sec.
+    """Polls the screen waiting for template (or any of multiple templates) to appear within timeout_sec.
+    Uses ultra-low latency 30ms polling interval (~33 FPS) for instant sub-frame responsiveness.
     Returns (center_x, center_y, width, height, score) or None on timeout.
     """
-    if not template_img_or_path:
-        return None
-
-    # Verify template exists before entering loop
-    if isinstance(template_img_or_path, str) and not os.path.exists(template_img_or_path):
+    targets = parse_template_targets(template_img_or_path)
+    if not targets:
         return None
 
     start_time = time.time()
@@ -486,11 +539,11 @@ def wait_for_template_on_screen(
         if result is not None:
             return result
 
-        # Sleep in small slices to remain responsive to stop/pause
+        # Sleep in tiny 10ms slices to remain instantly responsive to stop/pause
         poll_end = time.time() + poll_interval_sec
         while time.time() < poll_end:
             if stop_check_fn and stop_check_fn():
                 return None
-            time.sleep(0.02)
+            time.sleep(0.01)
 
     return None

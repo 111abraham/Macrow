@@ -933,6 +933,46 @@ class PropertyInspector(QWidget):
             spin_vk.valueChanged.connect(on_vk_change)
             kb_layout.addLayout(row_vk)
 
+            if at == "key_down":
+                hold_sep = QFrame()
+                hold_sep.setFrameShape(QFrame.Shape.HLine)
+                hold_sep.setStyleSheet("color: #334155; margin-top: 4px; margin-bottom: 4px;")
+                kb_layout.addWidget(hold_sep)
+
+                row_dur = QHBoxLayout()
+                row_dur.addWidget(QLabel("Hold Duration (ms):"))
+                spin_dur = QSpinBox()
+                spin_dur.setRange(0, 3600000)
+                spin_dur.setSingleStep(250)
+                spin_dur.setSpecialValueText("0 (Until Release)")
+                try:
+                    dur_val = int(node.properties.get("hold_duration", 0))
+                except (ValueError, TypeError):
+                    dur_val = 0
+                spin_dur.setValue(dur_val)
+                spin_dur.setToolTip("Duration to hold the key in milliseconds. 0 keeps key held until a Key Up node or macro stop.")
+
+                def on_dur_changed(v):
+                    node.properties["hold_duration"] = v
+                    node.update()
+                    self.property_changed.emit()
+
+                spin_dur.valueChanged.connect(on_dur_changed)
+                row_dur.addWidget(spin_dur)
+                kb_layout.addLayout(row_dur)
+
+                chk_repeat = QCheckBox("Auto-repeat (typematic pulses every 45ms)")
+                chk_repeat.setChecked(bool(node.properties.get("auto_repeat", False)))
+                chk_repeat.setToolTip("Continuously sends key down pulses every 45ms while held, simulating physical keyboard typematic repeating (useful for games like Chrome Dino or continuous movement).")
+
+                def on_rep_toggled(chk):
+                    node.properties["auto_repeat"] = chk
+                    node.update()
+                    self.property_changed.emit()
+
+                chk_repeat.toggled.connect(on_rep_toggled)
+                kb_layout.addWidget(chk_repeat)
+
             self.content_layout.addWidget(k_box)
 
         elif at == "wheel":
@@ -1624,33 +1664,87 @@ class PropertyInspector(QWidget):
         lbl.setStyleSheet("color: #10b981;")
         layout.addWidget(lbl)
 
-        # Image preview
-        lbl_thumb = QLabel()
-        lbl_thumb.setFixedHeight(70)
-        lbl_thumb.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        lbl_thumb.setStyleSheet("background: #0f172a; border: 1px dashed #475569; border-radius: 4px;")
+        # Image preview & variants container
+        gallery_box = QVBoxLayout()
+        gallery_box.setSpacing(6)
+        layout.addLayout(gallery_box)
 
-        def refresh_thumb():
-            tmpl = node.properties.get("template", "")
-            if tmpl and os.path.exists(tmpl):
-                pix = QPixmap(tmpl)
+        def refresh_gallery():
+            while gallery_box.count() > 0:
+                item = gallery_box.takeAt(0)
+                if item.widget():
+                    item.widget().deleteLater()
+                elif item.layout():
+                    sub = item.layout()
+                    while sub.count() > 0:
+                        si = sub.takeAt(0)
+                        if si.widget():
+                            si.widget().deleteLater()
+
+            raw_tmpl = node.properties.get("template", "")
+            tmpls = [p.strip() for p in str(raw_tmpl).split(";") if p.strip()]
+            valid_tmpls = [p for p in tmpls if os.path.exists(p)]
+
+            if not valid_tmpls:
+                lbl_empty = QLabel("No Image Snippet\n(Click '📸 Snip Image' below)")
+                lbl_empty.setFixedHeight(60)
+                lbl_empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                lbl_empty.setStyleSheet(
+                    "background: #0f172a; border: 1px dashed #475569; border-radius: 4px; color: #64748b; font-size: 10px;"
+                )
+                gallery_box.addWidget(lbl_empty)
+                return
+
+            if len(valid_tmpls) > 1:
+                badge = QLabel(f"⚡ {len(valid_tmpls)} Image Variants (OR Logic)")
+                badge.setStyleSheet("color: #38bdf8; font-size: 11px; font-weight: bold;")
+                gallery_box.addWidget(badge)
+
+            for idx, p_path in enumerate(valid_tmpls):
+                item_frame = QFrame()
+                item_frame.setStyleSheet("background: #0f172a; border: 1px solid #334155; border-radius: 4px; padding: 3px;")
+                row_item = QHBoxLayout(item_frame)
+                row_item.setContentsMargins(4, 2, 4, 2)
+                row_item.setSpacing(6)
+
+                thumb_lbl = QLabel()
+                thumb_lbl.setFixedSize(50, 36)
+                thumb_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                pix = QPixmap(p_path)
                 if not pix.isNull():
-                    scaled = pix.scaled(
-                        200, 60, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation
-                    )
-                    lbl_thumb.setPixmap(scaled)
-                    return
-            lbl_thumb.setText("No Image Snippet")
-            lbl_thumb.setStyleSheet("background: #0f172a; border: 1px dashed #475569; border-radius: 4px; color: #64748b; font-size: 10px;")
+                    scaled = pix.scaled(48, 34, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+                    thumb_lbl.setPixmap(scaled)
+                row_item.addWidget(thumb_lbl)
 
-        refresh_thumb()
-        layout.addWidget(lbl_thumb)
+                fname = os.path.basename(p_path)
+                info_lbl = QLabel(f"Variant #{idx + 1}\n{fname[:14]}..")
+                info_lbl.setStyleSheet("color: #cbd5e1; font-size: 10px;")
+                row_item.addWidget(info_lbl, 1)
+
+                btn_del = QPushButton("✖")
+                btn_del.setFixedSize(22, 22)
+                btn_del.setStyleSheet("background: #7f1d1d; color: white; border-radius: 3px; font-weight: bold; font-size: 10px;")
+                btn_del.setToolTip(f"Remove variant #{idx + 1}")
+
+                def _make_del_fn(target_p):
+                    return lambda: (node.remove_template_variant(target_p), refresh_gallery(), self.property_changed.emit())
+
+                btn_del.clicked.connect(_make_del_fn(p_path))
+                row_item.addWidget(btn_del)
+                gallery_box.addWidget(item_frame)
+
+        refresh_gallery()
 
         # Snippet buttons
-        btn_snip = QPushButton("📸 Snip from Screen")
+        btn_snip = QPushButton("📸 Snip Image")
         btn_snip.setStyleSheet("background: #0284c7; color: white; font-weight: bold; padding: 6px; border-radius: 4px;")
+        btn_snip.setToolTip("Capture a template image from your screen")
 
-        def on_snip_click():
+        btn_snip_or = QPushButton("➕ Snip Variant (OR)")
+        btn_snip_or.setStyleSheet("background: #059669; color: white; font-weight: bold; padding: 6px; border-radius: 4px;")
+        btn_snip_or.setToolTip("Add another image variant (e.g. 2nd cactus, 3rd cactus) to match simultaneously using fast parallel OR detection!")
+
+        def on_snip_click(append=False):
             parent_win = self.window()
             if parent_win:
                 parent_win.showMinimized()
@@ -1658,8 +1752,8 @@ class PropertyInspector(QWidget):
             snipper = ScreenSnipper(parent=None)
 
             def on_captured(qimg, filepath):
-                node.update_template(filepath)
-                refresh_thumb()
+                node.update_template(filepath, append=append)
+                refresh_gallery()
                 self.property_changed.emit()
                 if parent_win:
                     parent_win.showNormal()
@@ -1669,8 +1763,13 @@ class PropertyInspector(QWidget):
             snipper.rejected.connect(lambda: parent_win.showNormal() if parent_win else None)
             snipper.exec()
 
-        btn_snip.clicked.connect(on_snip_click)
-        layout.addWidget(btn_snip)
+        btn_snip.clicked.connect(lambda: on_snip_click(append=False))
+        btn_snip_or.clicked.connect(lambda: on_snip_click(append=True))
+
+        snip_btn_row = QHBoxLayout()
+        snip_btn_row.addWidget(btn_snip, 1)
+        snip_btn_row.addWidget(btn_snip_or, 1)
+        layout.addLayout(snip_btn_row)
 
         btn_browse = QPushButton("📂 Browse File...")
         btn_browse.setStyleSheet("background: #334155; color: #e2e8f0; padding: 5px; border-radius: 4px;")
@@ -1680,8 +1779,24 @@ class PropertyInspector(QWidget):
                 self, "Select Template Image", "", "Images (*.png *.jpg *.bmp)"
             )
             if path:
-                node.update_template(path)
-                refresh_thumb()
+                cur = str(node.properties.get("template", "")).strip()
+                if cur:
+                    reply = QMessageBox.question(
+                        self,
+                        "Add or Replace?",
+                        "Do you want to add this as an additional OR variant, or replace existing templates?",
+                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Cancel,
+                        QMessageBox.StandardButton.Yes,
+                    )
+                    if reply == QMessageBox.StandardButton.Yes:
+                        node.update_template(path, append=True)
+                    elif reply == QMessageBox.StandardButton.No:
+                        node.update_template(path, append=False)
+                    else:
+                        return
+                else:
+                    node.update_template(path, append=False)
+                refresh_gallery()
                 self.property_changed.emit()
 
         btn_browse.clicked.connect(on_browse)

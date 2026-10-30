@@ -1368,6 +1368,33 @@ class TestNodeEditor(unittest.TestCase):
         self.assertIn("stop_playback", all_seen_types)
         self.assertIn("wait_image", all_seen_types)
 
+    def test_vision_node_multi_template_or(self):
+        vnode = VisionNodeItem()
+        # Add single template
+        vnode.update_template("cactus1.png")
+        self.assertEqual(vnode.properties["template"], "cactus1.png")
+
+        # Append 2nd template variant (OR logic)
+        vnode.update_template("cactus2.png", append=True)
+        self.assertEqual(vnode.properties["template"], "cactus1.png;cactus2.png")
+        self.assertIn("2 Imgs (OR)", vnode.get_summary_text())
+
+        # Append 3rd template variant
+        vnode.update_template("cactus3.png", append=True)
+        self.assertEqual(vnode.properties["template"], "cactus1.png;cactus2.png;cactus3.png")
+        self.assertIn("3 Imgs (OR)", vnode.get_summary_text())
+
+        # Remove variant
+        vnode.remove_template_variant("cactus2.png")
+        self.assertEqual(vnode.properties["template"], "cactus1.png;cactus3.png")
+        self.assertIn("2 Imgs (OR)", vnode.get_summary_text())
+
+    def test_action_node_key_down_hold_summary(self):
+        anode = ActionNodeItem("key_down", {"key": "Space", "vk": 32, "hold_duration": 5000, "auto_repeat": True})
+        summary = anode.get_summary_text()
+        self.assertIn("5000ms", summary)
+        self.assertIn("[Repeat]", summary)
+
 
 if __name__ == "__main__":
     unittest.main()
