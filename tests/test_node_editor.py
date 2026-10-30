@@ -1395,6 +1395,64 @@ class TestNodeEditor(unittest.TestCase):
         self.assertIn("5000ms", summary)
         self.assertIn("[Repeat]", summary)
 
+    def test_key_down_auto_repeat_default_true(self):
+        node = ActionNodeItem("key_down")
+        self.assertTrue(node.properties.get("auto_repeat"))
+        self.assertEqual(node.properties.get("hold_duration"), 0)
+
+    def test_pixel_color_node_region_properties_and_summary(self):
+        pnode = PixelColorNodeItem()
+        # Default single coordinate mode
+        self.assertFalse(pnode.properties["use_region"])
+        self.assertIn("Pos:", pnode.get_summary_text())
+
+        # Switch to bounding box region mode
+        pnode.properties["use_region"] = True
+        pnode.properties["region_x"] = 320
+        pnode.properties["region_y"] = 240
+        pnode.properties["region_w"] = 150
+        pnode.properties["region_h"] = 120
+        pnode.properties["color"] = "#E11D48"
+        pnode.properties["tolerance"] = 20
+
+        summary = pnode.get_summary_text()
+        self.assertIn("Box: (320, 240) 150x120", summary)
+        self.assertIn("#E11D48", summary)
+        self.assertIn("±20", summary)
+
+        # Clone preserves region properties
+        cloned = pnode.clone()
+        self.assertTrue(cloned.properties["use_region"])
+        self.assertEqual(cloned.properties["region_w"], 150)
+
+    def test_pixel_color_graph_compilation_with_bounding_box(self):
+        scene = NodeScene()
+        start = StartNodeItem()
+        pnode = PixelColorNodeItem(properties={
+            "use_region": True,
+            "region_x": 400,
+            "region_y": 300,
+            "region_w": 200,
+            "region_h": 150,
+            "color": "#10B981",
+            "tolerance": 18,
+        })
+        scene.add_node(start, QPointF(0, 0))
+        scene.add_node(pnode, QPointF(200, 0))
+        scene.add_connection(start.output_sockets[0], pnode.input_sockets[0])
+
+        steps = graph_to_macro(scene)
+        self.assertEqual(len(steps), 1)
+        step = steps[0]
+        self.assertEqual(step["type"], "pixel_color")
+        self.assertTrue(step["use_region"])
+        self.assertEqual(step["region_x"], 400)
+        self.assertEqual(step["region_y"], 300)
+        self.assertEqual(step["region_w"], 200)
+        self.assertEqual(step["region_h"], 150)
+        self.assertEqual(step["color"], "#10B981")
+        self.assertEqual(step["tolerance"], 18)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -84,6 +84,31 @@ class TestUIPanel(unittest.TestCase):
         self.assertIsNotNone(txt_edit)
         self.assertIn("Test typing multiline", txt_edit.toPlainText())
 
+        # Test PixelColorNodeItem inspection and region toggle
+        from app.ui.node_editor.node_items import PixelColorNodeItem
+        from PyQt6.QtWidgets import QCheckBox
+        p_node = PixelColorNodeItem()
+        editor.scene.add_node(p_node)
+        editor.inspector.set_node(p_node)
+        reg_chk = next((c for c in editor.inspector.findChildren(QCheckBox) if "Bounding Box" in c.text()), None)
+        self.assertIsNotNone(reg_chk)
+        self.assertFalse(reg_chk.isChecked())
+        # Toggle region on
+        reg_chk.setChecked(True)
+        self.assertTrue(p_node.properties["use_region"])
+        # Toggle region off
+        reg_chk.setChecked(False)
+        self.assertFalse(p_node.properties["use_region"])
+
+        # Test Key Down node default auto-repeat
+        kd_node = ActionNodeItem("key_down")
+        editor.scene.add_node(kd_node)
+        editor.inspector.set_node(kd_node)
+        rep_chk = next((c for c in editor.inspector.findChildren(QCheckBox) if "Auto-repeat" in c.text()), None)
+        self.assertIsNotNone(rep_chk)
+        self.assertTrue(rep_chk.isChecked())
+
+        editor._has_unsaved_changes = False
         editor.close()
 
         # When loop_check is unchecked, repeat_count_spin is re-enabled

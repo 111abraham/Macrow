@@ -7,7 +7,7 @@ timing, pause/resume time tracking, speed scaling, loop repetition, and safety r
 import time
 import threading
 from app.core.input_simulator import InputSimulator
-from app.core.vision import find_template_on_screen, wait_for_template_on_screen
+from app.core.vision import find_template_on_screen, wait_for_template_on_screen, capture_screen_win32_bgra
 from app.core.key_catalog import get_vk_for_key
 
 
@@ -36,6 +36,11 @@ class MacroPlayer:
         self.repeat = False
         self.repeat_count = 1
         self.variables = {}
+
+        # Background auto-repeat state for held keys
+        self._repeat_lock = threading.Lock()
+        self._active_repeats = set()
+        self._repeat_thread = None
 
         # Callbacks
         self.on_state_changed = None
@@ -68,6 +73,12 @@ class MacroPlayer:
         self._stop_requested.clear()
         self._pause_requested.clear()
         self._resume_event.set()
+
+        with self._repeat_lock:
+            self._active_repeats.clear()
+
+        self._repeat_thread = threading.Thread(target=self._auto_repeat_worker, daemon=True)
+        self._repeat_thread.start()
 
         self._thread = threading.Thread(target=self._playback_worker, daemon=True)
         self._thread.start()
@@ -110,6 +121,9 @@ class MacroPlayer:
             self._thread.join(timeout=1.0)
             self._thread = None
 
+        with self._repeat_lock:
+            self._active_repeats.clear()
+
         self.simulator.release_all_held()
 
         with self.state_lock:
@@ -117,6 +131,23 @@ class MacroPlayer:
 
         if self.on_state_changed:
             self.on_state_changed(self.state)
+
+    def _auto_repeat_worker(self):
+        """Continuously pulses held keys registered with typematic auto-repeat every 45ms."""
+        while not self._stop_requested.is_set():
+            if not self.is_playing():
+                break
+            if not self._pause_requested.is_set():
+                with self._repeat_lock:
+                    vks = list(self._active_repeats)
+                for vk in vks:
+                    if self._stop_requested.is_set() or not self.is_playing():
+                        break
+                    try:
+                        self.simulator.key_down(vk)
+                    except Exception:
+                        pass
+            time.sleep(0.045)
 
     def set_repeat(self, repeat):
         """Update repeat state while running. Turning off lets current pass finish."""
@@ -163,6 +194,7 @@ class MacroPlayer:
             "found_next" in s
             or "miss_next" in s
             or "body_next" in s
+            or "next" in s
             or s.get("type") in ("loop_count", "if_condition")
             for s in steps
         )
@@ -215,8 +247,10 @@ class MacroPlayer:
             if self._stop_requested.is_set():
                 break
 
-            # Execute the step (linear pass already waited target_dt_ms, so delay step does not double-sleep)
-            if step.get("type") != "delay":
+            # Execute the step (linear pass already waited target_dt_ms, so delay step does not double-sleep unless dt is 0)
+            if step.get("type") == "delay" and not step.get("dt"):
+                self._execute_step(step)
+            elif step.get("type") != "delay":
                 self._execute_step(step)
 
             if self.on_progress:
@@ -414,7 +448,7 @@ class MacroPlayer:
             if vk is not None:
                 self.simulator.key_down(vk)
                 hold_dur = self._resolve_coord(step.get("hold_duration", 0), default=0)
-                auto_repeat = bool(step.get("auto_repeat", False))
+                auto_repeat = bool(step.get("auto_repeat", True))
                 if hold_dur > 0:
                     wait_sec = (hold_dur / 1000.0) / self.speed
                     start_t = time.perf_counter()
@@ -434,11 +468,19 @@ class MacroPlayer:
                             last_pulse = now
                         time.sleep(0.010)
                     self.simulator.key_up(vk)
+                else:
+                    # Indefinite hold ("Until Release"):
+                    # If auto_repeat enabled, register with background repeat worker to pulse until key_up
+                    if auto_repeat:
+                        with self._repeat_lock:
+                            self._active_repeats.add(vk)
             return True
 
         elif st_type == "key_up":
             vk = self._resolve_vk(step)
             if vk is not None:
+                with self._repeat_lock:
+                    self._active_repeats.discard(vk)
                 self.simulator.key_up(vk)
             return True
 
@@ -554,33 +596,72 @@ class MacroPlayer:
         elif st_type == "pixel_color":
             from PyQt6.QtGui import QGuiApplication, QColor
             from PyQt6.QtCore import QPoint
-            px = self._resolve_coord(step.get("x", 0), default=0)
-            py = self._resolve_coord(step.get("y", 0), default=0)
+            import numpy as np
+
             target_hex = step.get("color", "#FFFFFF")
             target_col = QColor(target_hex)
             tolerance = self._resolve_coord(step.get("tolerance", 15), default=15)
+            use_region = bool(step.get("use_region", False))
 
             matches = False
-            pt = QPoint(px, py)
-            screen = QGuiApplication.screenAt(pt)
-            if not screen:
-                screen = QGuiApplication.primaryScreen()
-            if screen:
-                geo = screen.geometry()
-                lx = int(px - geo.x())
-                ly = int(py - geo.y())
-                cur_img = screen.grabWindow(0, lx, ly, 1, 1).toImage()
-                if not cur_img.isNull() and cur_img.width() > 0 and cur_img.height() > 0:
-                    c = cur_img.pixelColor(0, 0)
+            if use_region:
+                rx = self._resolve_coord(step.get("region_x", step.get("x", 0)), default=0)
+                ry = self._resolve_coord(step.get("region_y", step.get("y", 0)), default=0)
+                rw = max(1, self._resolve_coord(step.get("region_w", 100), default=100))
+                rh = max(1, self._resolve_coord(step.get("region_h", 100), default=100))
+
+                bgra, sx, sy, sw, sh = capture_screen_win32_bgra(region=(rx, ry, rw, rh))
+                if bgra is not None and sw > 0 and sh > 0:
+                    b = bgra[:, :, 0].astype(int)
+                    g = bgra[:, :, 1].astype(int)
+                    r = bgra[:, :, 2].astype(int)
                     diff = (
-                        abs(c.red() - target_col.red())
-                        + abs(c.green() - target_col.green())
-                        + abs(c.blue() - target_col.blue())
+                        np.abs(r - target_col.red())
+                        + np.abs(g - target_col.green())
+                        + np.abs(b - target_col.blue())
                     )
-                    matches = diff <= (tolerance * 3)
-                    self.variables["$pixel_match"] = matches
-                    if self.on_cursor_action and matches:
-                        self.on_cursor_action(px, py, "pixel_matched")
+                    match_mask = diff <= (tolerance * 3)
+                    if np.any(match_mask):
+                        matches = True
+                        matched_ys, matched_xs = np.where(match_mask)
+                        found_x = int(sx + matched_xs[0])
+                        found_y = int(sy + matched_ys[0])
+                        self.variables["$pixel_x"] = found_x
+                        self.variables["$pixel_y"] = found_y
+                        self.variables["$pixel_match"] = True
+                        if self.on_cursor_action:
+                            self.on_cursor_action(found_x, found_y, "pixel_matched")
+                    else:
+                        matches = False
+                        self.variables["$pixel_match"] = False
+                else:
+                    matches = False
+                    self.variables["$pixel_match"] = False
+            else:
+                px = self._resolve_coord(step.get("x", 0), default=0)
+                py = self._resolve_coord(step.get("y", 0), default=0)
+                pt = QPoint(px, py)
+                screen = QGuiApplication.screenAt(pt)
+                if not screen:
+                    screen = QGuiApplication.primaryScreen()
+                if screen:
+                    geo = screen.geometry()
+                    lx = int(px - geo.x())
+                    ly = int(py - geo.y())
+                    cur_img = screen.grabWindow(0, lx, ly, 1, 1).toImage()
+                    if not cur_img.isNull() and cur_img.width() > 0 and cur_img.height() > 0:
+                        c = cur_img.pixelColor(0, 0)
+                        diff = (
+                            abs(c.red() - target_col.red())
+                            + abs(c.green() - target_col.green())
+                            + abs(c.blue() - target_col.blue())
+                        )
+                        matches = diff <= (tolerance * 3)
+                        self.variables["$pixel_match"] = matches
+                        self.variables["$pixel_x"] = px
+                        self.variables["$pixel_y"] = py
+                        if self.on_cursor_action and matches:
+                            self.on_cursor_action(px, py, "pixel_matched")
             return matches
 
         elif st_type == "if_condition":

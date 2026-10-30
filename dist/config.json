@@ -816,38 +816,43 @@
     "Macro 1": {
       "steps": [
         {
-          "id": "22e1615d",
-          "type": "dblclick",
-          "next": "96e178d0",
-          "x": 420,
-          "y": 275,
-          "button": "left",
-          "dt": 100
-        },
-        {
-          "id": "96e178d0",
-          "type": "delay",
-          "next": "59a4443e",
-          "duration": 250,
-          "dt": 350
-        },
-        {
-          "id": "59a4443e",
-          "type": "key_press",
-          "next": "56708311",
-          "key": "Space",
-          "vk": 32,
-          "dt": 400
-        },
-        {
-          "id": "56708311",
-          "type": "delay",
+          "id": "a139f9e0",
+          "type": "loop_count",
+          "count": 5,
+          "infinite": true,
+          "var_name": "i",
+          "body_next": "34e1656a",
           "next": null,
-          "duration": 5000,
-          "dt": 5400
+          "dt": 10
+        },
+        {
+          "id": "34e1656a",
+          "type": "pixel_color",
+          "x": -1273,
+          "y": 669,
+          "color": "#FFAA00",
+          "tolerance": 15,
+          "found_next": "61564ffb",
+          "miss_next": "a139f9e0",
+          "dt": 30
+        },
+        {
+          "id": "61564ffb",
+          "type": "key_press",
+          "next": "bc90e261",
+          "key": "Windows Key",
+          "vk": 91,
+          "dt": 80
+        },
+        {
+          "id": "bc90e261",
+          "type": "delay",
+          "next": "a139f9e0",
+          "duration": 1000,
+          "dt": 1080
         }
       ],
-      "duration": 5400,
+      "duration": 1080,
       "graph_data": {
         "nodes": [
           {
@@ -856,8 +861,8 @@
             "node_type": "start",
             "title": "▶ Start",
             "pos": [
-              217.49424138916146,
-              -47.95343062362697
+              589.9661033527542,
+              -429.0082207445306
             ],
             "bypassed": false,
             "properties": {}
@@ -868,8 +873,8 @@
             "node_type": "loop_count",
             "title": "🔁 Repeat Zone (Loop)",
             "pos": [
-              763.4199471660362,
-              169.54736169313702
+              691.9762398390449,
+              131.6530875642703
             ],
             "bypassed": false,
             "properties": {
@@ -880,33 +885,13 @@
             }
           },
           {
-            "id": "1b468792",
-            "class_name": "VisionNodeItem",
-            "node_type": "wait_image",
-            "title": "⏱ Wait For Image",
-            "pos": [
-              518.6955408409507,
-              -516.6214336443948
-            ],
-            "bypassed": false,
-            "properties": {
-              "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261029_200434.png",
-              "confidence": 0.85,
-              "timeout": 1.0,
-              "break_loop_on_found": false,
-              "action_type": "wait_image",
-              "action": "none",
-              "button": "left"
-            }
-          },
-          {
             "id": "daafd46a",
             "class_name": "HotkeyNodeItem",
             "node_type": "hotkey",
             "title": "⌨ Key Combination",
             "pos": [
-              1129.0792049357,
-              238.78517348842507
+              1560.022300464591,
+              182.84600691724086
             ],
             "bypassed": false,
             "properties": {
@@ -915,177 +900,17 @@
             }
           },
           {
-            "id": "07cab6d2",
-            "class_name": "VisionNodeItem",
-            "node_type": "wait_image",
-            "title": "⏱ Wait For Image",
-            "pos": [
-              515.7657949515632,
-              -349.6259179493275
-            ],
-            "bypassed": false,
-            "properties": {
-              "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261029_200526.png",
-              "confidence": 0.85,
-              "timeout": 1.0,
-              "break_loop_on_found": false,
-              "action_type": "wait_image",
-              "action": "none",
-              "button": "left"
-            }
-          },
-          {
-            "id": "a5beb1ab",
-            "class_name": "VisionNodeItem",
-            "node_type": "wait_image",
-            "title": "⏱ Wait For Image",
-            "pos": [
-              788.2321626645679,
-              -677.7574575606878
-            ],
-            "bypassed": false,
-            "properties": {
-              "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261029_200543.png",
-              "confidence": 0.85,
-              "timeout": 1.0,
-              "break_loop_on_found": false,
-              "action_type": "wait_image",
-              "action": "none",
-              "button": "left"
-            }
-          },
-          {
-            "id": "6b291edc",
-            "class_name": "VisionNodeItem",
-            "node_type": "wait_image",
-            "title": "⏱ Wait For Image",
-            "pos": [
-              776.5131791070193,
-              -507.83219597623344
-            ],
-            "bypassed": false,
-            "properties": {
-              "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261029_200658.png",
-              "confidence": 0.85,
-              "timeout": 1.0,
-              "break_loop_on_found": false,
-              "action_type": "wait_image",
-              "action": "none",
-              "button": "left"
-            }
-          },
-          {
-            "id": "97b3dd74",
-            "class_name": "VisionNodeItem",
-            "node_type": "wait_image",
-            "title": "⏱ Wait For Image",
-            "pos": [
-              785.3024167751809,
-              -337.90693439177886
-            ],
-            "bypassed": false,
-            "properties": {
-              "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261029_200658.png",
-              "confidence": 0.85,
-              "timeout": 1.0,
-              "break_loop_on_found": false,
-              "action_type": "wait_image",
-              "action": "none",
-              "button": "left"
-            }
-          },
-          {
-            "id": "eae2ac40",
-            "class_name": "VisionNodeItem",
-            "node_type": "wait_image",
-            "title": "⏱ Wait For Image",
-            "pos": [
-              1060.6985303775723,
-              -326.18795083423043
-            ],
-            "bypassed": false,
-            "properties": {
-              "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261029_200755.png",
-              "confidence": 0.85,
-              "timeout": 1.0,
-              "break_loop_on_found": false,
-              "action_type": "wait_image",
-              "action": "none",
-              "button": "left"
-            }
-          },
-          {
-            "id": "13f979e8",
-            "class_name": "VisionNodeItem",
-            "node_type": "wait_image",
-            "title": "⏱ Wait For Image",
-            "pos": [
-              237.43993545978435,
-              -695.3359328970109
-            ],
-            "bypassed": false,
-            "properties": {
-              "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261029_200948.png",
-              "confidence": 0.85,
-              "timeout": 1.0,
-              "break_loop_on_found": false,
-              "action_type": "wait_image",
-              "action": "none",
-              "button": "left"
-            }
-          },
-          {
-            "id": "007f579a",
-            "class_name": "VisionNodeItem",
-            "node_type": "wait_image",
-            "title": "⏱ Wait For Image",
-            "pos": [
-              240.36968134917163,
-              -531.2701630913305
-            ],
-            "bypassed": false,
-            "properties": {
-              "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261029_201027.png",
-              "confidence": 0.85,
-              "timeout": 1.0,
-              "break_loop_on_found": false,
-              "action_type": "wait_image",
-              "action": "none",
-              "button": "left"
-            }
-          },
-          {
             "id": "61ff04b6",
             "class_name": "VisionNodeItem",
             "node_type": "wait_image",
             "title": "⏱ Wait For Image",
             "pos": [
-              850.3291144124097,
-              227.07867843884827
+              799.4706512142463,
+              189.18440430998157
             ],
             "bypassed": false,
             "properties": {
-              "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261029_201108.png",
-              "confidence": 0.85,
-              "timeout": 1.0,
-              "break_loop_on_found": false,
-              "action_type": "wait_image",
-              "action": "none",
-              "button": "left"
-            }
-          },
-          {
-            "id": "f8dad4b7",
-            "class_name": "VisionNodeItem",
-            "node_type": "wait_image",
-            "title": "⏱ Wait For Image",
-            "pos": [
-              1677.4424270572936,
-              -463.7718347755215
-            ],
-            "bypassed": false,
-            "properties": {
-              "template": "D:/anti gravity experimenting folder/desktop auto clicker gemini/dist/snippets/snippet_20261029_201503.png",
+              "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261030_093912.png",
               "confidence": 0.85,
               "timeout": 1.0,
               "break_loop_on_found": false,
@@ -1100,14 +925,14 @@
             "node_type": "click",
             "title": "🖱 Mouse Click",
             "pos": [
-              405.87205583230633,
-              188.61312321955953
+              323.3766021318249,
+              282.8936417343956
             ],
             "bypassed": false,
             "properties": {
               "action_type": "click",
-              "x": 1321,
-              "y": 829
+              "x": 1314,
+              "y": 837
             }
           },
           {
@@ -1116,46 +941,14 @@
             "node_type": "dblclick",
             "title": "🖱 Double Click",
             "pos": [
-              399.60785813111534,
-              -47.95343062362697
+              880.4385025567792,
+              -43.23940469788517
             ],
             "bypassed": false,
             "properties": {
               "action_type": "dblclick",
-              "x": 420,
-              "y": 275
-            }
-          },
-          {
-            "id": "92de0df5",
-            "class_name": "LoopNodeItem",
-            "node_type": "loop_count",
-            "title": "🔁 Repeat Zone (Loop)",
-            "pos": [
-              773.3989852938139,
-              429.92942967043285
-            ],
-            "bypassed": false,
-            "properties": {
-              "count": 1,
-              "infinite": true,
-              "var_name": "wave",
-              "action_type": "loop_count"
-            }
-          },
-          {
-            "id": "57d7a6e2",
-            "class_name": "HotkeyNodeItem",
-            "node_type": "hotkey",
-            "title": "⌨ Key Combination",
-            "pos": [
-              1126.8044593318748,
-              512.4185997613498
-            ],
-            "bypassed": false,
-            "properties": {
-              "combo": "space",
-              "action_type": "hotkey"
+              "x": 418,
+              "y": 267
             }
           },
           {
@@ -1164,8 +957,8 @@
             "node_type": "wait_image",
             "title": "⏱ Wait For Image",
             "pos": [
-              854.2267229892743,
-              489.2607905672581
+              1092.93761831019,
+              301.81493163995555
             ],
             "bypassed": false,
             "properties": {
@@ -1179,49 +972,17 @@
             }
           },
           {
-            "id": "d7c3c82c",
-            "class_name": "LoopNodeItem",
-            "node_type": "loop_count",
-            "title": "🔁 Repeat Zone (Loop)",
-            "pos": [
-              768.2041853770473,
-              705.3820413263869
-            ],
-            "bypassed": false,
-            "properties": {
-              "count": 1,
-              "infinite": true,
-              "var_name": "wave",
-              "action_type": "loop_count"
-            }
-          },
-          {
-            "id": "709fc91a",
-            "class_name": "HotkeyNodeItem",
-            "node_type": "hotkey",
-            "title": "⌨ Key Combination",
-            "pos": [
-              1133.8634431467112,
-              774.619853121675
-            ],
-            "bypassed": false,
-            "properties": {
-              "combo": "space",
-              "action_type": "hotkey"
-            }
-          },
-          {
             "id": "a5cd7b53",
             "class_name": "VisionNodeItem",
             "node_type": "wait_image",
             "title": "⏱ Wait For Image",
             "pos": [
-              855.1133526234208,
-              762.913358072098
+              1394.891004811005,
+              405.1537513896294
             ],
             "bypassed": false,
             "properties": {
-              "template": "D:/anti gravity experimenting folder/desktop auto clicker gemini/dist/snippets/snippet_20261029_200526.png",
+              "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261030_093946.png",
               "confidence": 0.85,
               "timeout": 1.0,
               "break_loop_on_found": false,
@@ -1236,8 +997,8 @@
             "node_type": "wait_image",
             "title": "⏱ Wait For Image",
             "pos": [
-              859.0109612002854,
-              1025.0954702005079
+              1652.986228662255,
+              527.0564387925452
             ],
             "bypassed": false,
             "properties": {
@@ -1251,60 +1012,13 @@
             }
           },
           {
-            "id": "617f513f",
-            "class_name": "LoopNodeItem",
-            "node_type": "loop_count",
-            "title": "🔁 Repeat Zone (Loop)",
-            "pos": [
-              778.1832235048252,
-              965.7641093036826
-            ],
-            "bypassed": false,
-            "properties": {
-              "count": 1,
-              "infinite": true,
-              "var_name": "wave",
-              "action_type": "loop_count"
-            }
-          },
-          {
-            "id": "2fdc3fdf",
-            "class_name": "HotkeyNodeItem",
-            "node_type": "hotkey",
-            "title": "⌨ Key Combination",
-            "pos": [
-              1131.5886975428857,
-              1048.2532793945998
-            ],
-            "bypassed": false,
-            "properties": {
-              "combo": "space",
-              "action_type": "hotkey"
-            }
-          },
-          {
-            "id": "1582bf69",
-            "class_name": "HotkeyNodeItem",
-            "node_type": "hotkey",
-            "title": "⌨ Key Combination",
-            "pos": [
-              1129.7696404705925,
-              1326.5690114554136
-            ],
-            "bypassed": false,
-            "properties": {
-              "combo": "space",
-              "action_type": "hotkey"
-            }
-          },
-          {
             "id": "fd2a5dea",
             "class_name": "VisionNodeItem",
             "node_type": "wait_image",
             "title": "⏱ Wait For Image",
             "pos": [
-              857.1919041279925,
-              1303.4112022613217
+              1917.4306514058462,
+              652.4665946381313
             ],
             "bypassed": false,
             "properties": {
@@ -1318,51 +1032,21 @@
             }
           },
           {
-            "id": "442ecb04",
-            "class_name": "LoopNodeItem",
-            "node_type": "loop_count",
-            "title": "🔁 Repeat Zone (Loop)",
-            "pos": [
-              776.3641664325323,
-              1244.0798413644961
-            ],
-            "bypassed": false,
-            "properties": {
-              "count": 1,
-              "infinite": true,
-              "var_name": "wave",
-              "action_type": "loop_count"
-            }
-          },
-          {
             "id": "59a4443e",
             "class_name": "ActionNodeItem",
-            "node_type": "key_press",
-            "title": "⌨ Key Press (Tap)",
+            "node_type": "key_down",
+            "title": "⌨ Key Down (Hold)",
             "pos": [
-              879.6078581311153,
-              -47.95343062362697
+              1392.23703991446,
+              -73.56252726667756
             ],
             "bypassed": false,
             "properties": {
               "key": "Space",
               "vk": 32,
-              "action_type": "key_press"
-            }
-          },
-          {
-            "id": "56708311",
-            "class_name": "ActionNodeItem",
-            "node_type": "delay",
-            "title": "⏳ Delay Wait",
-            "pos": [
-              1119.6078581311153,
-              -47.95343062362697
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "delay",
-              "duration": 5000
+              "action_type": "key_down",
+              "hold_duration": 0,
+              "auto_repeat": true
             }
           },
           {
@@ -1371,13 +1055,315 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              639.6078581311153,
-              -47.95343062362697
+              1141.8111804699442,
+              -65.94787498062342
             ],
             "bypassed": false,
             "properties": {
               "action_type": "delay",
               "duration": 250
+            }
+          },
+          {
+            "id": "d1950ece",
+            "class_name": "VisionNodeItem",
+            "node_type": "wait_image",
+            "title": "⏱ Wait For Image",
+            "pos": [
+              741.970740562338,
+              968.0357883155214
+            ],
+            "bypassed": false,
+            "properties": {
+              "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261030_091331.png;D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261030_091417.png;D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261030_091443.png;D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261030_091512.png;D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261030_091604.png",
+              "timeout": 5.0,
+              "action_type": "wait_image",
+              "confidence": 0.85,
+              "action": "none",
+              "button": "left",
+              "break_loop_on_found": false
+            }
+          },
+          {
+            "id": "a75f9ba2",
+            "class_name": "ActionNodeItem",
+            "node_type": "click",
+            "title": "🖱 Mouse Click",
+            "pos": [
+              397.17868580756203,
+              866.276640255225
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "click",
+              "x": 1314,
+              "y": 837
+            }
+          },
+          {
+            "id": "408bb530",
+            "class_name": "LoopNodeItem",
+            "node_type": "loop_count",
+            "title": "🔁 Repeat Zone (Loop)",
+            "pos": [
+              661.0430560625268,
+              885.3681364591966
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "loop_count",
+              "infinite": true,
+              "count": 5,
+              "var_name": "i"
+            }
+          },
+          {
+            "id": "a86195ec",
+            "class_name": "HotkeyNodeItem",
+            "node_type": "hotkey",
+            "title": "⌨ Key Combination",
+            "pos": [
+              989.6282761414705,
+              974.7416005252328
+            ],
+            "bypassed": false,
+            "properties": {
+              "combo": "space",
+              "action_type": "hotkey"
+            }
+          },
+          {
+            "id": "6bac0626",
+            "class_name": "HotkeyNodeItem",
+            "node_type": "hotkey",
+            "title": "⌨ Key Combination",
+            "pos": [
+              1688.690229183724,
+              294.72434005960935
+            ],
+            "bypassed": false,
+            "properties": {
+              "combo": "space",
+              "action_type": "hotkey"
+            }
+          },
+          {
+            "id": "fa10b4d9",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              1104.1980993586935,
+              184.1262400753152
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 50
+            }
+          },
+          {
+            "id": "dc14c7e0",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              1370.9486832886043,
+              289.257352565339
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 50
+            }
+          },
+          {
+            "id": "3eadd06a",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              1645.544872628218,
+              414.78703912059103
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 50
+            }
+          },
+          {
+            "id": "6b80f355",
+            "class_name": "HotkeyNodeItem",
+            "node_type": "hotkey",
+            "title": "⌨ Key Combination",
+            "pos": [
+              1884.8303644263056,
+              402.99369471351434
+            ],
+            "bypassed": false,
+            "properties": {
+              "combo": "space",
+              "action_type": "hotkey"
+            }
+          },
+          {
+            "id": "9c768d0e",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              1927.0451947283707,
+              535.6878184841183
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 50
+            }
+          },
+          {
+            "id": "51e4e87a",
+            "class_name": "HotkeyNodeItem",
+            "node_type": "hotkey",
+            "title": "⌨ Key Combination",
+            "pos": [
+              2164.526197282227,
+              536.5258987866638
+            ],
+            "bypassed": false,
+            "properties": {
+              "combo": "space",
+              "action_type": "hotkey"
+            }
+          },
+          {
+            "id": "bdaafe73",
+            "class_name": "HotkeyNodeItem",
+            "node_type": "hotkey",
+            "title": "⌨ Key Combination",
+            "pos": [
+              2437.5532655399,
+              682.4541594071444
+            ],
+            "bypassed": false,
+            "properties": {
+              "combo": "space",
+              "action_type": "hotkey"
+            }
+          },
+          {
+            "id": "e4a57b1c",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              2200.072262986044,
+              681.616079104599
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 50
+            }
+          },
+          {
+            "id": "3e3fa306",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              1652.970227461929,
+              -72.47387942597271
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 3000
+            }
+          },
+          {
+            "id": "367cd7af",
+            "class_name": "ActionNodeItem",
+            "node_type": "key_up",
+            "title": "⌨ Key Up (Release)",
+            "pos": [
+              1941.5373559317245,
+              -65.05942639953724
+            ],
+            "bypassed": false,
+            "properties": {
+              "key": "Space",
+              "vk": 32,
+              "action_type": "key_up",
+              "hold_duration": 0,
+              "auto_repeat": true
+            }
+          },
+          {
+            "id": "34e1656a",
+            "class_name": "PixelColorNodeItem",
+            "node_type": "pixel_color",
+            "title": "🎨 Pixel Color Check",
+            "pos": [
+              957.8642233509365,
+              -377.3600255800546
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "pixel_color",
+              "x": -1273,
+              "y": 669,
+              "color": "#FFAA00",
+              "tolerance": 15
+            }
+          },
+          {
+            "id": "a139f9e0",
+            "class_name": "LoopNodeItem",
+            "node_type": "loop_count",
+            "title": "🔁 Repeat Zone (Loop)",
+            "pos": [
+              848.5709683111461,
+              -423.1856381550201
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "loop_count",
+              "infinite": true,
+              "count": 5,
+              "var_name": "i"
+            }
+          },
+          {
+            "id": "61564ffb",
+            "class_name": "ActionNodeItem",
+            "node_type": "key_press",
+            "title": "⌨ Key Press (Tap)",
+            "pos": [
+              1225.7463553531484,
+              -377.4552452591389
+            ],
+            "bypassed": false,
+            "properties": {
+              "key": "Windows Key",
+              "vk": 91,
+              "action_type": "key_press"
+            }
+          },
+          {
+            "id": "bc90e261",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              1489.2252749774052,
+              -376.48561308785173
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 1000
             }
           }
         ],
@@ -1395,138 +1381,6 @@
             "to_socket_idx": 0
           },
           {
-            "from_node": "61ff04b6",
-            "from_socket_idx": 1,
-            "to_node": "a68509e8",
-            "to_socket_idx": 1
-          },
-          {
-            "from_node": "daafd46a",
-            "from_socket_idx": 0,
-            "to_node": "a68509e8",
-            "to_socket_idx": 1
-          },
-          {
-            "from_node": "61ff04b6",
-            "from_socket_idx": 0,
-            "to_node": "daafd46a",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "57d7a6e2",
-            "from_socket_idx": 0,
-            "to_node": "92de0df5",
-            "to_socket_idx": 1
-          },
-          {
-            "from_node": "f84721ee",
-            "from_socket_idx": 0,
-            "to_node": "92de0df5",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "92de0df5",
-            "from_socket_idx": 0,
-            "to_node": "eb465f6d",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "eb465f6d",
-            "from_socket_idx": 0,
-            "to_node": "57d7a6e2",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "d7c3c82c",
-            "from_socket_idx": 0,
-            "to_node": "a5cd7b53",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "a5cd7b53",
-            "from_socket_idx": 1,
-            "to_node": "d7c3c82c",
-            "to_socket_idx": 1
-          },
-          {
-            "from_node": "709fc91a",
-            "from_socket_idx": 0,
-            "to_node": "d7c3c82c",
-            "to_socket_idx": 1
-          },
-          {
-            "from_node": "a5cd7b53",
-            "from_socket_idx": 0,
-            "to_node": "709fc91a",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "2fdc3fdf",
-            "from_socket_idx": 0,
-            "to_node": "617f513f",
-            "to_socket_idx": 1
-          },
-          {
-            "from_node": "617f513f",
-            "from_socket_idx": 0,
-            "to_node": "e6ef2651",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "e6ef2651",
-            "from_socket_idx": 0,
-            "to_node": "2fdc3fdf",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "f84721ee",
-            "from_socket_idx": 0,
-            "to_node": "d7c3c82c",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "f84721ee",
-            "from_socket_idx": 0,
-            "to_node": "617f513f",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "1582bf69",
-            "from_socket_idx": 0,
-            "to_node": "442ecb04",
-            "to_socket_idx": 1
-          },
-          {
-            "from_node": "442ecb04",
-            "from_socket_idx": 0,
-            "to_node": "fd2a5dea",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "fd2a5dea",
-            "from_socket_idx": 0,
-            "to_node": "1582bf69",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "f84721ee",
-            "from_socket_idx": 0,
-            "to_node": "442ecb04",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "d1b64dc2",
-            "from_socket_idx": 0,
-            "to_node": "22e1615d",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "59a4443e",
-            "from_socket_idx": 0,
-            "to_node": "56708311",
-            "to_socket_idx": 0
-          },
-          {
             "from_node": "22e1615d",
             "from_socket_idx": 0,
             "to_node": "96e178d0",
@@ -1537,6 +1391,162 @@
             "from_socket_idx": 0,
             "to_node": "59a4443e",
             "to_socket_idx": 0
+          },
+          {
+            "from_node": "a75f9ba2",
+            "from_socket_idx": 0,
+            "to_node": "408bb530",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "408bb530",
+            "from_socket_idx": 0,
+            "to_node": "d1950ece",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "d1950ece",
+            "from_socket_idx": 0,
+            "to_node": "a86195ec",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "d1950ece",
+            "from_socket_idx": 1,
+            "to_node": "408bb530",
+            "to_socket_idx": 1
+          },
+          {
+            "from_node": "a86195ec",
+            "from_socket_idx": 0,
+            "to_node": "408bb530",
+            "to_socket_idx": 1
+          },
+          {
+            "from_node": "61ff04b6",
+            "from_socket_idx": 1,
+            "to_node": "eb465f6d",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "61ff04b6",
+            "from_socket_idx": 0,
+            "to_node": "fa10b4d9",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "fa10b4d9",
+            "from_socket_idx": 0,
+            "to_node": "daafd46a",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "eb465f6d",
+            "from_socket_idx": 0,
+            "to_node": "dc14c7e0",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "dc14c7e0",
+            "from_socket_idx": 0,
+            "to_node": "6bac0626",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "eb465f6d",
+            "from_socket_idx": 1,
+            "to_node": "a5cd7b53",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "a5cd7b53",
+            "from_socket_idx": 0,
+            "to_node": "3eadd06a",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "3eadd06a",
+            "from_socket_idx": 0,
+            "to_node": "6b80f355",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "a5cd7b53",
+            "from_socket_idx": 1,
+            "to_node": "e6ef2651",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "9c768d0e",
+            "from_socket_idx": 0,
+            "to_node": "51e4e87a",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "e6ef2651",
+            "from_socket_idx": 0,
+            "to_node": "9c768d0e",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "e6ef2651",
+            "from_socket_idx": 1,
+            "to_node": "fd2a5dea",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "e4a57b1c",
+            "from_socket_idx": 0,
+            "to_node": "bdaafe73",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "fd2a5dea",
+            "from_socket_idx": 0,
+            "to_node": "e4a57b1c",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "fd2a5dea",
+            "from_socket_idx": 1,
+            "to_node": "a68509e8",
+            "to_socket_idx": 1
+          },
+          {
+            "from_node": "59a4443e",
+            "from_socket_idx": 0,
+            "to_node": "3e3fa306",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "a139f9e0",
+            "from_socket_idx": 0,
+            "to_node": "34e1656a",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "d1b64dc2",
+            "from_socket_idx": 0,
+            "to_node": "a139f9e0",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "34e1656a",
+            "from_socket_idx": 0,
+            "to_node": "61564ffb",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "61564ffb",
+            "from_socket_idx": 0,
+            "to_node": "bc90e261",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "34e1656a",
+            "from_socket_idx": 1,
+            "to_node": "a139f9e0",
+            "to_socket_idx": 1
           }
         ],
         "groups": [],
@@ -2643,14 +2653,14 @@
   },
   "instances": {
     "1": {
-      "x": 0,
-      "y": 0,
+      "x": -820,
+      "y": 465,
       "minimized": false,
       "selected_macro": "Macro 1",
       "speed": 0.98,
       "repeat": false,
-      "width": 445,
-      "height": 399
+      "width": 672,
+      "height": 635
     }
   },
   "hotkeys": {

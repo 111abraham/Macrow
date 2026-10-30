@@ -102,8 +102,10 @@ Macrow includes a visual node-based macro customizer (Node Editor) that translat
   - **Mouse Actions**: Click, Double Click, Mouse Down (Hold), Mouse Up (Release), Mouse Move (Smooth curve trajectory or Direct Jump), Mouse Wheel Scroll.
   - **Keyboard Actions & Full Key Catalog**:
     - **Key Press (Tap)**: Presses and releases any key with accurate timing.
-    - **Key Down (Hold)**: Holds down any key continuously. Now features direct configurable `Hold Duration (ms)` and `Auto-repeat` typematic pulse emulation (every 45ms) for smooth gaming, movement, and continuous typing without needing external delay chains.
-    - **Key Up (Release)**: Releases any held key.
+    - **Key Down (Hold)**: Holds down any key continuously. Auto-repeat typematic pulses (every 45ms) are **enabled by default** for seamless gaming and movement.
+      - **Until Release Mode (`Hold Duration = 0`)**: The key is held (and pulsed in the background) while subsequent nodes execute. It remains active until explicitly released by a companion **Key Up (Release)** node or when playback ends!
+      - **Timed Duration Mode (`Hold Duration > 0ms`)**: The node self-holds and pulses for the specified milliseconds, then automatically releases without requiring a Key Up node.
+    - **Key Up (Release)**: Releases any held key and cancels any background auto-repeat pulses. Essential for ending long-running holds across branching paths, loops, and complex workflows.
     - **Complete Keyboard Coverage**: All letters (`A`–`Z`), numbers (`0`–`9`), full numeric keypad (`Num 0`–`Num 9`, `Num +`, `Num -`, `Num *`, `Num /`, `Num .`, `Num Enter`, `Num Lock`), function keys (`F1`–`F24`), navigation (`Enter`, `Esc`, `Tab`, `Space`, `Backspace`, `Delete`, `Insert`, `Home`, `End`, `Page Up`, `Page Down`), arrow keys, modifiers (`Shift`, `Ctrl`, `Alt`, `Win`, `Caps Lock`, `Scroll Lock`), symbols (`;`, `=`, `,`, `-`, `.`, `/`, `` ` ``, `[`, `\`, `]`, `'`), and media keys.
     - **Categorized Key Picker & 1-Click Quick Picks**: Categorized dropdown list plus instant 1-click pills for most common keys (`Enter`, `Space`, `Tab`, `Esc`, `Shift`, `Ctrl`, `Alt`, etc.).
     - **Type Text**: Type strings with real-time `$variable` substitution.
@@ -111,7 +113,12 @@ Macrow includes a visual node-based macro customizer (Node Editor) that translat
   - **OS Security Restriction Handling (SAS)**: Explicit presets and options for `Ctrl+Alt+Delete` and Task Manager invocation.
   - **Logic & Branching**:
     - **If / Compare Condition**: Compare variable values against numbers or strings with `True →` and `False →` output paths.
-    - **Pixel Color Verification**: Live screen eyedropper samples pixel coordinates and hex color with configurable color tolerance, splitting into `Match →` and `Miss →` branches.
+    - **Pixel Color Verification with Togglable Bounding Box (Region Search)**:
+      - **Single Coordinate Mode**: Tests the exact pixel color at `(X, Y)` with configurable tolerance (±0 to ±60).
+      - **Bounding Box Region Mode**: Toggles an adjustable search window (`X`, `Y`, `Width`, `Height`) to find target colors across a wider area.
+      - **Visual Screen Selection**: Click `📐 Drag Bounding Box on Screen` to drag and frame the search area directly over your desktop. Automatically samples the target color.
+      - **Auto-Coordinate Extraction**: When a matching pixel is found in the box, routes to `Match →` and immediately exports its exact global screen coordinates to `$pixel_x` and `$pixel_y` for downstream clicks or moves!
+      - **Vectorized Performance**: Scans large screen areas in under 1 millisecond via vectorized NumPy Manhattan color distance.
     - **Math & Variable Assignment**: Increment (`+= 1`), Decrement (`-= 1`), Set (`= value`), Add (`+= value`), Subtract, Multiply, and Random range (`rand(min..max)`).
     - **Vision AI / Screen Search with Multi-Template OR Recognition**:
       - **Instant Parallel OR Detection**: Add multiple template variants (e.g. single cactus, double cactus, triple cactus) to a single `Wait For Image` node via `➕ Snip Variant (OR)`. All templates are matched against a single frame in parallel in ~3ms.

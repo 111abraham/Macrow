@@ -142,6 +142,67 @@ class TestMacroPlayer(unittest.TestCase):
         self.assertGreaterEqual(self.mock_sim.key_down.call_count, 2)
         self.mock_sim.key_up.assert_called_with(32)
 
+    def test_key_down_until_release_background_repeat_and_key_up(self):
+        # Indefinite key_down (hold_duration=0, auto_repeat=True) pulses in background until key_up
+        steps = [
+            {"id": "kd", "type": "key_down", "key": "Space", "vk": 32, "hold_duration": 0, "auto_repeat": True, "next": "d"},
+            {"id": "d", "type": "delay", "duration": 120, "next": "ku"},
+            {"id": "ku", "type": "key_up", "key": "Space", "vk": 32, "next": None},
+        ]
+        self.player.play(steps, speed=1.0, repeat=False)
+        time.sleep(0.18)
+        self.player.stop()
+
+        # Initial press + at least 1 background repeat pulse
+        self.assertGreaterEqual(self.mock_sim.key_down.call_count, 2)
+        self.mock_sim.key_up.assert_called_with(32)
+
+    def test_pixel_color_bounding_box_region_match(self):
+        import numpy as np
+        from unittest.mock import patch
+
+        # 20x20 BGRA image with red pixel at local (x=5, y=8)
+        arr = np.zeros((20, 20, 4), dtype=np.uint8)
+        arr[8, 5] = [0, 0, 255, 255]  # BGRA -> Red is 255
+
+        with patch("app.core.player.capture_screen_win32_bgra", return_value=(arr, 100, 200, 20, 20)):
+            step = {
+                "type": "pixel_color",
+                "use_region": True,
+                "region_x": 100,
+                "region_y": 200,
+                "region_w": 20,
+                "region_h": 20,
+                "color": "#FF0000",
+                "tolerance": 10,
+            }
+            res = self.player._execute_step(step)
+            self.assertTrue(res)
+            self.assertEqual(self.player.variables.get("$pixel_x"), 105)
+            self.assertEqual(self.player.variables.get("$pixel_y"), 208)
+            self.assertTrue(self.player.variables.get("$pixel_match"))
+
+    def test_pixel_color_bounding_box_region_miss(self):
+        import numpy as np
+        from unittest.mock import patch
+
+        arr = np.zeros((20, 20, 4), dtype=np.uint8)  # All black
+
+        with patch("app.core.player.capture_screen_win32_bgra", return_value=(arr, 50, 50, 20, 20)):
+            step = {
+                "type": "pixel_color",
+                "use_region": True,
+                "region_x": 50,
+                "region_y": 50,
+                "region_w": 20,
+                "region_h": 20,
+                "color": "#FF0000",  # Looking for red
+                "tolerance": 10,
+            }
+            res = self.player._execute_step(step)
+            self.assertFalse(res)
+            self.assertFalse(self.player.variables.get("$pixel_match"))
+
     def test_unplugged_node_skipped(self):
         steps = [
             {"id": "step1", "type": "click", "x": 50, "y": 50, "button": "left", "next": "step2"},

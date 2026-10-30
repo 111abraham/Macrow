@@ -251,6 +251,9 @@ class ActionNodeItem(BaseNodeItem):
         )
         self.properties = dict(props)
         self.properties.setdefault("action_type", action_type)
+        if action_type == "key_down":
+            self.properties.setdefault("auto_repeat", True)
+            self.properties.setdefault("hold_duration", 0)
         if "bypassed" in self.properties:
             self.bypassed = bool(self.properties["bypassed"])
 
@@ -260,6 +263,9 @@ class ActionNodeItem(BaseNodeItem):
     def set_action_type(self, new_type: str):
         self.node_type = new_type
         self.properties["action_type"] = new_type
+        if new_type == "key_down":
+            self.properties.setdefault("auto_repeat", True)
+            self.properties.setdefault("hold_duration", 0)
         self.title = self.TITLES.get(new_type, "⚙ Action")
         self.accent_color = self.COLORS.get(new_type, QColor(56, 189, 248))
         self.update()
@@ -637,6 +643,11 @@ class PixelColorNodeItem(BaseNodeItem):
         self.properties.setdefault("y", 300)
         self.properties.setdefault("color", "#38BDF8")
         self.properties.setdefault("tolerance", 15)
+        self.properties.setdefault("use_region", False)
+        self.properties.setdefault("region_x", 500)
+        self.properties.setdefault("region_y", 300)
+        self.properties.setdefault("region_w", 100)
+        self.properties.setdefault("region_h", 100)
         if "bypassed" in self.properties:
             self.bypassed = bool(self.properties["bypassed"])
 
@@ -648,10 +659,17 @@ class PixelColorNodeItem(BaseNodeItem):
         self.socket_mismatch = self.add_output_socket(name="Mismatch", color=QColor(244, 63, 94))
 
     def get_summary_text(self) -> str:
+        col = self.properties.get("color", "#FFFFFF")
+        tol = self.properties.get("tolerance", 15)
+        if self.properties.get("use_region", False):
+            rx = self.properties.get("region_x", self.properties.get("x", 0))
+            ry = self.properties.get("region_y", self.properties.get("y", 0))
+            rw = self.properties.get("region_w", 100)
+            rh = self.properties.get("region_h", 100)
+            return f"Box: ({rx}, {ry}) {rw}x{rh}\nColor: {col} (±{tol})"
         x = self.properties.get("x", 0)
         y = self.properties.get("y", 0)
-        col = self.properties.get("color", "#FFFFFF")
-        return f"Pos: ({x}, {y})\nColor: {col}"
+        return f"Pos: ({x}, {y})\nColor: {col} (±{tol})"
 
     def paint(self, painter: QPainter, option, widget=None):
         super().paint(painter, option, widget)
@@ -662,6 +680,12 @@ class PixelColorNodeItem(BaseNodeItem):
         painter.setPen(QPen(QColor(255, 255, 255), 1))
         painter.setBrush(QBrush(QColor(col_hex)))
         painter.drawRoundedRect(swatch_rect, 2, 2)
+
+        if self.properties.get("use_region", False):
+            # Draw dashed bounding box icon indicator
+            painter.setPen(QPen(QColor(217, 70, 239), 1, Qt.PenStyle.DashLine))
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawRect(QRectF(34, self.height - 22, 16, 14))
 
         # Socket output labels
         painter.setFont(QFont("Segoe UI", 7, QFont.Weight.Bold))

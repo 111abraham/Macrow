@@ -30,6 +30,7 @@ class ScreenSnipper(QDialog):
     """Fullscreen semi-transparent overlay to select and crop a screen snippet."""
 
     snippet_captured = pyqtSignal(QImage, str)  # (cropped_qimage, saved_filepath)
+    region_captured = pyqtSignal(int, int, int, int)  # (global_x, global_y, width, height)
 
     def __init__(self, parent=None, save_dir: Optional[str] = None):
         super().__init__(parent)
@@ -50,12 +51,13 @@ class ScreenSnipper(QDialog):
         # Capture the entire virtual desktop across all connected monitors safely
         bgra, vx, vy, vw, vh = capture_screen_win32_bgra(region=None)
         if bgra is not None and vw > 0 and vh > 0:
+            self.vx, self.vy = vx, vy
             self.setGeometry(QRect(vx, vy, vw, vh))
             self.full_screenshot = QImage(bgra.data, vw, vh, vw * 4, QImage.Format.Format_ARGB32).copy()
         else:
-            vx, vy, vw, vh = 0, 0, 1920, 1080
-            self.setGeometry(QRect(vx, vy, vw, vh))
-            self.full_screenshot = QImage(vw, vh, QImage.Format.Format_RGB32)
+            self.vx, self.vy = 0, 0
+            self.setGeometry(QRect(0, 0, 1920, 1080))
+            self.full_screenshot = QImage(1920, 1080, QImage.Format.Format_RGB32)
             self.full_screenshot.fill(QColor(15, 23, 42))
 
         self.start_pos: Optional[QPoint] = None
@@ -96,7 +98,13 @@ class ScreenSnipper(QDialog):
                 filepath = os.path.join(self.save_dir, filename)
                 cropped.save(filepath, "PNG")
 
+                gx = getattr(self, "vx", 0) + rect.x()
+                gy = getattr(self, "vy", 0) + rect.y()
+                gw = rect.width()
+                gh = rect.height()
+
                 self.snippet_captured.emit(cropped, filepath)
+                self.region_captured.emit(gx, gy, gw, gh)
                 self.accept()
             else:
                 self.update()

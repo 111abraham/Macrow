@@ -962,8 +962,8 @@ class PropertyInspector(QWidget):
                 kb_layout.addLayout(row_dur)
 
                 chk_repeat = QCheckBox("Auto-repeat (typematic pulses every 45ms)")
-                chk_repeat.setChecked(bool(node.properties.get("auto_repeat", False)))
-                chk_repeat.setToolTip("Continuously sends key down pulses every 45ms while held, simulating physical keyboard typematic repeating (useful for games like Chrome Dino or continuous movement).")
+                chk_repeat.setChecked(bool(node.properties.get("auto_repeat", True)))
+                chk_repeat.setToolTip("Continuously sends key down pulses every 45ms while held, simulating physical keyboard typematic repeating (useful for games like Chrome Dino or continuous movement).\n\nWhen Hold Duration is 0 (Until Release), pulses continue in the background until a Key Up (Release) node is reached or playback stops.")
 
                 def on_rep_toggled(chk):
                     node.properties["auto_repeat"] = chk
@@ -1328,7 +1328,19 @@ class PropertyInspector(QWidget):
         lbl.setStyleSheet("color: #d946ef;")
         layout.addWidget(lbl)
 
-        # Coordinates
+        # Region vs Single Coord Toggle
+        is_region = bool(node.properties.get("use_region", False))
+        chk_region = QCheckBox("Search in Bounding Box (Wider Region)")
+        chk_region.setChecked(is_region)
+        chk_region.setStyleSheet("color: #f472b6; font-weight: bold; font-size: 11px;")
+        layout.addWidget(chk_region)
+
+        # 1. Single Coordinate Container
+        coord_container = QWidget()
+        coord_layout = QVBoxLayout(coord_container)
+        coord_layout.setContentsMargins(0, 0, 0, 0)
+        coord_layout.setSpacing(6)
+
         row_xy = QHBoxLayout()
         row_xy.addWidget(QLabel("X:"))
         widget_x, edit_x = self._create_param_input(
@@ -1347,9 +1359,8 @@ class PropertyInspector(QWidget):
             tooltip="Target screen pixel Y coordinate or variable (e.g. 300 or $y)",
         )
         row_xy.addWidget(widget_y)
-        layout.addLayout(row_xy)
+        coord_layout.addLayout(row_xy)
 
-        # Eye dropper button for sampling coordinate AND color together!
         btn_sample = QPushButton("🎯 Pick Color & Coord (Eye Dropper)")
         btn_sample.setStyleSheet("""
             QPushButton {
@@ -1363,6 +1374,96 @@ class PropertyInspector(QWidget):
                 background-color: #c026d3;
             }
         """)
+        coord_layout.addWidget(btn_sample)
+        layout.addWidget(coord_container)
+
+        # 2. Bounding Box Region Container
+        region_container = QWidget()
+        reg_layout = QVBoxLayout(region_container)
+        reg_layout.setContentsMargins(0, 0, 0, 0)
+        reg_layout.setSpacing(6)
+
+        row_reg_xy = QHBoxLayout()
+        row_reg_xy.addWidget(QLabel("Top-Left X:"))
+        widget_rx, edit_rx = self._create_param_input(
+            node.properties.get("region_x", node.properties.get("x", 500)),
+            lambda val: (node.properties.__setitem__("region_x", val), node.update(), self.property_changed.emit()),
+            placeholder="500 or $rx",
+            tooltip="Bounding box top-left X coordinate or variable",
+        )
+        row_reg_xy.addWidget(widget_rx)
+
+        row_reg_xy.addWidget(QLabel("Y:"))
+        widget_ry, edit_ry = self._create_param_input(
+            node.properties.get("region_y", node.properties.get("y", 300)),
+            lambda val: (node.properties.__setitem__("region_y", val), node.update(), self.property_changed.emit()),
+            placeholder="300 or $ry",
+            tooltip="Bounding box top-left Y coordinate or variable",
+        )
+        row_reg_xy.addWidget(widget_ry)
+        reg_layout.addLayout(row_reg_xy)
+
+        row_reg_wh = QHBoxLayout()
+        row_reg_wh.addWidget(QLabel("Width (W):"))
+        widget_rw, edit_rw = self._create_param_input(
+            node.properties.get("region_w", 100),
+            lambda val: (node.properties.__setitem__("region_w", val), node.update(), self.property_changed.emit()),
+            placeholder="100 or $rw",
+            tooltip="Bounding box search width in pixels",
+        )
+        row_reg_wh.addWidget(widget_rw)
+
+        row_reg_wh.addWidget(QLabel("Height (H):"))
+        widget_rh, edit_rh = self._create_param_input(
+            node.properties.get("region_h", 100),
+            lambda val: (node.properties.__setitem__("region_h", val), node.update(), self.property_changed.emit()),
+            placeholder="100 or $rh",
+            tooltip="Bounding box search height in pixels",
+        )
+        row_reg_wh.addWidget(widget_rh)
+        reg_layout.addLayout(row_reg_wh)
+
+        row_reg_btns = QHBoxLayout()
+        btn_drag_box = QPushButton("📐 Drag Bounding Box on Screen")
+        btn_drag_box.setStyleSheet("""
+            QPushButton {
+                background-color: #8b5cf6;
+                color: white;
+                font-weight: bold;
+                padding: 6px;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #7c3aed;
+            }
+        """)
+        row_reg_btns.addWidget(btn_drag_box, 1)
+
+        btn_pick_col_only = QPushButton("🎯 Pick Color")
+        btn_pick_col_only.setStyleSheet("background-color: #334155; color: white; padding: 6px; border-radius: 4px;")
+        btn_pick_col_only.setToolTip("Sample target color from anywhere on screen")
+        row_reg_btns.addWidget(btn_pick_col_only)
+        reg_layout.addLayout(row_reg_btns)
+
+        lbl_reg_tip = QLabel("💡 Searches the entire bounding box. If color is found, routes to Match → and saves found pixel coordinates to $pixel_x and $pixel_y.")
+        lbl_reg_tip.setStyleSheet("color: #94a3b8; font-size: 10px;")
+        lbl_reg_tip.setWordWrap(True)
+        reg_layout.addWidget(lbl_reg_tip)
+
+        layout.addWidget(region_container)
+
+        # Toggle visibility between single coordinate and region
+        coord_container.setVisible(not is_region)
+        region_container.setVisible(is_region)
+
+        def on_region_toggle(checked):
+            node.properties["use_region"] = checked
+            coord_container.setVisible(not checked)
+            region_container.setVisible(checked)
+            node.update()
+            self.property_changed.emit()
+
+        chk_region.toggled.connect(on_region_toggle)
 
         # Color row: swatch + hex edit
         row_col = QHBoxLayout()
@@ -1393,6 +1494,7 @@ class PropertyInspector(QWidget):
 
         btn_pick_dlg.clicked.connect(on_open_palette)
         row_col.addWidget(btn_pick_dlg)
+        layout.addLayout(row_col)
 
         def on_sample():
             parent_win = self.window()
@@ -1408,6 +1510,7 @@ class PropertyInspector(QWidget):
                 node.properties["x"] = x
                 node.properties["y"] = y
                 node.properties["color"] = hex_col
+                swatch_lbl.setStyleSheet(f"background-color: {hex_col}; border: 1px solid #ffffff; border-radius: 4px;")
                 node.update()
                 self.property_changed.emit()
                 if parent_win:
@@ -1415,12 +1518,69 @@ class PropertyInspector(QWidget):
                     parent_win.activateWindow()
 
             dropper.coord_picked.connect(on_picked)
-            dropper.rejected.connect(lambda: parent_win.showNormal() if parent_win else None)
+            dropper.rejected.connect(lambda: (parent_win.showNormal(), parent_win.activateWindow()) if parent_win else None)
             dropper.exec()
 
         btn_sample.clicked.connect(on_sample)
-        layout.addWidget(btn_sample)
-        layout.addLayout(row_col)
+
+        def on_pick_only_color():
+            parent_win = self.window()
+            if parent_win:
+                parent_win.showMinimized()
+
+            dropper = CoordinateEyeDropper(parent=None)
+
+            def on_col_picked(x, y, hex_col, rgb):
+                edit_hex.setText(hex_col)
+                node.properties["color"] = hex_col
+                swatch_lbl.setStyleSheet(f"background-color: {hex_col}; border: 1px solid #ffffff; border-radius: 4px;")
+                node.update()
+                self.property_changed.emit()
+                if parent_win:
+                    parent_win.showNormal()
+                    parent_win.activateWindow()
+
+            dropper.coord_picked.connect(on_col_picked)
+            dropper.rejected.connect(lambda: (parent_win.showNormal(), parent_win.activateWindow()) if parent_win else None)
+            dropper.exec()
+
+        btn_pick_col_only.clicked.connect(on_pick_only_color)
+
+        def on_drag_box():
+            parent_win = self.window()
+            if parent_win:
+                parent_win.showMinimized()
+
+            snipper = ScreenSnipper(parent=None)
+
+            def on_box_captured(x, y, w, h):
+                edit_rx.setText(str(x))
+                edit_ry.setText(str(y))
+                edit_rw.setText(str(w))
+                edit_rh.setText(str(h))
+                node.properties["region_x"] = x
+                node.properties["region_y"] = y
+                node.properties["region_w"] = w
+                node.properties["region_h"] = h
+                if hasattr(snipper, "full_screenshot") and not snipper.full_screenshot.isNull():
+                    lx = x - getattr(snipper, "vx", 0) + w // 2
+                    ly = y - getattr(snipper, "vy", 0) + h // 2
+                    if 0 <= lx < snipper.full_screenshot.width() and 0 <= ly < snipper.full_screenshot.height():
+                        c_hex = snipper.full_screenshot.pixelColor(lx, ly).name().upper()
+                        edit_hex.setText(c_hex)
+                        node.properties["color"] = c_hex
+                        swatch_lbl.setStyleSheet(f"background-color: {c_hex}; border: 1px solid #ffffff; border-radius: 4px;")
+                node.update()
+                self.property_changed.emit()
+                if parent_win:
+                    parent_win.showNormal()
+                    parent_win.activateWindow()
+
+            snipper.region_captured.connect(on_box_captured)
+            snipper.rejected.connect(lambda: (parent_win.showNormal(), parent_win.activateWindow()) if parent_win else None)
+            snipper.exec()
+
+        btn_drag_box.clicked.connect(on_drag_box)
 
         # Tolerance
         try:

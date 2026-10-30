@@ -473,6 +473,29 @@ def graph_to_macro(scene: NodeScene) -> List[Dict[str, Any]]:
                 step["tolerance"] = int(props.get("tolerance", 15))
             except (ValueError, TypeError):
                 step["tolerance"] = str(props.get("tolerance", 15))
+            use_reg = bool(props.get("use_region", False))
+            step["use_region"] = use_reg
+            if use_reg:
+                raw_rx = props.get("region_x", raw_x)
+                raw_ry = props.get("region_y", raw_y)
+                raw_rw = props.get("region_w", 100)
+                raw_rh = props.get("region_h", 100)
+                try:
+                    step["region_x"] = int(raw_rx)
+                except (ValueError, TypeError):
+                    step["region_x"] = str(raw_rx)
+                try:
+                    step["region_y"] = int(raw_ry)
+                except (ValueError, TypeError):
+                    step["region_y"] = str(raw_ry)
+                try:
+                    step["region_w"] = int(raw_rw)
+                except (ValueError, TypeError):
+                    step["region_w"] = str(raw_rw)
+                try:
+                    step["region_h"] = int(raw_rh)
+                except (ValueError, TypeError):
+                    step["region_h"] = str(raw_rh)
             step["found_next"] = get_target_id(0)
             step["miss_next"] = get_target_id(1)
             current_dt += 20
