@@ -55,6 +55,7 @@ class BridgeSignals(QObject):
     pass_progress = pyqtSignal(int, int)
     cursor_action = pyqtSignal(int, int, str)
     scheduler_status = pyqtSignal(str)
+    step_executing = pyqtSignal(str)
 
 
 class MacrowPanel(QWidget):
@@ -116,10 +117,12 @@ class MacrowPanel(QWidget):
         self.player.on_progress = lambda cur, tot: self.bridges.player_progress.emit(cur, tot)
         self.player.on_pass_progress = lambda cur, tot: self.bridges.pass_progress.emit(cur, tot)
         self.player.on_cursor_action = lambda x, y, act: self.bridges.cursor_action.emit(x, y, act)
+        self.player.on_step_executing = lambda sid, idx, s: self.bridges.step_executing.emit(sid or "")
         self.bridges.player_state_changed.connect(self._on_player_state_changed)
         self.bridges.player_progress.connect(self._on_player_progress)
         self.bridges.pass_progress.connect(self._on_pass_progress)
         self.bridges.cursor_action.connect(self._on_cursor_action)
+        self.bridges.step_executing.connect(self._on_step_executing)
 
         # Scheduler status
         self.bridges.scheduler_status.connect(self._update_scheduler_status_ui)
@@ -804,6 +807,12 @@ class MacrowPanel(QWidget):
     def _on_cursor_action(self, x, y, action_type):
         if action_type in ("click", "dblclick", "down"):
             self.indicator.show_at(x, y, 180)
+
+    def _on_step_executing(self, step_id: str):
+        if hasattr(self, "_editor_windows"):
+            for editor_win in self._editor_windows.values():
+                if editor_win and editor_win.isVisible():
+                    editor_win.set_executing_node_id(step_id if step_id else None)
 
     def _on_scheduler_status(self, status):
         self.bridges.scheduler_status.emit(status)

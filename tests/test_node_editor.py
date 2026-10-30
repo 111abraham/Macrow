@@ -1592,6 +1592,61 @@ class TestNodeEditor(unittest.TestCase):
         scene.node_selected.emit(node2)
         self.assertIs(inspector.current_node, node2)
 
+    def test_live_node_execution_highlighting(self):
+        from app.ui.node_editor.editor_window import MacroNodeEditorWindow
+        from app.ui.node_editor.node_items import BaseNodeItem
+        steps = [
+            {"type": "click", "x": 100, "y": 200, "id": "step_a"},
+            {"type": "delay", "duration": 50, "id": "step_b"},
+        ]
+        win = MacroNodeEditorWindow("TestHighlight", steps)
+        nodes = [item for item in win.scene.items() if isinstance(item, BaseNodeItem)]
+        self.assertGreaterEqual(len(nodes), 2)
+        n_a = next(n for n in nodes if n.id == "step_a")
+        n_b = next(n for n in nodes if n.id == "step_b")
+
+        self.assertFalse(n_a.is_executing)
+        self.assertFalse(n_b.is_executing)
+
+        # Set step_a executing
+        win.set_executing_node_id("step_a")
+        self.assertTrue(n_a.is_executing)
+        self.assertFalse(n_b.is_executing)
+
+        # Transition to step_b executing
+        win.set_executing_node_id("step_b")
+        self.assertFalse(n_a.is_executing)
+        self.assertTrue(n_b.is_executing)
+
+        # Clear execution highlight
+        win.set_executing_node_id(None)
+        self.assertFalse(n_a.is_executing)
+        self.assertFalse(n_b.is_executing)
+        win.close()
+
+    def test_player_step_executing_callback(self):
+        from app.core.input_simulator import InputSimulator
+        from app.core.player import MacroPlayer
+        import time
+
+        sim = InputSimulator()
+        player = MacroPlayer(simulator=sim)
+        executing_events = []
+        player.on_step_executing = lambda sid, idx, s: executing_events.append((sid, idx))
+
+        steps = [
+            {"type": "delay", "duration": 10, "dt": 10, "id": "node_1"},
+            {"type": "delay", "duration": 10, "dt": 20, "id": "node_2"},
+        ]
+        player.play(steps, repeat=False, repeat_count=1)
+        player._thread.join(timeout=3.0)
+
+        # First steps executed, then cleared on finish with (None, -1)
+        step_ids = [e[0] for e in executing_events]
+        self.assertIn("node_1", step_ids)
+        self.assertIn("node_2", step_ids)
+        self.assertEqual(step_ids[-1], None)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -146,6 +146,13 @@ Macrow includes a visual node-based macro customizer (Node Editor) that translat
   - Wire Auto-Splice: Dropping an unconnected node onto a wire splices the node in-between.
   - Interactive Snap Wire: Dynamic candidate socket glow when wire tip approaches.
 
+- **⚡ Live Real-Time Execution Highlighting in Node Customizer**:
+  - **Active Flow Visualization**: When the Node Customizer is open while a macro is playing back, the currently running node lights up with a vibrant emerald green border (`#10B981`, 3.2px), soft glow aura, and a `⚡ RUNNING` active header badge.
+  - **Glowing Execution Wire**: Incoming bezier connection wires feeding into the active node automatically light up with an emerald green power glow (`#34D199`, 8px halo), tracing the active execution path through your node graph in real time.
+  - **Repeat Zone Active Brackets**: The Lego Mindstorms-style C-clamp repeat zone bracket illuminates green during active iteration cycles.
+  - **Auto-Follow Canvas Camera (`ensureVisible`)**: If the macro steps into nodes outside the current viewport, the canvas smoothly ensures the active node is visible, allowing you to trace complex logic flows and correct mistakes on the fly.
+  - **Clean Reset**: When playback reaches the end or when Emergency Stop (`Alt+S` / `F12`) is pressed, all active node badges and glowing wires instantly return to their clean resting states.
+
 - **📚 Varied Real-World Example Presets**:
   1. **📋 Form Auto-Filler & Exporter**: Minimizes to desktop, double-clicks document, types variable text (`Record #$row: Complete`), advances fields with Tab, and saves with `Ctrl+S`.
   2. **🎮 Boss Combat Guard**: Outer combat loop, pixel color HP bar monitor, Vision AI target recognition, mana condition evaluation, ability clicks, and camera zoom scroll.

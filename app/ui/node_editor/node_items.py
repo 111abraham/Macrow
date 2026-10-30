@@ -54,6 +54,7 @@ class BaseNodeItem(QGraphicsItem):
         # Data properties dictionary for serialization and execution
         self.properties: Dict[str, Any] = dict(properties) if properties else {}
         self.bypassed: bool = bool(self.properties.get("bypassed", False))
+        self.is_executing: bool = False
 
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
@@ -142,7 +143,14 @@ class BaseNodeItem(QGraphicsItem):
         painter.fillRect(QRectF(0, self.header_height - 6, self.width, 6), hdr_color)
 
         # Border
-        if is_sel:
+        if getattr(self, "is_executing", False):
+            glow_pen = QPen(QColor(16, 185, 129, 120), 7.0)
+            painter.setPen(glow_pen)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawRoundedRect(rect, 8, 8)
+            border_col = QColor(16, 185, 129)
+            pen = QPen(border_col, 3.2)
+        elif is_sel:
             border_col = QColor(251, 146, 60)
             pen = QPen(border_col, 2.5)
         elif self.bypassed:
@@ -165,6 +173,17 @@ class BaseNodeItem(QGraphicsItem):
             Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft,
             display_title,
         )
+
+        # Executing Running Badge
+        if getattr(self, "is_executing", False):
+            badge_w = 64
+            badge_rect = QRectF(self.width - badge_w - 6, 4, badge_w, self.header_height - 8)
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(QBrush(QColor(16, 185, 129)))
+            painter.drawRoundedRect(badge_rect, 4, 4)
+            painter.setPen(QColor(255, 255, 255))
+            painter.setFont(QFont("Segoe UI", 7, QFont.Weight.Bold))
+            painter.drawText(badge_rect, Qt.AlignmentFlag.AlignCenter, "⚡ RUNNING")
 
         # Body summary text
         summary = self.get_summary_text()
@@ -934,7 +953,16 @@ class LoopNodeItem(BaseNodeItem):
         painter.drawPath(hdr_path)
 
         # Bracket outer border
-        border_pen = QPen(QColor(251, 146, 60) if is_sel else QColor(99, 102, 241), 2.0 if is_sel else 1.5)
+        if getattr(self, "is_executing", False):
+            glow_pen = QPen(QColor(16, 185, 129, 120), 7.0)
+            painter.setPen(glow_pen)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawPath(bracket_path)
+            border_pen = QPen(QColor(16, 185, 129), 3.2)
+        elif is_sel:
+            border_pen = QPen(QColor(251, 146, 60), 2.0)
+        else:
+            border_pen = QPen(QColor(99, 102, 241), 1.5)
         painter.setPen(border_pen)
         painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawPath(bracket_path)
@@ -943,6 +971,16 @@ class LoopNodeItem(BaseNodeItem):
         painter.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
         painter.setPen(QColor(255, 255, 255))
         painter.drawText(QRectF(10, 0, 160, hdr_h), Qt.AlignmentFlag.AlignVCenter, "🔁 REPEAT ZONE")
+
+        # Executing Running Badge
+        if getattr(self, "is_executing", False):
+            run_badge_rect = QRectF(w - 180, 5, 62, 18)
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(QBrush(QColor(16, 185, 129)))
+            painter.drawRoundedRect(run_badge_rect, 4, 4)
+            painter.setPen(QColor(255, 255, 255))
+            painter.setFont(QFont("Segoe UI", 7, QFont.Weight.Bold))
+            painter.drawText(run_badge_rect, Qt.AlignmentFlag.AlignCenter, "⚡ RUNNING")
 
         # Badge: [∞ Infinite] vs [Count]
         badge_text = "∞ Infinite" if is_inf else f"{cnt}x"

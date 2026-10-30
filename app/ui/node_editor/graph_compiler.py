@@ -406,7 +406,7 @@ def graph_to_macro(scene: NodeScene) -> List[Dict[str, Any]]:
                     step["vk"] = 0
                 if action_type == "key_down":
                     step["hold_duration"] = props.get("hold_duration", 0)
-                    step["auto_repeat"] = bool(props.get("auto_repeat", False))
+                    step["auto_repeat"] = bool(props.get("auto_repeat", True))
                 current_dt += 50
                 step["dt"] = current_dt
 

@@ -476,7 +476,11 @@ class MacroNodeEditorWindow(QMainWindow):
         center = self.view.mapToScene(self.view.viewport().rect().center())
         default_key = "Shift" if action_type in ("key_down", "key_up") else "Enter"
         default_vk = 16 if action_type in ("key_down", "key_up") else 13
-        node = ActionNodeItem(action_type=action_type, properties={"key": default_key, "vk": default_vk})
+        props = {"key": default_key, "vk": default_vk}
+        if action_type == "key_down":
+            props["auto_repeat"] = True
+            props["hold_duration"] = 0
+        node = ActionNodeItem(action_type=action_type, properties=props)
         self.scene.add_node(node, center)
         self.scene.clearSelection()
         node.setSelected(True)
@@ -1071,3 +1075,22 @@ class MacroNodeEditorWindow(QMainWindow):
                     self.parent_panel.raise_()
                 except Exception:
                     pass
+
+    def set_executing_node_id(self, node_id: Optional[str]):
+        """Highlight the currently executing node in real-time during macro playback."""
+        if not hasattr(self, "scene"):
+            return
+        found_target = None
+        for item in self.scene.items():
+            if isinstance(item, BaseNodeItem):
+                is_curr = bool(node_id and item.id == node_id)
+                if getattr(item, "is_executing", False) != is_curr:
+                    item.is_executing = is_curr
+                    item.update()
+                    item.update_connected_wires()
+                if is_curr:
+                    found_target = item
+        if found_target and hasattr(self, "view"):
+            # Ensure visible within viewport with a comfortable margin
+            self.view.ensureVisible(found_target, 50, 50)
+        self.scene.update()

@@ -47,6 +47,7 @@ class MacroPlayer:
         self.on_progress = None
         self.on_pass_progress = None  # (current_pass, total_passes) - 0 if infinite
         self.on_cursor_action = None  # (x, y, action_type) for visual indicator
+        self.on_step_executing = None  # (step_id, step_index, step_dict) for live node highlight
 
     def is_playing(self):
         with self.state_lock:
@@ -124,6 +125,12 @@ class MacroPlayer:
         with self._repeat_lock:
             self._active_repeats.clear()
 
+        if self.on_step_executing:
+            try:
+                self.on_step_executing(None, -1, None)
+            except Exception:
+                pass
+
         self.simulator.release_all_held()
 
         with self.state_lock:
@@ -178,6 +185,11 @@ class MacroPlayer:
                 else:
                     break
         finally:
+            if self.on_step_executing:
+                try:
+                    self.on_step_executing(None, -1, None)
+                except Exception:
+                    pass
             self.simulator.release_all_held()
             with self.state_lock:
                 self.state = self.STATE_IDLE
@@ -247,6 +259,13 @@ class MacroPlayer:
             if self._stop_requested.is_set():
                 break
 
+            step_id = step.get("id")
+            if self.on_step_executing and step_id:
+                try:
+                    self.on_step_executing(step_id, i, step)
+                except Exception:
+                    pass
+
             # Execute the step (linear pass already waited target_dt_ms, so delay step does not double-sleep unless dt is 0)
             if step.get("type") == "delay" and not step.get("dt"):
                 self._execute_step(step)
@@ -291,6 +310,11 @@ class MacroPlayer:
             # Special state handling for Loop (Repeat Zone) node
             if curr_step.get("type") == "loop_count":
                 lid = curr_step.get("id")
+                if self.on_step_executing and lid:
+                    try:
+                        self.on_step_executing(lid, step_count, curr_step)
+                    except Exception:
+                        pass
                 is_infinite = bool(curr_step.get("infinite", False))
                 target_count = self._resolve_coord(curr_step.get("count", 5), default=5)
                 var_name = str(curr_step.get("var_name", "i")).lstrip("$")
@@ -313,6 +337,12 @@ class MacroPlayer:
                 continue
 
             # Execute the current step
+            step_id = curr_step.get("id")
+            if self.on_step_executing and step_id:
+                try:
+                    self.on_step_executing(step_id, step_count, curr_step)
+                except Exception:
+                    pass
             cond_res = self._execute_step(curr_step)
 
             if self.on_progress:

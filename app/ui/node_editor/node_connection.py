@@ -82,6 +82,7 @@ class NodeConnection(QGraphicsPathItem):
 
         is_sel = self.isSelected()
         is_highlighted = getattr(self, "is_drop_target", False)
+        is_executing = bool(self.end_socket and self.end_socket.node and getattr(self.end_socket.node, "is_executing", False))
 
         if is_highlighted:
             glow_pen = QPen(QColor(245, 158, 11, 150), 8.0)
@@ -90,6 +91,13 @@ class NodeConnection(QGraphicsPathItem):
             col = QColor(251, 191, 36)  # Amber gold
             pen_width = 3.2
             pen_style = Qt.PenStyle.DashLine
+        elif is_executing:
+            glow_pen = QPen(QColor(16, 185, 129, 130), 8.0)
+            painter.setPen(glow_pen)
+            painter.drawPath(self.path())
+            col = QColor(52, 211, 153)  # Emerald green
+            pen_width = 3.2
+            pen_style = Qt.PenStyle.SolidLine
         else:
             col = self.selected_color if is_sel else (self.start_socket.color if self.start_socket else self.color)
             pen_width = 3.0 if is_sel else 2.2
