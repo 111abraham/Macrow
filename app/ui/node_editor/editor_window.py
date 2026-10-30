@@ -985,6 +985,21 @@ class MacroNodeEditorWindow(QMainWindow):
     def showEvent(self, event):
         super().showEvent(event)
         QTimer.singleShot(60, self.view.fit_all)
+        if hasattr(self, "inspector") and hasattr(self.inspector, "_update_region_overlay"):
+            self.inspector._update_region_overlay()
+
+    def hideEvent(self, event):
+        super().hideEvent(event)
+        if hasattr(self, "inspector") and hasattr(self.inspector, "region_overlay"):
+            self.inspector.region_overlay.hide_overlay()
+
+    def changeEvent(self, event):
+        super().changeEvent(event)
+        if hasattr(self, "inspector") and hasattr(self.inspector, "region_overlay"):
+            if self.isMinimized():
+                self.inspector.region_overlay.hide_overlay()
+            elif hasattr(self.inspector, "_update_region_overlay"):
+                self.inspector._update_region_overlay()
 
     def closeEvent(self, event):
         if self._has_unsaved_changes and os.environ.get("MACROW_TEST_MODE") != "1":
@@ -1045,11 +1060,14 @@ class MacroNodeEditorWindow(QMainWindow):
         else:
             event.accept()
 
-        if event.isAccepted() and hasattr(self, "parent_panel") and self.parent_panel:
-            try:
-                if self.parent_panel.isMinimized():
-                    self.parent_panel.showNormal()
-                self.parent_panel.activateWindow()
-                self.parent_panel.raise_()
-            except Exception:
-                pass
+        if event.isAccepted():
+            if hasattr(self, "inspector") and hasattr(self.inspector, "region_overlay"):
+                self.inspector.region_overlay.hide_overlay()
+            if hasattr(self, "parent_panel") and self.parent_panel:
+                try:
+                    if self.parent_panel.isMinimized():
+                        self.parent_panel.showNormal()
+                    self.parent_panel.activateWindow()
+                    self.parent_panel.raise_()
+                except Exception:
+                    pass

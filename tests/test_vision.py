@@ -105,6 +105,38 @@ class TestVision(unittest.TestCase):
         # Empty string
         self.assertEqual(parse_template_targets(""), [])
 
+    def test_capture_desktop_composite_qimage_region(self):
+        from app.core.vision import capture_desktop_composite_qimage
+        # Capture a 64x64 region at (50, 50)
+        qimg, rx, ry, rw, rh = capture_desktop_composite_qimage((50, 50, 64, 64))
+        if qimg is not None:
+            self.assertEqual(rw, 64)
+            self.assertEqual(rh, 64)
+            self.assertEqual(rx, 50)
+            self.assertEqual(ry, 50)
+            self.assertEqual(qimg.width(), 64)
+            self.assertEqual(qimg.height(), 64)
+
+    def test_region_highlight_overlay(self):
+        from app.ui.indicator import RegionHighlightOverlay
+        overlay = RegionHighlightOverlay()
+        overlay.show_region(120, 150, 240, 180, label="Test Region", color_hex="#10B981")
+        self.assertEqual(overlay.x(), 120)
+        self.assertEqual(overlay.y(), 150)
+        self.assertEqual(overlay.width(), 240)
+        self.assertEqual(overlay.height(), 180)
+        self.assertEqual(overlay.label_text, "Test Region")
+        self.assertTrue(overlay.isVisible())
+
+        # Test small box adapts badge
+        overlay.show_region(50, 60, 45, 25, label="Mini")
+        self.assertEqual(overlay.width(), 45)
+        self.assertEqual(overlay.height(), 25)
+
+        overlay.hide_overlay()
+        self.assertFalse(overlay.isVisible())
+        overlay.close()
+
 
 if __name__ == "__main__":
     unittest.main()

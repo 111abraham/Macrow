@@ -1453,6 +1453,52 @@ class TestNodeEditor(unittest.TestCase):
         self.assertEqual(step["color"], "#10B981")
         self.assertEqual(step["tolerance"], 18)
 
+    def test_inspector_pixel_color_region_overlay_live_highlight(self):
+        from app.ui.node_editor.inspector import PropertyInspector
+        scene = NodeScene()
+        inspector = PropertyInspector(scene)
+        pnode = PixelColorNodeItem(properties={
+            "use_region": False,
+            "region_x": 350,
+            "region_y": 250,
+            "region_w": 180,
+            "region_h": 120,
+            "color": "#D946EF",
+        })
+        scene.add_node(pnode)
+
+        # 1. Initially use_region is False, overlay is hidden
+        inspector.set_node(pnode)
+        self.assertFalse(inspector.region_overlay.isVisible())
+
+        # 2. Toggle use_region to True -> overlay shows and moves to bounding box
+        pnode.properties["use_region"] = True
+        inspector._update_region_overlay(pnode)
+        self.assertTrue(inspector.region_overlay.isVisible())
+        self.assertEqual(inspector.region_overlay.x(), 350)
+        self.assertEqual(inspector.region_overlay.y(), 250)
+        self.assertEqual(inspector.region_overlay.width(), 180)
+        self.assertEqual(inspector.region_overlay.height(), 120)
+
+        # 3. Live update coordinates -> overlay moves immediately
+        pnode.properties["region_x"] = 520
+        pnode.properties["region_y"] = 410
+        inspector._update_region_overlay(pnode)
+        self.assertEqual(inspector.region_overlay.x(), 520)
+        self.assertEqual(inspector.region_overlay.y(), 410)
+
+        # 4. Deselection -> overlay hides
+        inspector.set_node(None)
+        self.assertFalse(inspector.region_overlay.isVisible())
+
+        # 5. Selecting a non-region node -> overlay stays hidden
+        action_node = ActionNodeItem(action_type="delay")
+        inspector.set_node(action_node)
+        self.assertFalse(inspector.region_overlay.isVisible())
+
+        # Clean up
+        inspector.region_overlay.close()
+
 
 if __name__ == "__main__":
     unittest.main()

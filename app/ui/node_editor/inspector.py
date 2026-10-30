@@ -41,6 +41,7 @@ from app.ui.node_editor.node_items import (
 from app.core.key_catalog import KEY_CATALOG_GROUPS, get_name_for_vk, get_vk_for_key
 from app.ui.snippet_tool import ScreenSnipper
 from app.ui.eye_dropper import CoordinateEyeDropper
+from app.ui.indicator import RegionHighlightOverlay
 
 if TYPE_CHECKING:
     from app.ui.node_editor.node_scene import NodeScene
@@ -61,10 +62,30 @@ class PropertyInspector(QWidget):
         self.setMinimumWidth(260)
         self.setMaximumWidth(800)
 
+        # Bounding box highlight overlay for screen visualization
+        self.region_overlay = RegionHighlightOverlay()
+
         self._init_ui()
 
         # Connect scene selection change
         self.node_scene.node_selected.connect(self.set_node)
+
+    def _update_region_overlay(self, node: Optional[BaseNodeItem] = None):
+        """Highlights the node's search bounding box on screen if use_region is enabled."""
+        target = node if node is not None else self.current_node
+        if isinstance(target, PixelColorNodeItem):
+            if target.properties.get("use_region", False):
+                rx = target.properties.get("region_x", target.properties.get("x", 500))
+                ry = target.properties.get("region_y", target.properties.get("y", 300))
+                rw = target.properties.get("region_w", 100)
+                rh = target.properties.get("region_h", 100)
+                col = target.properties.get("color", "#D946EF")
+                self.region_overlay.show_region(
+                    rx, ry, rw, rh, label="Pixel Search Region", color_hex=col
+                )
+                return
+        if hasattr(self, "region_overlay"):
+            self.region_overlay.hide_overlay()
 
     def _init_ui(self):
         self.setStyleSheet("""
@@ -216,12 +237,15 @@ class PropertyInspector(QWidget):
 
     def set_node(self, node: Optional[BaseNodeItem], force: bool = False):
         if node is self.current_node and not force and self.content_layout.count() > 1:
+            self._update_region_overlay(node)
             return
         self.current_node = node
         if not node:
             self._show_empty_state()
+            self._update_region_overlay(None)
             return
 
+        self._update_region_overlay(node)
         self._clear_content()
 
         # Node Title Badge
@@ -1387,7 +1411,12 @@ class PropertyInspector(QWidget):
         row_reg_xy.addWidget(QLabel("Top-Left X:"))
         widget_rx, edit_rx = self._create_param_input(
             node.properties.get("region_x", node.properties.get("x", 500)),
-            lambda val: (node.properties.__setitem__("region_x", val), node.update(), self.property_changed.emit()),
+            lambda val: (
+                node.properties.__setitem__("region_x", val),
+                node.update(),
+                self._update_region_overlay(node),
+                self.property_changed.emit(),
+            ),
             placeholder="500 or $rx",
             tooltip="Bounding box top-left X coordinate or variable",
         )
@@ -1396,7 +1425,12 @@ class PropertyInspector(QWidget):
         row_reg_xy.addWidget(QLabel("Y:"))
         widget_ry, edit_ry = self._create_param_input(
             node.properties.get("region_y", node.properties.get("y", 300)),
-            lambda val: (node.properties.__setitem__("region_y", val), node.update(), self.property_changed.emit()),
+            lambda val: (
+                node.properties.__setitem__("region_y", val),
+                node.update(),
+                self._update_region_overlay(node),
+                self.property_changed.emit(),
+            ),
             placeholder="300 or $ry",
             tooltip="Bounding box top-left Y coordinate or variable",
         )
@@ -1407,7 +1441,12 @@ class PropertyInspector(QWidget):
         row_reg_wh.addWidget(QLabel("Width (W):"))
         widget_rw, edit_rw = self._create_param_input(
             node.properties.get("region_w", 100),
-            lambda val: (node.properties.__setitem__("region_w", val), node.update(), self.property_changed.emit()),
+            lambda val: (
+                node.properties.__setitem__("region_w", val),
+                node.update(),
+                self._update_region_overlay(node),
+                self.property_changed.emit(),
+            ),
             placeholder="100 or $rw",
             tooltip="Bounding box search width in pixels",
         )
@@ -1416,7 +1455,12 @@ class PropertyInspector(QWidget):
         row_reg_wh.addWidget(QLabel("Height (H):"))
         widget_rh, edit_rh = self._create_param_input(
             node.properties.get("region_h", 100),
-            lambda val: (node.properties.__setitem__("region_h", val), node.update(), self.property_changed.emit()),
+            lambda val: (
+                node.properties.__setitem__("region_h", val),
+                node.update(),
+                self._update_region_overlay(node),
+                self.property_changed.emit(),
+            ),
             placeholder="100 or $rh",
             tooltip="Bounding box search height in pixels",
         )
@@ -1461,6 +1505,7 @@ class PropertyInspector(QWidget):
             coord_container.setVisible(not checked)
             region_container.setVisible(checked)
             node.update()
+            self._update_region_overlay(node)
             self.property_changed.emit()
 
         chk_region.toggled.connect(on_region_toggle)
@@ -1480,6 +1525,7 @@ class PropertyInspector(QWidget):
             node.properties["color"] = h_str
             swatch_lbl.setStyleSheet(f"background-color: {h_str}; border: 1px solid #ffffff; border-radius: 4px;")
             node.update()
+            self._update_region_overlay(node)
             self.property_changed.emit()
 
         edit_hex.textChanged.connect(update_color)
@@ -1512,6 +1558,7 @@ class PropertyInspector(QWidget):
                 node.properties["color"] = hex_col
                 swatch_lbl.setStyleSheet(f"background-color: {hex_col}; border: 1px solid #ffffff; border-radius: 4px;")
                 node.update()
+                self._update_region_overlay(node)
                 self.property_changed.emit()
                 if parent_win:
                     parent_win.showNormal()
@@ -1535,6 +1582,7 @@ class PropertyInspector(QWidget):
                 node.properties["color"] = hex_col
                 swatch_lbl.setStyleSheet(f"background-color: {hex_col}; border: 1px solid #ffffff; border-radius: 4px;")
                 node.update()
+                self._update_region_overlay(node)
                 self.property_changed.emit()
                 if parent_win:
                     parent_win.showNormal()
@@ -1551,6 +1599,7 @@ class PropertyInspector(QWidget):
             if parent_win:
                 parent_win.showMinimized()
 
+            self.region_overlay.hide_overlay()
             snipper = ScreenSnipper(parent=None)
 
             def on_box_captured(x, y, w, h):
@@ -1571,13 +1620,20 @@ class PropertyInspector(QWidget):
                         node.properties["color"] = c_hex
                         swatch_lbl.setStyleSheet(f"background-color: {c_hex}; border: 1px solid #ffffff; border-radius: 4px;")
                 node.update()
+                self._update_region_overlay(node)
                 self.property_changed.emit()
                 if parent_win:
                     parent_win.showNormal()
                     parent_win.activateWindow()
 
+            def on_snipper_rejected():
+                self._update_region_overlay(node)
+                if parent_win:
+                    parent_win.showNormal()
+                    parent_win.activateWindow()
+
             snipper.region_captured.connect(on_box_captured)
-            snipper.rejected.connect(lambda: (parent_win.showNormal(), parent_win.activateWindow()) if parent_win else None)
+            snipper.rejected.connect(on_snipper_rejected)
             snipper.exec()
 
         btn_drag_box.clicked.connect(on_drag_box)

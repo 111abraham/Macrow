@@ -821,17 +821,22 @@
           "count": 5,
           "infinite": true,
           "var_name": "i",
-          "body_next": "34e1656a",
+          "body_next": "97e5e68d",
           "next": null,
           "dt": 10
         },
         {
-          "id": "34e1656a",
+          "id": "97e5e68d",
           "type": "pixel_color",
-          "x": -1273,
-          "y": 669,
+          "x": 500,
+          "y": 300,
           "color": "#FFAA00",
           "tolerance": 15,
+          "use_region": true,
+          "region_x": -1316,
+          "region_y": 79,
+          "region_w": 248,
+          "region_h": 375,
           "found_next": "61564ffb",
           "miss_next": "a139f9e0",
           "dt": 30
@@ -848,11 +853,11 @@
           "id": "bc90e261",
           "type": "delay",
           "next": "a139f9e0",
-          "duration": 1000,
-          "dt": 1080
+          "duration": 500,
+          "dt": 580
         }
       ],
-      "duration": 1080,
+      "duration": 580,
       "graph_data": {
         "nodes": [
           {
@@ -861,8 +866,8 @@
             "node_type": "start",
             "title": "▶ Start",
             "pos": [
-              589.9661033527542,
-              -429.0082207445306
+              638.3708223063522,
+              -767.6665975618597
             ],
             "bypassed": false,
             "properties": {}
@@ -941,14 +946,14 @@
             "node_type": "dblclick",
             "title": "🖱 Double Click",
             "pos": [
-              880.4385025567792,
-              -43.23940469788517
+              956.4613066850545,
+              -420.49360561368366
             ],
             "bypassed": false,
             "properties": {
               "action_type": "dblclick",
-              "x": 418,
-              "y": 267
+              "x": 422,
+              "y": 350
             }
           },
           {
@@ -1037,8 +1042,8 @@
             "node_type": "key_down",
             "title": "⌨ Key Down (Hold)",
             "pos": [
-              1392.23703991446,
-              -73.56252726667756
+              1437.4713576261306,
+              -420.49360561368366
             ],
             "bypassed": false,
             "properties": {
@@ -1055,8 +1060,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              1141.8111804699442,
-              -65.94787498062342
+              1197.4713576261306,
+              -420.49360561368366
             ],
             "bypassed": false,
             "properties": {
@@ -1273,13 +1278,13 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              1652.970227461929,
-              -72.47387942597271
+              1677.4713576261306,
+              -420.49360561368366
             ],
             "bypassed": false,
             "properties": {
               "action_type": "delay",
-              "duration": 3000
+              "duration": 1000
             }
           },
           {
@@ -1288,8 +1293,8 @@
             "node_type": "key_up",
             "title": "⌨ Key Up (Release)",
             "pos": [
-              1941.5373559317245,
-              -65.05942639953724
+              1917.4713576261306,
+              -420.49360561368366
             ],
             "bypassed": false,
             "properties": {
@@ -1306,16 +1311,21 @@
             "node_type": "pixel_color",
             "title": "🎨 Pixel Color Check",
             "pos": [
-              957.8642233509365,
-              -377.3600255800546
+              1340.685489043478,
+              -962.7657865234128
             ],
             "bypassed": false,
             "properties": {
               "action_type": "pixel_color",
-              "x": -1273,
-              "y": 669,
+              "x": -1200,
+              "y": 266,
               "color": "#FFAA00",
-              "tolerance": 15
+              "tolerance": 15,
+              "use_region": true,
+              "region_x": -1284,
+              "region_y": 97,
+              "region_w": 230,
+              "region_h": 345
             }
           },
           {
@@ -1324,8 +1334,8 @@
             "node_type": "loop_count",
             "title": "🔁 Repeat Zone (Loop)",
             "pos": [
-              848.5709683111461,
-              -423.1856381550201
+              888.8723020643656,
+              -775.1506195998059
             ],
             "bypassed": false,
             "properties": {
@@ -1341,8 +1351,8 @@
             "node_type": "key_press",
             "title": "⌨ Key Press (Tap)",
             "pos": [
-              1225.7463553531484,
-              -377.4552452591389
+              1294.079174423703,
+              -723.4486162080715
             ],
             "bypassed": false,
             "properties": {
@@ -1357,13 +1367,51 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              1489.2252749774052,
-              -376.48561308785173
+              1513.7662837450368,
+              -728.4505945326376
             ],
             "bypassed": false,
             "properties": {
               "action_type": "delay",
-              "duration": 1000
+              "duration": 500
+            }
+          },
+          {
+            "id": "ed223a0b",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              2168.3561149890024,
+              -421.5036565547597
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 3000
+            }
+          },
+          {
+            "id": "97e5e68d",
+            "class_name": "PixelColorNodeItem",
+            "node_type": "pixel_color",
+            "title": "🎨 Pixel Color Check",
+            "pos": [
+              1024.0957844306186,
+              -724.6170346470535
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "pixel_color",
+              "x": 500,
+              "y": 300,
+              "color": "#FFAA00",
+              "tolerance": 15,
+              "use_region": true,
+              "region_x": -1316,
+              "region_y": 79,
+              "region_w": 248,
+              "region_h": 375
             }
           }
         ],
@@ -1378,18 +1426,6 @@
             "from_node": "a68509e8",
             "from_socket_idx": 0,
             "to_node": "61ff04b6",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "22e1615d",
-            "from_socket_idx": 0,
-            "to_node": "96e178d0",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "96e178d0",
-            "from_socket_idx": 0,
-            "to_node": "59a4443e",
             "to_socket_idx": 0
           },
           {
@@ -1513,15 +1549,39 @@
             "to_socket_idx": 1
           },
           {
+            "from_node": "61564ffb",
+            "from_socket_idx": 0,
+            "to_node": "bc90e261",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "22e1615d",
+            "from_socket_idx": 0,
+            "to_node": "96e178d0",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "3e3fa306",
+            "from_socket_idx": 0,
+            "to_node": "367cd7af",
+            "to_socket_idx": 0
+          },
+          {
             "from_node": "59a4443e",
             "from_socket_idx": 0,
             "to_node": "3e3fa306",
             "to_socket_idx": 0
           },
           {
-            "from_node": "a139f9e0",
+            "from_node": "96e178d0",
             "from_socket_idx": 0,
-            "to_node": "34e1656a",
+            "to_node": "59a4443e",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "367cd7af",
+            "from_socket_idx": 0,
+            "to_node": "ed223a0b",
             "to_socket_idx": 0
           },
           {
@@ -1531,19 +1591,19 @@
             "to_socket_idx": 0
           },
           {
-            "from_node": "34e1656a",
+            "from_node": "a139f9e0",
+            "from_socket_idx": 0,
+            "to_node": "97e5e68d",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "97e5e68d",
             "from_socket_idx": 0,
             "to_node": "61564ffb",
             "to_socket_idx": 0
           },
           {
-            "from_node": "61564ffb",
-            "from_socket_idx": 0,
-            "to_node": "bc90e261",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "34e1656a",
+            "from_node": "97e5e68d",
             "from_socket_idx": 1,
             "to_node": "a139f9e0",
             "to_socket_idx": 1
@@ -1551,8 +1611,8 @@
         ],
         "groups": [],
         "custom_variables": [
-          "$y",
-          "$count"
+          "$count",
+          "$y"
         ]
       }
     },
@@ -2653,14 +2713,14 @@
   },
   "instances": {
     "1": {
-      "x": -820,
-      "y": 465,
+      "x": -823,
+      "y": 742,
       "minimized": false,
       "selected_macro": "Macro 1",
       "speed": 0.98,
       "repeat": false,
-      "width": 672,
-      "height": 635
+      "width": 515,
+      "height": 538
     }
   },
   "hotkeys": {

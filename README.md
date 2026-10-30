@@ -116,6 +116,9 @@ Macrow includes a visual node-based macro customizer (Node Editor) that translat
     - **Pixel Color Verification with Togglable Bounding Box (Region Search)**:
       - **Single Coordinate Mode**: Tests the exact pixel color at `(X, Y)` with configurable tolerance (±0 to ±60).
       - **Bounding Box Region Mode**: Toggles an adjustable search window (`X`, `Y`, `Width`, `Height`) to find target colors across a wider area.
+      - **Live Bounding Box Screen Highlight Overlay**: Clicking on any Pixel Color Check node in the canvas or inspector instantly highlights its exact search bounding box on your actual desktop screen! Features a non-activating, click-through overlay with vibrant dashed borders, CAD-style corner reticles, soft translucent tint, and a floating dimension pill badge (`🎨 Pixel Search Region: W×H (X, Y)`).
+      - **Real-Time Live Inspector Tracking**: Editing `Top-Left X`, `Y`, `Width`, or `Height` in the Property Inspector repositions and resizes the on-screen bounding box in real time right in front of your eyes. Automatically hides when deselected, minimized, or closed.
+      - **Multi-Monitor & DPI-Accurate Capture (No Left Shift)**: Seamlessly accounts for multi-screen setups, negative coordinate offsets, and Per-Monitor Windows DPI scaling (e.g. 125%, 150%). Both the capture engine and screen overlay map 1:1 to your exact desktop pixels without horizontal or vertical offset distortion.
       - **Visual Screen Selection**: Click `📐 Drag Bounding Box on Screen` to drag and frame the search area directly over your desktop. Automatically samples the target color.
       - **Auto-Coordinate Extraction**: When a matching pixel is found in the box, routes to `Match →` and immediately exports its exact global screen coordinates to `$pixel_x` and `$pixel_y` for downstream clicks or moves!
       - **Vectorized Performance**: Scans large screen areas in under 1 millisecond via vectorized NumPy Manhattan color distance.

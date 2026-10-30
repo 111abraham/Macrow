@@ -93,20 +93,28 @@ def capture_desktop_composite_qimage(
     try:
         from PyQt6.QtWidgets import QApplication
         from PyQt6.QtGui import QGuiApplication, QPainter, QImage
-        from PyQt6.QtCore import Qt
+        from PyQt6.QtCore import Qt, QPoint, QRect
 
         app = QApplication.instance()
         screens = QGuiApplication.screens() if app else []
         if screens:
             if region is not None:
                 rx, ry, rw, rh = region
-                primary = QGuiApplication.primaryScreen()
-                if primary and rw > 0 and rh > 0:
-                    pix = primary.grabWindow(0, rx, ry, rw, rh)
-                    qimg = pix.toImage().scaled(
-                        rw, rh, Qt.AspectRatioMode.IgnoreAspectRatio, Qt.TransformationMode.SmoothTransformation
-                    ).convertToFormat(QImage.Format.Format_ARGB32)
-                    return qimg, rx, ry, rw, rh
+                target_rect = QRect(int(rx), int(ry), int(rw), int(rh))
+                center_pt = target_rect.center()
+                screen = QGuiApplication.screenAt(center_pt)
+                if not screen:
+                    screen = QGuiApplication.primaryScreen()
+                if screen and rw > 0 and rh > 0:
+                    geo = screen.geometry()
+                    lx = int(rx - geo.x())
+                    ly = int(ry - geo.y())
+                    pix = screen.grabWindow(0, lx, ly, rw, rh)
+                    if not pix.isNull() and pix.width() > 0 and pix.height() > 0:
+                        qimg = pix.toImage().scaled(
+                            rw, rh, Qt.AspectRatioMode.IgnoreAspectRatio, Qt.TransformationMode.SmoothTransformation
+                        ).convertToFormat(QImage.Format.Format_ARGB32)
+                        return qimg, rx, ry, rw, rh
 
             min_x = min(s.geometry().x() for s in screens)
             min_y = min(s.geometry().y() for s in screens)
@@ -130,6 +138,13 @@ def capture_desktop_composite_qimage(
                         ),
                     )
                 p.end()
+                if region is not None:
+                    rx, ry, rw, rh = region
+                    crop_x = int(rx - min_x)
+                    crop_y = int(ry - min_y)
+                    if 0 <= crop_x < vw and 0 <= crop_y < vh:
+                        cropped = comp.copy(crop_x, crop_y, rw, rh)
+                        return cropped, rx, ry, rw, rh
                 return comp, min_x, min_y, vw, vh
     except Exception:
         pass

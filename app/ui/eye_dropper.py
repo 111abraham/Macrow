@@ -89,7 +89,15 @@ gdi32.GetDIBits.argtypes = [
 
 
 def get_real_cursor_pos() -> Tuple[int, int]:
-    """Get exact hardware cursor coordinate from Windows API."""
+    """Get exact cursor coordinate from Qt virtual desktop when available, with Win32 fallback."""
+    try:
+        from PyQt6.QtWidgets import QApplication
+        from PyQt6.QtGui import QCursor
+        if QApplication.instance():
+            pos = QCursor.pos()
+            return int(pos.x()), int(pos.y())
+    except Exception:
+        pass
     return get_cursor_pos()
 
 

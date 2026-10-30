@@ -283,7 +283,16 @@ def get_cursor_pos():
 
 
 def set_cursor_pos(x, y):
-    """Set cursor position using Windows SetCursorPos."""
+    """Set cursor position using Qt multi-monitor aware mapper when available, with Win32 fallback."""
+    try:
+        from PyQt6.QtWidgets import QApplication
+        from PyQt6.QtGui import QCursor
+        from PyQt6.QtCore import QPoint
+        if QApplication.instance():
+            QCursor.setPos(QPoint(int(x), int(y)))
+            return True
+    except Exception:
+        pass
     return bool(user32.SetCursorPos(int(x), int(y)))
 
 
