@@ -1821,6 +1821,129 @@ class TestNodeEditor(unittest.TestCase):
         self.assertTrue(player._execute_step(step_read))
         self.assertIn("elapsed_val", player.variables)
 
+    def test_multi_node_selection_drag_together(self):
+        from app.ui.node_editor.node_view import NodeView
+        from PyQt6.QtTest import QTest
+        from PyQt6.QtCore import Qt
+
+        view = NodeView(self.scene)
+        view.resize(800, 600)
+
+        n1 = ActionNodeItem("click", {"x": 100, "y": 100})
+        n1.setPos(100, 100)
+        self.scene.add_node(n1)
+
+        n2 = ActionNodeItem("click", {"x": 300, "y": 300})
+        n2.setPos(300, 300)
+        self.scene.add_node(n2)
+
+        # Select both nodes (orange highlight)
+        n1.setSelected(True)
+        n2.setSelected(True)
+        self.assertEqual(len(self.scene.selectedItems()), 2)
+
+        # Drag n1 by (60, 60)
+        p1 = view.mapFromScene(120, 120)
+        p2 = view.mapFromScene(180, 180)
+
+        QTest.mousePress(view.viewport(), Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, p1)
+        self.assertEqual(len(self.scene.selectedItems()), 2)
+        QTest.mouseMove(view.viewport(), p2)
+        QTest.mouseRelease(view.viewport(), Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, p2)
+
+        # Both nodes should have moved together by 60px
+        self.assertEqual(n1.pos().x(), 160.0)
+        self.assertEqual(n1.pos().y(), 160.0)
+        self.assertEqual(n2.pos().x(), 360.0)
+        self.assertEqual(n2.pos().y(), 360.0)
+        self.assertEqual(len(self.scene.selectedItems()), 2)
+
+    def test_ai_vision_node_graph_compilation(self):
+        from app.ui.node_editor.node_items import AIVisionNodeItem, StartNodeItem
+        from app.ui.node_editor.graph_compiler import macro_to_graph, graph_to_macro
+
+        start = StartNodeItem()
+        self.scene.add_node(start)
+
+        ai_node = AIVisionNodeItem(properties={
+            "prompt": "Find blue button and click it",
+            "mode": "multi_step",
+            "server_url": "http://localhost:11434/v1",
+            "model_name": "ui-tars-7b",
+            "max_steps": 6,
+            "mock_fallback": True,
+        })
+        self.scene.add_node(ai_node)
+        self.scene.add_connection(start.output_sockets[0], ai_node.input_sockets[0])
+
+        self.assertEqual(ai_node.properties["prompt"], "Find blue button and click it")
+        self.assertIn("ui-tars-7b", ai_node.properties["model_name"])
+
+        # Test serialization
+        compiled = graph_to_macro(self.scene)
+        ai_steps = [s for s in compiled if s.get("type") == "ai_vision"]
+        self.assertEqual(len(ai_steps), 1)
+        self.assertEqual(ai_steps[0]["prompt"], "Find blue button and click it")
+        self.assertEqual(ai_steps[0]["max_steps"], 6)
+
+        # Test deserialization
+        self.scene.clear()
+        macro_to_graph(compiled, self.scene)
+        restored = [n for n in self.scene.nodes if isinstance(n, AIVisionNodeItem)]
+        self.assertEqual(len(restored), 1)
+        self.assertEqual(restored[0].properties["prompt"], "Find blue button and click it")
+
+    def test_ai_vision_player_execution(self):
+        from app.core.input_simulator import InputSimulator
+        from app.core.player import MacroPlayer
+
+        sim = InputSimulator()
+        player = MacroPlayer(simulator=sim)
+
+        step = {
+            "type": "ai_vision",
+            "prompt": "Click search and type hello",
+            "mode": "multi_step",
+            "max_steps": 2,
+            "mock_fallback": True,
+        }
+        res = player._execute_step(step)
+        self.assertTrue(res)
+        self.assertEqual(player.variables.get("$ai_found"), 1)
+        self.assertGreater(player.variables.get("$ai_steps_taken", 0), 0)
+
+    def test_config_import_preserves_graph_data(self):
+        import tempfile
+        import json
+        import os
+        from app.config import ConfigManager
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cfg_path = os.path.join(tmpdir, "config.json")
+            cfg = ConfigManager(config_file=cfg_path)
+
+            export_file = os.path.join(tmpdir, "export.json")
+            sample_payload = {
+                "macros": {
+                    "TestMacro": {
+                        "steps": [{"type": "click", "x": 100, "y": 100}],
+                        "duration": 500,
+                        "graph_data": {
+                            "nodes": [{"id": "n1", "type": "click", "x": 50, "y": 50}],
+                            "connections": [],
+                        }
+                    }
+                }
+            }
+            with open(export_file, "w", encoding="utf-8") as f:
+                json.dump(sample_payload, f)
+
+            imported = cfg.import_macros_from_file(export_file)
+            self.assertIn("TestMacro", imported)
+            macro_obj = cfg.data["macros"]["TestMacro"]
+            self.assertIn("graph_data", macro_obj)
+            self.assertEqual(len(macro_obj["graph_data"]["nodes"]), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

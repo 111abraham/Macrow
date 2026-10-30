@@ -41,6 +41,7 @@ from app.ui.node_editor.node_items import (
     HotkeyNodeItem,
     LoopNodeItem,
     StopNodeItem,
+    AIVisionNodeItem,
 )
 from app.ui.snippet_tool import ScreenSnipper
 from app.ui.node_editor.undo_manager import UndoManager, serialize_scene, deserialize_scene
@@ -184,8 +185,10 @@ class MacroNodeEditorWindow(QMainWindow):
         add_menu.addAction("🔢 Math / Variable", lambda: self._add_custom_node(MathNodeItem()))
         add_menu.addSeparator()
 
-        # Vision AI
+        # Vision AI & Multimodal Actions
+        add_menu.addSection("VISION & MULTIMODAL AI")
         add_menu.addAction("⏱ Wait For Image (AI Screen)", lambda: self._add_vision_node("wait_image"))
+        add_menu.addAction("🤖 AI Vision Action (VLA Agent)", lambda: self._add_custom_node(AIVisionNodeItem()))
         add_menu.addSeparator()
 
         # Control Flow
@@ -204,6 +207,7 @@ class MacroNodeEditorWindow(QMainWindow):
         self.examples_btn = QPushButton("📚 Examples ▾")
         self.examples_btn.setToolTip("Load working example node setups to test and explore")
         ex_menu = QMenu(self)
+        ex_menu.addAction("🌟 0. Master Showcase (ALL Nodes: Timer, Compare, AI Vision, Loops, Bounding Box, Holds)", lambda: self._load_example_preset("master_showcase_all_nodes"))
         ex_menu.addAction("📋 1. Form Auto-Filler & Exporter (DblClick, Type, Hotkeys, Delay)", lambda: self._load_example_preset("form_filler"))
         ex_menu.addAction("🎮 2. Boss Combat Guard (HP Pixel Check, Vision AI, If Logic, Ability, Zoom)", lambda: self._load_example_preset("game_bot"))
         ex_menu.addAction("🖱️ 3. Inventory Drag-and-Drop Sorter (Mouse Down, Drag, Mouse Up, Math)", lambda: self._load_example_preset("drag_drop_sorter"))
@@ -526,7 +530,64 @@ class MacroNodeEditorWindow(QMainWindow):
         start = StartNodeItem()
         self.scene.add_node(start, QPointF(50, 150))
 
-        if preset_key == "form_filler":
+        if preset_key in ("master_showcase_all_nodes", "showcase_all"):
+            # Master Showcase: ALL Node Types Connected
+            # Timer -> Loop -> Pixel Color -> Compare Gate -> AI Vision -> DblClick -> Key Down -> Delay -> Key Up -> Key Press -> Math -> Vision -> Stop
+            timer = TimerNodeItem(properties={"timer_name": "potion_cd", "mode": "check", "threshold_ms": 5000, "auto_reset": True})
+            self.scene.add_node(timer, QPointF(270, 150))
+
+            loop = LoopNodeItem(properties={"count": 3, "infinite": False, "var_name": "wave"})
+            self.scene.add_node(loop, QPointF(520, 100))
+
+            pix = PixelColorNodeItem(properties={"x": 400, "y": 200, "color": "#E11D48", "tolerance": 20, "use_region": True, "region_x": 350, "region_y": 150, "region_w": 180, "region_h": 40})
+            self.scene.add_node(pix, QPointF(650, 180))
+
+            comp = CompareNodeItem(properties={"var_a": "$pixel_match", "op_a": "==", "val_a": "1", "logic_gate": "OR", "var_b": "$potion_cd_elapsed_ms", "op_b": ">=", "val_b": "5000"})
+            self.scene.add_node(comp, QPointF(920, 180))
+
+            ai = AIVisionNodeItem(properties={"prompt": "Locate enemy boss weak point, click target, and clear popup", "mode": "multi_step", "max_steps": 3})
+            self.scene.add_node(ai, QPointF(1180, 140))
+
+            dbl = ActionNodeItem("dblclick", {"x": 960, "y": 540, "button": "left"})
+            self.scene.add_node(dbl, QPointF(1450, 140))
+
+            kdown = ActionNodeItem("key_down", {"key": "Space", "vk": 32})
+            self.scene.add_node(kdown, QPointF(1690, 140))
+
+            delay = ActionNodeItem("delay", {"duration": 300})
+            self.scene.add_node(delay, QPointF(1930, 140))
+
+            kup = ActionNodeItem("key_up", {"key": "Space", "vk": 32})
+            self.scene.add_node(kup, QPointF(2170, 140))
+
+            kpress = ActionNodeItem("key_press", {"key": "E", "vk": 69})
+            self.scene.add_node(kpress, QPointF(2410, 140))
+
+            math_node = MathNodeItem(properties={"var_name": "boss_hits", "operation": "increment", "value": "1"})
+            self.scene.add_node(math_node, QPointF(2650, 140))
+
+            vis = VisionNodeItem(properties={"timeout": 3.0, "action": "none"})
+            self.scene.add_node(vis, QPointF(800, 420))
+
+            stop = StopNodeItem()
+            self.scene.add_node(stop, QPointF(1060, 420))
+
+            # Connections:
+            self.scene.add_connection(start.output_sockets[0], timer.input_sockets[0])
+            self.scene.add_connection(timer.socket_waiting, loop.input_sockets[0])
+            self.scene.add_connection(loop.socket_body, pix.input_sockets[0])
+            self.scene.add_connection(pix.output_sockets[0], comp.input_sockets[0])
+            self.scene.add_connection(comp.socket_true, ai.input_sockets[0])
+            self.scene.add_connection(ai.socket_success, dbl.input_sockets[0])
+            self.scene.add_connection(dbl.output_sockets[0], kdown.input_sockets[0])
+            self.scene.add_connection(kdown.output_sockets[0], delay.input_sockets[0])
+            self.scene.add_connection(delay.output_sockets[0], kup.input_sockets[0])
+            self.scene.add_connection(kup.output_sockets[0], kpress.input_sockets[0])
+            self.scene.add_connection(kpress.output_sockets[0], math_node.input_sockets[0])
+            self.scene.add_connection(loop.socket_done, vis.input_sockets[0])
+            self.scene.add_connection(vis.socket_found, stop.input_sockets[0])
+
+        elif preset_key == "form_filler":
             # Preset 1: Automated Form Filler & Report Exporter
             # Nodes: Start -> Hotkey (Win+D) -> Action (DblClick) -> Action (Delay) -> Loop (5x) -> Action (Type) -> Hotkey (Tab) -> Hotkey (Ctrl+S) -> Stop
             h_desk = HotkeyNodeItem(properties={"combo": "Win+D"})

@@ -393,6 +393,8 @@ class VisionNodeItem(BaseNodeItem):
         self.socket_fail = self.add_output_socket(
             name="Miss", color=QColor(244, 63, 94)  # Rose red
         )
+        self.socket_found = self.socket_success
+        self.socket_miss = self.socket_fail
 
     def _load_thumbnail(self):
         tmpl = self.properties.get("template", "")
@@ -682,6 +684,8 @@ class TimerNodeItem(BaseNodeItem):
         self.add_input_socket(name="In")
         self.socket_true = self.add_output_socket(name="Elapsed", color=QColor(16, 185, 129))
         self.socket_false = self.add_output_socket(name="Waiting", color=QColor(245, 158, 11))
+        self.socket_elapsed = self.socket_true
+        self.socket_waiting = self.socket_false
 
     def get_summary_text(self) -> str:
         tname = self.properties.get("timer_name", "timer_1")
@@ -1202,3 +1206,73 @@ class StopNodeItem(BaseNodeItem):
 
     def clone(self) -> "StopNodeItem":
         return StopNodeItem(properties=dict(self.properties))
+
+
+class AIVisionNodeItem(BaseNodeItem):
+    """Multimodal AI Vision & Action Agent node (recreates multi-step actions with visual reasoning)."""
+
+    def __init__(
+        self,
+        node_type: str = "ai_vision",
+        properties: Optional[Dict[str, Any]] = None,
+        parent=None,
+    ):
+        super().__init__(
+            title="🤖 AI Vision Action",
+            node_type="ai_vision",
+            color=QColor(168, 85, 247),  # Vibrant Purple
+            parent=parent,
+        )
+        self.properties = properties or {}
+        self.properties.setdefault("action_type", "ai_vision")
+        self.properties.setdefault("prompt", "Find and click target element")
+        self.properties.setdefault("mode", "multi_step")
+        self.properties.setdefault("server_url", "http://localhost:11434/v1")
+        self.properties.setdefault("model_name", "ui-tars-7b")
+        self.properties.setdefault("max_steps", 5)
+        self.properties.setdefault("step_delay_ms", 300)
+        self.properties.setdefault("region_mode", "fullscreen")
+        self.properties.setdefault("region_x", 0)
+        self.properties.setdefault("region_y", 0)
+        self.properties.setdefault("region_w", 800)
+        self.properties.setdefault("region_h", 600)
+        self.properties.setdefault("mock_fallback", True)
+        if "bypassed" in self.properties:
+            self.bypassed = bool(self.properties["bypassed"])
+
+        self.width = 220.0
+        self.height = 95.0
+
+        self.add_input_socket(name="In")
+        self.socket_success = self.add_output_socket(name="Success", color=QColor(16, 185, 129))
+        self.socket_fail = self.add_output_socket(name="Fail", color=QColor(244, 63, 94))
+
+    def get_summary_text(self) -> str:
+        prompt = str(self.properties.get("prompt", "AI Action"))
+        mode = str(self.properties.get("mode", "multi_step")).replace("_", " ").title()
+        max_s = self.properties.get("max_steps", 5)
+        if len(prompt) > 28:
+            prompt = prompt[:25] + "..."
+        if mode.lower() == "multi step":
+            return f"[{mode} ({max_s} max)]\n\"{prompt}\""
+        return f"[{mode}]\n\"{prompt}\""
+
+    def paint(self, painter: QPainter, option, widget=None):
+        super().paint(painter, option, widget)
+        painter.setFont(QFont("Segoe UI", 7, QFont.Weight.Bold))
+        painter.setPen(QColor(16, 185, 129))
+        painter.drawText(
+            QRectF(self.width - 65, self.header_height + 4, 55, 16),
+            Qt.AlignmentFlag.AlignRight,
+            "✓ Success →",
+        )
+        painter.setPen(QColor(244, 63, 94))
+        painter.drawText(
+            QRectF(self.width - 65, self.height - 20, 55, 16),
+            Qt.AlignmentFlag.AlignRight,
+            "✗ Fail →",
+        )
+
+    def clone(self) -> "AIVisionNodeItem":
+        return AIVisionNodeItem(properties=dict(self.properties))
+

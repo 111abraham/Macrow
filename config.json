@@ -12,7 +12,492 @@
   "active_position": "M1",
   "repeat_interval_ms": 100,
   "panel_opacity": 0.95,
-  "macros": {},
+  "macros": {
+    "\ud83c\udf1f Master Showcase (All Nodes)": {
+      "steps": [
+        {
+          "id": "23c32eb9",
+          "type": "timer",
+          "timer_name": "potion_cd",
+          "mode": "check",
+          "threshold_ms": 5000,
+          "auto_reset": true,
+          "var_name": "elapsed_ms",
+          "found_next": null,
+          "miss_next": "79943f0a",
+          "dt": 10
+        },
+        {
+          "id": "79943f0a",
+          "type": "loop_count",
+          "count": 3,
+          "infinite": false,
+          "var_name": "wave",
+          "body_next": "25d33154",
+          "next": "cce7d957",
+          "dt": 20
+        },
+        {
+          "id": "25d33154",
+          "type": "pixel_color",
+          "x": 400,
+          "y": 200,
+          "color": "#E11D48",
+          "tolerance": 20,
+          "use_region": true,
+          "region_x": 350,
+          "region_y": 150,
+          "region_w": 180,
+          "region_h": 40,
+          "found_next": "60b9db8f",
+          "miss_next": null,
+          "dt": 40
+        },
+        {
+          "id": "cce7d957",
+          "type": "wait_image",
+          "template": "",
+          "confidence": 0.85,
+          "action": "none",
+          "button": "left",
+          "timeout": 3.0,
+          "break_loop_on_found": false,
+          "found_next": "599f87ed",
+          "miss_next": null,
+          "dt": 190
+        },
+        {
+          "id": "60b9db8f",
+          "type": "compare",
+          "var_a": "",
+          "op_a": "==",
+          "val_a": "1",
+          "logic_gate": "OR",
+          "enable_cond_b": true,
+          "var_b": "",
+          "op_b": ">=",
+          "val_b": "5000",
+          "found_next": "08a4702d",
+          "miss_next": null,
+          "dt": 200
+        },
+        {
+          "id": "599f87ed",
+          "type": "stop_playback",
+          "dt": 210
+        },
+        {
+          "id": "08a4702d",
+          "type": "ai_vision",
+          "prompt": "Locate enemy boss weak point, click target, and clear popup",
+          "mode": "multi_step",
+          "server_url": "http://localhost:11434/v1",
+          "model_name": "ui-tars-7b",
+          "max_steps": 3,
+          "step_delay_ms": 300,
+          "region_mode": "fullscreen",
+          "mock_fallback": true,
+          "found_next": "7cc44b95",
+          "miss_next": null,
+          "dt": 310
+        },
+        {
+          "id": "7cc44b95",
+          "type": "dblclick",
+          "next": "1a34f51c",
+          "x": 960,
+          "y": 540,
+          "button": "left",
+          "dt": 410
+        },
+        {
+          "id": "1a34f51c",
+          "type": "key_down",
+          "next": "5e0f8fc8",
+          "key": "Space",
+          "vk": 32,
+          "hold_duration": 0,
+          "auto_repeat": true,
+          "dt": 460
+        },
+        {
+          "id": "5e0f8fc8",
+          "type": "delay",
+          "next": "82e16a78",
+          "duration": 300,
+          "dt": 760
+        },
+        {
+          "id": "82e16a78",
+          "type": "key_up",
+          "next": "7670e2de",
+          "key": "Space",
+          "vk": 32,
+          "dt": 810
+        },
+        {
+          "id": "7670e2de",
+          "type": "key_press",
+          "next": "54933d20",
+          "key": "E",
+          "vk": 69,
+          "dt": 860
+        },
+        {
+          "id": "54933d20",
+          "type": "math_op",
+          "var_name": "boss_hits",
+          "operation": "increment",
+          "value": "1",
+          "min_val": 100,
+          "max_val": 1000,
+          "next": "79943f0a",
+          "dt": 870
+        }
+      ],
+      "duration": 870,
+      "graph_data": {
+        "nodes": [
+          {
+            "id": "c8412670",
+            "class_name": "StartNodeItem",
+            "node_type": "start",
+            "title": "\u25b6 Start",
+            "pos": [
+              50.0,
+              150.0
+            ],
+            "bypassed": false,
+            "properties": {}
+          },
+          {
+            "id": "23c32eb9",
+            "class_name": "TimerNodeItem",
+            "node_type": "timer",
+            "title": "\u23f1\ufe0f Timer / Cooldown",
+            "pos": [
+              270.0,
+              150.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "timer_name": "potion_cd",
+              "mode": "check",
+              "threshold_ms": 5000,
+              "auto_reset": true,
+              "action_type": "timer",
+              "var_name": "elapsed_ms"
+            }
+          },
+          {
+            "id": "79943f0a",
+            "class_name": "LoopNodeItem",
+            "node_type": "loop_count",
+            "title": "\ud83d\udd01 Repeat Zone (Loop)",
+            "pos": [
+              520.0,
+              100.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "count": 3,
+              "infinite": false,
+              "var_name": "wave",
+              "action_type": "loop_count"
+            }
+          },
+          {
+            "id": "25d33154",
+            "class_name": "PixelColorNodeItem",
+            "node_type": "pixel_color",
+            "title": "\ud83c\udfa8 Pixel Color Check",
+            "pos": [
+              650.0,
+              180.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "x": 400,
+              "y": 200,
+              "color": "#E11D48",
+              "tolerance": 20,
+              "use_region": true,
+              "region_x": 350,
+              "region_y": 150,
+              "region_w": 180,
+              "region_h": 40,
+              "action_type": "pixel_color"
+            }
+          },
+          {
+            "id": "60b9db8f",
+            "class_name": "CompareNodeItem",
+            "node_type": "compare",
+            "title": "\u2696 Compare / Logic",
+            "pos": [
+              920.0,
+              180.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "var_a": "",
+              "op_a": "==",
+              "val_a": "1",
+              "logic_gate": "OR",
+              "var_b": "",
+              "op_b": ">=",
+              "val_b": "5000",
+              "action_type": "compare",
+              "enable_cond_b": true
+            }
+          },
+          {
+            "id": "08a4702d",
+            "class_name": "AIVisionNodeItem",
+            "node_type": "ai_vision",
+            "title": "\ud83e\udd16 AI Vision Action",
+            "pos": [
+              1180.0,
+              140.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "prompt": "Locate enemy boss weak point, click target, and clear popup",
+              "mode": "multi_step",
+              "max_steps": 3,
+              "action_type": "ai_vision",
+              "server_url": "http://localhost:11434/v1",
+              "model_name": "ui-tars-7b",
+              "step_delay_ms": 300,
+              "region_mode": "fullscreen",
+              "region_x": 0,
+              "region_y": 0,
+              "region_w": 800,
+              "region_h": 600,
+              "mock_fallback": true
+            }
+          },
+          {
+            "id": "7cc44b95",
+            "class_name": "ActionNodeItem",
+            "node_type": "dblclick",
+            "title": "\ud83d\uddb1 Double Click",
+            "pos": [
+              1450.0,
+              140.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "x": 960,
+              "y": 540,
+              "button": "left",
+              "action_type": "dblclick"
+            }
+          },
+          {
+            "id": "1a34f51c",
+            "class_name": "ActionNodeItem",
+            "node_type": "key_down",
+            "title": "\u2328 Key Down (Hold)",
+            "pos": [
+              1690.0,
+              140.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "key": "Space",
+              "vk": 32,
+              "action_type": "key_down",
+              "auto_repeat": true,
+              "hold_duration": 0
+            }
+          },
+          {
+            "id": "5e0f8fc8",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "\u23f3 Delay Wait",
+            "pos": [
+              1930.0,
+              140.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "duration": 300,
+              "action_type": "delay"
+            }
+          },
+          {
+            "id": "82e16a78",
+            "class_name": "ActionNodeItem",
+            "node_type": "key_up",
+            "title": "\u2328 Key Up (Release)",
+            "pos": [
+              2170.0,
+              140.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "key": "Space",
+              "vk": 32,
+              "action_type": "key_up"
+            }
+          },
+          {
+            "id": "7670e2de",
+            "class_name": "ActionNodeItem",
+            "node_type": "key_press",
+            "title": "\u2328 Key Press (Tap)",
+            "pos": [
+              2410.0,
+              140.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "key": "E",
+              "vk": 69,
+              "action_type": "key_press"
+            }
+          },
+          {
+            "id": "54933d20",
+            "class_name": "MathNodeItem",
+            "node_type": "math_op",
+            "title": "\ud83d\udd22 Math / Variable",
+            "pos": [
+              2650.0,
+              140.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "var_name": "boss_hits",
+              "operation": "increment",
+              "value": "1",
+              "action_type": "math_op",
+              "min_val": 100,
+              "max_val": 1000
+            }
+          },
+          {
+            "id": "cce7d957",
+            "class_name": "VisionNodeItem",
+            "node_type": "wait_image",
+            "title": "\u23f1 Wait For Image",
+            "pos": [
+              800.0,
+              420.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "timeout": 3.0,
+              "action": "none",
+              "action_type": "wait_image",
+              "confidence": 0.85,
+              "button": "left",
+              "template": "",
+              "break_loop_on_found": false
+            }
+          },
+          {
+            "id": "599f87ed",
+            "class_name": "StopNodeItem",
+            "node_type": "stop_playback",
+            "title": "\u23f9 Stop Playback",
+            "pos": [
+              1060.0,
+              420.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "stop_playback"
+            }
+          }
+        ],
+        "connections": [
+          {
+            "from_node": "c8412670",
+            "from_socket_idx": 0,
+            "to_node": "23c32eb9",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "23c32eb9",
+            "from_socket_idx": 1,
+            "to_node": "79943f0a",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "79943f0a",
+            "from_socket_idx": 0,
+            "to_node": "25d33154",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "25d33154",
+            "from_socket_idx": 0,
+            "to_node": "60b9db8f",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "60b9db8f",
+            "from_socket_idx": 0,
+            "to_node": "08a4702d",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "08a4702d",
+            "from_socket_idx": 0,
+            "to_node": "7cc44b95",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "7cc44b95",
+            "from_socket_idx": 0,
+            "to_node": "1a34f51c",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "1a34f51c",
+            "from_socket_idx": 0,
+            "to_node": "5e0f8fc8",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "5e0f8fc8",
+            "from_socket_idx": 0,
+            "to_node": "82e16a78",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "82e16a78",
+            "from_socket_idx": 0,
+            "to_node": "7670e2de",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "7670e2de",
+            "from_socket_idx": 0,
+            "to_node": "54933d20",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "79943f0a",
+            "from_socket_idx": 1,
+            "to_node": "cce7d957",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "cce7d957",
+            "from_socket_idx": 0,
+            "to_node": "599f87ed",
+            "to_socket_idx": 0
+          }
+        ],
+        "groups": [],
+        "custom_variables": []
+      }
+    }
+  },
   "instances": {
     "1": {
       "x": 120,

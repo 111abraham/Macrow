@@ -294,10 +294,14 @@ class ConfigManager:
                     target_name = f"{name} ({collision_index})"
                     collision_index += 1
 
-                macros[target_name] = {
+                macro_entry = {
                     "steps": copy.deepcopy(steps),
                     "duration": duration,
                 }
+                if "graph_data" in content and content["graph_data"]:
+                    macro_entry["graph_data"] = copy.deepcopy(content["graph_data"])
+
+                macros[target_name] = macro_entry
                 imported_names.append(target_name)
 
         self.save()

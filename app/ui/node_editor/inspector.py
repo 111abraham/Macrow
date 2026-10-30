@@ -39,6 +39,7 @@ from app.ui.node_editor.node_items import (
     HotkeyNodeItem,
     LoopNodeItem,
     StopNodeItem,
+    AIVisionNodeItem,
 )
 from app.core.key_catalog import KEY_CATALOG_GROUPS, get_name_for_vk, get_vk_for_key
 from app.ui.snippet_tool import ScreenSnipper
@@ -337,6 +338,8 @@ class PropertyInspector(QWidget):
             self._build_loop_controls(node)
         elif isinstance(node, StopNodeItem):
             self._build_stop_controls(node)
+        elif isinstance(node, AIVisionNodeItem):
+            self._build_ai_vision_controls(node)
         elif isinstance(node, ActionNodeItem):
             self._build_action_controls(node)
         else:
@@ -2182,6 +2185,199 @@ class PropertyInspector(QWidget):
         desc.setStyleSheet("color: #cbd5e1; font-size: 11px;")
         desc.setWordWrap(True)
         layout.addWidget(desc)
+        self.content_layout.addWidget(box)
+
+    def _build_ai_vision_controls(self, node: AIVisionNodeItem):
+        box = QFrame()
+        box.setStyleSheet("background: #1e293b; border-radius: 6px; padding: 10px;")
+        layout = QVBoxLayout(box)
+        layout.setSpacing(8)
+
+        lbl = QLabel("🤖 Multimodal AI Vision & Action Agent")
+        lbl.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+        lbl.setStyleSheet("color: #c084fc;")
+        layout.addWidget(lbl)
+
+        info = QLabel(
+            "Uses local Vision-Language-Action models (UI-TARS, Qwen2-VL, ShowUI) "
+            "running on your RTX 5080 to visually inspect the screen and execute multi-step actions."
+        )
+        info.setStyleSheet("color: #cbd5e1; font-size: 11px;")
+        info.setWordWrap(True)
+        layout.addWidget(info)
+
+        # 1. Natural Language Instruction / Prompt
+        layout.addWidget(QLabel("Instruction Prompt:"))
+        txt_prompt = QPlainTextEdit(node.properties.get("prompt", "Find and click target element"))
+        txt_prompt.setPlaceholderText("e.g. Find search bar, type 'downloads', wait for results, and click top entry...")
+        txt_prompt.setMaximumHeight(75)
+        txt_prompt.setStyleSheet("""
+            QPlainTextEdit {
+                background-color: #0f172a;
+                color: #e2e8f0;
+                border: 1px solid #475569;
+                border-radius: 4px;
+                padding: 4px;
+                font-size: 11px;
+            }
+            QPlainTextEdit:focus {
+                border-color: #c084fc;
+            }
+        """)
+        txt_prompt.textChanged.connect(lambda: (
+            node.properties.__setitem__("prompt", txt_prompt.toPlainText().strip()),
+            node.update(),
+            self.property_changed.emit()
+        ))
+        layout.addWidget(txt_prompt)
+
+        # 2. Operating Mode
+        layout.addWidget(QLabel("Action Mode:"))
+        combo_mode = QComboBox()
+        modes = [
+            ("Multi-Step Nuanced Action (Iterative Loop)", "multi_step"),
+            ("Locate & Left Click Element", "point_click"),
+            ("Locate Only (Store coords in $ai_x, $ai_y)", "locate_only"),
+            ("Visual Question / Condition Check (Sets $ai_found)", "vqa_check"),
+        ]
+        for title, key in modes:
+            combo_mode.addItem(title, key)
+
+        curr_mode = node.properties.get("mode", "multi_step")
+        for i, (_, key) in enumerate(modes):
+            if key == curr_mode:
+                combo_mode.setCurrentIndex(i)
+                break
+
+        layout.addWidget(combo_mode)
+
+        # 3. Server URL with Ping Check
+        layout.addWidget(QLabel("Local Server Endpoint (OpenAI / Ollama / vLLM):"))
+        h_srv = QHBoxLayout()
+        edit_url = QLineEdit(node.properties.get("server_url", "http://localhost:11434/v1"))
+        edit_url.setPlaceholderText("http://localhost:11434/v1 or http://localhost:8000/v1")
+        edit_url.textChanged.connect(lambda txt: (
+            node.properties.__setitem__("server_url", txt.strip()),
+            node.update(),
+            self.property_changed.emit()
+        ))
+        btn_ping = QPushButton("Ping")
+        btn_ping.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_ping.setStyleSheet("background: #334155; color: #f8fafc; font-weight: bold; padding: 4px 10px; border-radius: 4px;")
+
+        lbl_ping_res = QLabel("")
+        lbl_ping_res.setStyleSheet("font-size: 10px; font-weight: bold;")
+
+        def on_ping():
+            import urllib.request
+            url = edit_url.text().strip()
+            if not url:
+                url = "http://localhost:11434/v1"
+            base_url = url.rstrip("/")
+            test_target = f"{base_url}/models"
+            try:
+                req = urllib.request.Request(test_target, headers={"User-Agent": "Macrow-Agent"})
+                with urllib.request.urlopen(req, timeout=1.5) as resp:
+                    if resp.status == 200:
+                        lbl_ping_res.setText("🟢 Server Online")
+                        lbl_ping_res.setStyleSheet("color: #10b981; font-size: 10px; font-weight: bold;")
+                        return
+            except Exception:
+                pass
+            lbl_ping_res.setText("⚪ Offline / Unreachable")
+            lbl_ping_res.setStyleSheet("color: #f43f5e; font-size: 10px; font-weight: bold;")
+
+        btn_ping.clicked.connect(on_ping)
+        h_srv.addWidget(edit_url)
+        h_srv.addWidget(btn_ping)
+        layout.addLayout(h_srv)
+        layout.addWidget(lbl_ping_res)
+
+        # 4. Model Name
+        layout.addWidget(QLabel("Target Vision Model:"))
+        combo_model = QComboBox()
+        combo_model.setEditable(True)
+        common_models = ["ui-tars-7b", "qwen2-vl-7b", "showui-2b", "llama3.2-vision", "molmo-7b"]
+        for m in common_models:
+            combo_model.addItem(m)
+        curr_m = node.properties.get("model_name", "ui-tars-7b")
+        if curr_m in common_models:
+            combo_model.setCurrentIndex(common_models.index(curr_m))
+        else:
+            combo_model.setEditText(curr_m)
+        combo_model.currentTextChanged.connect(lambda txt: (
+            node.properties.__setitem__("model_name", txt.strip()),
+            self.property_changed.emit()
+        ))
+        layout.addWidget(combo_model)
+
+        # 5. Multi-Step Options Container
+        multi_box = QWidget()
+        lay_multi = QVBoxLayout(multi_box)
+        lay_multi.setContentsMargins(0, 0, 0, 0)
+        lay_multi.setSpacing(6)
+
+        h_step_opts = QHBoxLayout()
+        h_step_opts.addWidget(QLabel("Max Steps:"))
+        spin_steps = QSpinBox()
+        spin_steps.setRange(1, 20)
+        spin_steps.setValue(int(node.properties.get("max_steps", 5)))
+        spin_steps.valueChanged.connect(lambda v: (
+            node.properties.__setitem__("max_steps", v),
+            node.update(),
+            self.property_changed.emit()
+        ))
+        h_step_opts.addWidget(spin_steps)
+
+        h_step_opts.addWidget(QLabel("Step Delay (ms):"))
+        spin_delay = QSpinBox()
+        spin_delay.setRange(50, 5000)
+        spin_delay.setSingleStep(50)
+        spin_delay.setValue(int(node.properties.get("step_delay_ms", 300)))
+        spin_delay.valueChanged.connect(lambda v: (
+            node.properties.__setitem__("step_delay_ms", v),
+            self.property_changed.emit()
+        ))
+        h_step_opts.addWidget(spin_delay)
+        lay_multi.addLayout(h_step_opts)
+        layout.addWidget(multi_box)
+
+        def on_mode_changed(idx):
+            selected_key = combo_mode.itemData(idx)
+            node.properties["mode"] = selected_key
+            multi_box.setVisible(selected_key == "multi_step")
+            node.update()
+            self.property_changed.emit()
+
+        combo_mode.currentIndexChanged.connect(on_mode_changed)
+        multi_box.setVisible(curr_mode == "multi_step")
+
+        # 6. Fallback Simulation Checkbox
+        chk_mock = QCheckBox("Fallback to simulated action if local server is offline")
+        chk_mock.setChecked(bool(node.properties.get("mock_fallback", True)))
+        chk_mock.setStyleSheet("color: #94a3b8; font-size: 11px;")
+        chk_mock.toggled.connect(lambda chk: (
+            node.properties.__setitem__("mock_fallback", chk),
+            self.property_changed.emit()
+        ))
+        layout.addWidget(chk_mock)
+
+        # 7. Output Routing Summary Card
+        out_card = QFrame()
+        out_card.setStyleSheet("background: #0f172a; border: 1px solid #334155; border-radius: 4px; padding: 6px;")
+        lay_out = QVBoxLayout(out_card)
+        lay_out.setSpacing(2)
+        l_suc = QLabel("✓ Success → Goal achieved / element located")
+        l_suc.setStyleSheet("color: #10b981; font-size: 10px; font-weight: bold;")
+        lay_out.addWidget(l_suc)
+        l_fal = QLabel("✗ Fail → Target not found / server error / timeout")
+        l_fal.setStyleSheet("color: #f43f5e; font-size: 10px; font-weight: bold;")
+        lay_out.addWidget(l_fal)
+        l_var = QLabel("Sets variables: $ai_x, $ai_y, $ai_found (1/0), $ai_steps_taken")
+        l_var.setStyleSheet("color: #94a3b8; font-size: 10px; font-style: italic;")
+        lay_out.addWidget(l_var)
+        layout.addWidget(out_card)
+
         self.content_layout.addWidget(box)
 
     def _build_vision_controls(self, node: VisionNodeItem):

@@ -20,6 +20,7 @@ from app.ui.node_editor.node_items import (
     HotkeyNodeItem,
     LoopNodeItem,
     StopNodeItem,
+    AIVisionNodeItem,
 )
 from app.ui.node_editor.node_socket import NodeSocketItem
 
@@ -130,6 +131,8 @@ def macro_to_graph(
             node = HotkeyNodeItem(properties=step)
         elif st_type == "loop_count":
             node = LoopNodeItem(properties=step)
+        elif st_type in ("ai_vision", "ai_action"):
+            node = AIVisionNodeItem(properties=step)
         elif st_type == "stop_playback":
             node = StopNodeItem(properties=step)
         else:
@@ -480,6 +483,27 @@ def graph_to_macro(scene: NodeScene) -> List[Dict[str, Any]]:
             else:
                 step["next"] = get_target_id(0)
             current_dt += 10
+            step["dt"] = current_dt
+
+        elif isinstance(node, AIVisionNodeItem):
+            step["type"] = "ai_vision"
+            step["prompt"] = props.get("prompt", "Find and click target element")
+            step["mode"] = props.get("mode", "multi_step")
+            step["server_url"] = props.get("server_url", "http://localhost:11434/v1")
+            step["model_name"] = props.get("model_name", "ui-tars-7b")
+            step["max_steps"] = int(props.get("max_steps", 5))
+            step["step_delay_ms"] = int(props.get("step_delay_ms", 300))
+            reg_mode = props.get("region_mode", "fullscreen")
+            step["region_mode"] = reg_mode
+            if reg_mode == "bounding_box":
+                step["region_x"] = int(props.get("region_x", 0))
+                step["region_y"] = int(props.get("region_y", 0))
+                step["region_w"] = int(props.get("region_w", 800))
+                step["region_h"] = int(props.get("region_h", 600))
+            step["mock_fallback"] = bool(props.get("mock_fallback", True))
+            step["found_next"] = get_target_id(0)
+            step["miss_next"] = get_target_id(1)
+            current_dt += 100
             step["dt"] = current_dt
 
         elif isinstance(node, MathNodeItem):

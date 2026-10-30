@@ -39,6 +39,7 @@ from app.ui.node_editor.node_items import (
     HotkeyNodeItem,
     LoopNodeItem,
     StopNodeItem,
+    AIVisionNodeItem,
 )
 from app.ui.node_editor.node_connection import NodeConnection
 
@@ -93,6 +94,10 @@ class NodeView(QGraphicsView):
 
         # 4. Wire drop candidate
         self._hovered_wire: Optional[NodeConnection] = None
+
+        # 5. Multi-selection drag tracking
+        self._pending_single_selection: Optional[BaseNodeItem] = None
+        self._press_view_pos: Optional[QPoint] = None
 
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
@@ -213,7 +218,8 @@ class NodeView(QGraphicsView):
         menu.addAction("🔢 Math / Variable", lambda: add_node_item(MathNodeItem()))
 
         menu.addSeparator()
-        menu.addSection("VISION AI & CONTROL")
+        menu.addSection("VISION AI & MULTIMODAL")
+        menu.addAction("🤖 AI Vision Action (VLA Agent)", lambda: add_node_item(AIVisionNodeItem()))
         menu.addAction("⏱ Wait For Image (AI Screen)", lambda: add_node_item(VisionNodeItem()))
         menu.addAction("🎯 Loop Until Image Found", lambda: add_node_item(VisionNodeItem(properties={"break_loop_on_found": True})))
         menu.addAction("⏹ Stop Playback", lambda: add_node_item(StopNodeItem()))
@@ -376,16 +382,28 @@ class NodeView(QGraphicsView):
 
                 # Normal node drag: track for shake disconnect and wire auto-insert
                 self._dragged_node = target_node
+                self._press_view_pos = event.pos()
                 now = time.time()
                 self._shake_samples = [(now, target_node.pos().x(), target_node.pos().y())]
                 self._shake_triggered = False
 
-                # Ensure clicking a node immediately focuses and updates Property Inspector
+                # Handle multi-selection movement:
+                # If target_node is ALREADY selected and part of a multi-selection, do NOT deselect others!
+                # Keep all selected items so dragging moves the whole group together.
+                sel = self.node_scene.selectedItems()
                 if not (event.modifiers() & (Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier)):
-                    sel = self.node_scene.selectedItems()
-                    if len(sel) > 1 or (len(sel) == 1 and sel[0] is not target_node):
+                    if target_node.isSelected() and len(sel) > 1:
+                        # Defer potential single selection to mouseRelease in case user is just clicking, not dragging
+                        self._pending_single_selection = target_node
+                    elif not target_node.isSelected():
                         self.node_scene.clearSelection()
                         target_node.setSelected(True)
+                        self._pending_single_selection = None
+                    else:
+                        self._pending_single_selection = None
+                else:
+                    self._pending_single_selection = None
+
                 self.node_scene._current_selected_node = target_node
                 self.node_scene.node_selected.emit(target_node)
             else:
@@ -450,10 +468,15 @@ class NodeView(QGraphicsView):
             event.accept()
             return
 
+        # If dragging confirmed, cancel pending single selection so multi-selection stays active
+        if self._pending_single_selection and self._press_view_pos:
+            if (event.pos() - self._press_view_pos).manhattanLength() > 4:
+                self._pending_single_selection = None
+
         super().mouseMoveEvent(event)
 
-        # Shake detection and wire drop target detection during node drag
-        if self._dragged_node and not self._is_cutting and not self._is_panning:
+        # Shake detection and wire drop target detection during node drag (single node only)
+        if self._dragged_node and not self._is_cutting and not self._is_panning and len(self.node_scene.selectedItems()) <= 1:
             now = time.time()
             cur_pos = self._dragged_node.pos()
             self._shake_samples = [s for s in self._shake_samples if now - s[0] <= 0.45]
@@ -591,12 +614,28 @@ class NodeView(QGraphicsView):
             self._hovered_wire.update()
             self._hovered_wire = None
 
+        # If user clicked on a node within a multi-selection without dragging, isolate that selection now
+        if self._pending_single_selection and self._press_view_pos:
+            if (event.pos() - self._press_view_pos).manhattanLength() <= 4:
+                self.node_scene.clearSelection()
+                self._pending_single_selection.setSelected(True)
+                self.node_scene._current_selected_node = self._pending_single_selection
+                self.node_scene.node_selected.emit(self._pending_single_selection)
+            self._pending_single_selection = None
+        self._press_view_pos = None
+
         self._dragged_node = None
         self._shake_samples.clear()
         self._shake_triggered = False
 
         super().mouseReleaseEvent(event)
         self.node_scene.update_loop_bounds()
+
+        # Ensure all selected items update their connected wires after multi-drag
+        for sel_item in self.node_scene.selectedItems():
+            if isinstance(sel_item, BaseNodeItem):
+                sel_item.update_connected_wires()
+
         if event.button() == Qt.MouseButton.LeftButton:
             self.node_scene.scene_modified.emit()
 
