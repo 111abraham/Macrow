@@ -1641,7 +1641,7 @@ class PropertyInspector(QWidget):
         def on_drag_box():
             parent_win = self.window()
             if parent_win:
-                parent_win.showMinimized()
+                parent_win.hide()
 
             self.region_overlay.hide_overlay()
             snipper = ScreenSnipper(parent=None)
@@ -1669,14 +1669,16 @@ class PropertyInspector(QWidget):
                 self._update_region_overlay(node)
                 self.property_changed.emit()
                 if parent_win:
-                    parent_win.showNormal()
+                    parent_win.show()
                     parent_win.activateWindow()
+                    parent_win.raise_()
 
             def on_snipper_rejected():
                 self._update_region_overlay(node)
                 if parent_win:
-                    parent_win.showNormal()
+                    parent_win.show()
                     parent_win.activateWindow()
+                    parent_win.raise_()
 
             snipper.region_captured.connect(on_box_captured)
             snipper.rejected.connect(on_snipper_rejected)
@@ -2009,7 +2011,7 @@ class PropertyInspector(QWidget):
         def on_snip_click(append=False):
             parent_win = self.window()
             if parent_win:
-                parent_win.showMinimized()
+                parent_win.hide()
 
             snipper = ScreenSnipper(parent=None)
 
@@ -2018,11 +2020,18 @@ class PropertyInspector(QWidget):
                 refresh_gallery()
                 self.property_changed.emit()
                 if parent_win:
-                    parent_win.showNormal()
+                    parent_win.show()
                     parent_win.activateWindow()
+                    parent_win.raise_()
+
+            def on_cancel():
+                if parent_win:
+                    parent_win.show()
+                    parent_win.activateWindow()
+                    parent_win.raise_()
 
             snipper.snippet_captured.connect(on_captured)
-            snipper.rejected.connect(lambda: parent_win.showNormal() if parent_win else None)
+            snipper.rejected.connect(on_cancel)
             snipper.exec()
 
         btn_snip.clicked.connect(lambda: on_snip_click(append=False))

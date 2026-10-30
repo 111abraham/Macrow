@@ -1647,6 +1647,37 @@ class TestNodeEditor(unittest.TestCase):
         self.assertIn("node_2", step_ids)
         self.assertEqual(step_ids[-1], None)
 
+    def test_screen_snipper_timer_and_crosshair_init(self):
+        from app.ui.snippet_tool import ScreenSnipper
+        from PyQt6.QtCore import QPoint
+        snipper = ScreenSnipper()
+        self.assertTrue(hasattr(snipper, "track_timer"))
+        self.assertTrue(snipper.track_timer.isActive())
+        self.assertGreaterEqual(len(snipper.overlays), 1)
+
+        ov = snipper.overlays[0]
+        # Overlay must have FramelessWindowHint and WindowStaysOnTopHint
+        flags = ov.windowFlags()
+        self.assertTrue(flags & Qt.WindowType.FramelessWindowHint)
+        self.assertTrue(flags & Qt.WindowType.WindowStaysOnTopHint)
+
+        # Crosshair update via cursor point
+        ov.update_cursor_at(ov.screen_geo.center())
+        self.assertIsNotNone(ov.current_pos)
+
+        # Test finish_selection
+        ov.start_pos = QPoint(10, 10)
+        ov.is_selecting = True
+        captured_data = []
+        snipper.region_captured.connect(lambda x, y, w, h: captured_data.append((x, y, w, h)))
+        ov.finish_selection(QPoint(60, 60))
+        self.assertEqual(len(captured_data), 1)
+        self.assertEqual(captured_data[0][2], 50)
+        self.assertEqual(captured_data[0][3], 50)
+
+        snipper.reject()
+        self.assertFalse(snipper.track_timer.isActive())
+
 
 if __name__ == "__main__":
     unittest.main()
