@@ -12,27 +12,32 @@ from typing import Tuple
 from app.core.win32_api import user32, GWL_EXSTYLE, WS_EX_LAYERED, WS_EX_NOACTIVATE, WS_EX_TRANSPARENT
 
 
-def get_safe_overlay_color(hex_str: str) -> Tuple[QColor, QColor]:
-    """Given a target color, returns (safe_accent_color, target_preview_color).
-    The safe_accent_color is mathematically offset in hue and luminance so that
-    Manhattan RGB distance |R1-R2| + |G1-G2| + |B1-B2| > 200, guaranteeing that
-    a pixel color check with tolerance up to 60 will NEVER accidentally match
-    the highlight overlay border or tint!
+def get_safe_overlay_color(hex_str: str) -> Tuple[QColor, QColor, QColor]:
+    """Given a target color, returns (safe_accent_color, safe_corner_color, target_preview_color).
+    Both safe_accent_color and safe_corner_color are mathematically offset in hue and luminance
+    so that Manhattan RGB distance |R1-R2| + |G1-G2| + |B1-B2| > 200 from the target sample,
+    guaranteeing that neither the perimeter dashed line nor the precision corner reticles
+    can ever accidentally match the sampled target color!
     """
     target = QColor(hex_str)
     if not target.isValid():
         target = QColor("#D946EF")
 
     h, s, v = target.hsvHue(), target.hsvSaturation(), target.value()
-    if s < 45:  # Low saturation / grayscale / black / white
-        safe = QColor("#06B6D4") if v < 160 else QColor("#8B5CF6")
+    if s < 45:  # Low saturation / grayscale / gray / black / white
+        safe_accent = QColor("#06B6D4") if v < 160 else QColor("#8B5CF6")
+        safe_corner = QColor("#F43F5E") if v < 160 else QColor("#10B981")
     else:
         new_h = (h + 140) % 360
         new_s = max(180, s)
         new_v = 245 if v < 140 else 180
-        safe = QColor.fromHsv(new_h, new_s, new_v)
+        safe_accent = QColor.fromHsv(new_h, new_s, new_v)
 
-    return safe, target
+        corner_h = (h + 220) % 360
+        corner_v = 250 if v < 140 else 170
+        safe_corner = QColor.fromHsv(corner_h, new_s, corner_v)
+
+    return safe_accent, safe_corner, target
 
 
 class VisualIndicator(QWidget):
@@ -259,6 +264,7 @@ class RegionHighlightOverlay(QWidget):
 
         self.region_rect = QRect(0, 0, 100, 100)
         self.safe_accent_color = QColor(6, 182, 212)    # Cyan / Off-color
+        self.safe_corner_color = QColor(244, 63, 94)    # Rose / Corner Off-color
         self.target_color = QColor(217, 70, 239)        # Target preview swatch
         self.label_text = "Pixel Search Region"
 
@@ -307,7 +313,7 @@ class RegionHighlightOverlay(QWidget):
 
         self.region_rect = QRect(ix, iy, iw, ih)
         self.label_text = label
-        self.safe_accent_color, self.target_color = get_safe_overlay_color(color_hex)
+        self.safe_accent_color, self.safe_corner_color, self.target_color = get_safe_overlay_color(color_hex)
 
         self.setGeometry(self.region_rect)
         self.show()
@@ -452,8 +458,8 @@ class RegionHighlightOverlay(QWidget):
         painter.setPen(dash_pen)
         painter.drawRect(r)
 
-        # 3. Precision corner brackets (reticle style)
-        corner_pen = QPen(QColor(255, 255, 255, 240), 3, Qt.PenStyle.SolidLine)
+        # 3. Precision corner brackets (reticle style using mathematically safe off-color)
+        corner_pen = QPen(self.safe_corner_color, 3, Qt.PenStyle.SolidLine)
         corner_pen.setCapStyle(Qt.PenCapStyle.RoundCap)
         painter.setPen(corner_pen)
         c_len = min(14, max(4, min(w, h) // 4))

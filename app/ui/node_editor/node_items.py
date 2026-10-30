@@ -584,6 +584,147 @@ class IfConditionNodeItem(BaseNodeItem):
         return IfConditionNodeItem(properties=dict(self.properties))
 
 
+class CompareNodeItem(BaseNodeItem):
+    """Multi-condition logic & comparison node (AND / OR gates)."""
+
+    def __init__(
+        self,
+        node_type: str = "compare",
+        properties: Optional[Dict[str, Any]] = None,
+        parent=None,
+    ):
+        super().__init__(
+            title="⚖ Compare / Logic",
+            node_type="compare",
+            color=QColor(139, 92, 246),  # Violet
+            parent=parent,
+        )
+        self.properties = properties or {}
+        self.properties.setdefault("action_type", "compare")
+        self.properties.setdefault("var_a", "$val1")
+        self.properties.setdefault("op_a", "==")
+        self.properties.setdefault("val_a", "1")
+        self.properties.setdefault("logic_gate", "OR")
+        self.properties.setdefault("enable_cond_b", True)
+        self.properties.setdefault("var_b", "$val2")
+        self.properties.setdefault("op_b", "==")
+        self.properties.setdefault("val_b", "1")
+        if "bypassed" in self.properties:
+            self.bypassed = bool(self.properties["bypassed"])
+
+        self.width = 205.0
+        self.height = 100.0
+
+        self.add_input_socket(name="In")
+        self.socket_true = self.add_output_socket(name="True", color=QColor(16, 185, 129))
+        self.socket_false = self.add_output_socket(name="False", color=QColor(244, 63, 94))
+
+    def get_summary_text(self) -> str:
+        va = self.properties.get("var_a", "$val1")
+        oa = self.properties.get("op_a", "==")
+        la = self.properties.get("val_a", "1")
+        gate = self.properties.get("logic_gate", "OR")
+        vb = self.properties.get("var_b", "$val2")
+        ob = self.properties.get("op_b", "==")
+        lb = self.properties.get("val_b", "1")
+        if self.properties.get("enable_cond_b", True):
+            return f"{va} {oa} {la}\n[{gate}] {vb} {ob} {lb}"
+        return f"{va} {oa} {la}"
+
+    def paint(self, painter: QPainter, option, widget=None):
+        super().paint(painter, option, widget)
+        painter.setFont(QFont("Segoe UI", 7, QFont.Weight.Bold))
+        painter.setPen(QColor(16, 185, 129))
+        painter.drawText(
+            QRectF(self.width - 55, self.header_height + 4, 45, 16),
+            Qt.AlignmentFlag.AlignRight,
+            "✓ True →",
+        )
+        painter.setPen(QColor(244, 63, 94))
+        painter.drawText(
+            QRectF(self.width - 55, self.height - 20, 45, 16),
+            Qt.AlignmentFlag.AlignRight,
+            "✗ False →",
+        )
+
+    def clone(self) -> "CompareNodeItem":
+        return CompareNodeItem(properties=dict(self.properties))
+
+
+class TimerNodeItem(BaseNodeItem):
+    """Non-blocking timer and cooldown monitor node."""
+
+    def __init__(
+        self,
+        node_type: str = "timer",
+        properties: Optional[Dict[str, Any]] = None,
+        parent=None,
+    ):
+        super().__init__(
+            title="⏱️ Timer / Cooldown",
+            node_type="timer",
+            color=QColor(20, 184, 166),  # Teal
+            parent=parent,
+        )
+        self.properties = properties or {}
+        self.properties.setdefault("action_type", "timer")
+        self.properties.setdefault("timer_name", "timer_1")
+        self.properties.setdefault("mode", "check")  # "check", "reset", "read"
+        self.properties.setdefault("threshold_ms", 3000)
+        self.properties.setdefault("auto_reset", True)
+        self.properties.setdefault("var_name", "elapsed_ms")
+        if "bypassed" in self.properties:
+            self.bypassed = bool(self.properties["bypassed"])
+
+        self.width = 200.0
+        self.height = 95.0
+
+        self.add_input_socket(name="In")
+        self.socket_true = self.add_output_socket(name="Elapsed", color=QColor(16, 185, 129))
+        self.socket_false = self.add_output_socket(name="Waiting", color=QColor(245, 158, 11))
+
+    def get_summary_text(self) -> str:
+        tname = self.properties.get("timer_name", "timer_1")
+        mode = self.properties.get("mode", "check")
+        if mode == "reset":
+            return f"Reset '${tname}'\n(Set to 0s)"
+        elif mode == "read":
+            vn = self.properties.get("var_name", "elapsed_ms")
+            return f"Read '${tname}'\n-> ${vn}"
+        else:
+            th = self.properties.get("threshold_ms", 3000)
+            rst = " [Auto-Reset]" if self.properties.get("auto_reset", True) else ""
+            return f"Timer '${tname}' >= {th}ms\n(Cooldown Check){rst}"
+
+    def paint(self, painter: QPainter, option, widget=None):
+        super().paint(painter, option, widget)
+        mode = self.properties.get("mode", "check")
+        painter.setFont(QFont("Segoe UI", 7, QFont.Weight.Bold))
+        if mode == "check":
+            painter.setPen(QColor(16, 185, 129))
+            painter.drawText(
+                QRectF(self.width - 65, self.header_height + 4, 55, 16),
+                Qt.AlignmentFlag.AlignRight,
+                "⏱ Elapsed →",
+            )
+            painter.setPen(QColor(245, 158, 11))
+            painter.drawText(
+                QRectF(self.width - 65, self.height - 20, 55, 16),
+                Qt.AlignmentFlag.AlignRight,
+                "⏳ Waiting →",
+            )
+        else:
+            painter.setPen(QColor(56, 189, 248))
+            painter.drawText(
+                QRectF(self.width - 55, int(self.height / 2), 45, 16),
+                Qt.AlignmentFlag.AlignRight,
+                "Out →",
+            )
+
+    def clone(self) -> "TimerNodeItem":
+        return TimerNodeItem(properties=dict(self.properties))
+
+
 class MathNodeItem(BaseNodeItem):
     """Math arithmetic & variable assignment node."""
 

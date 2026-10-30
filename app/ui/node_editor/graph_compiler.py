@@ -13,6 +13,8 @@ from app.ui.node_editor.node_items import (
     ActionNodeItem,
     VisionNodeItem,
     IfConditionNodeItem,
+    CompareNodeItem,
+    TimerNodeItem,
     MathNodeItem,
     PixelColorNodeItem,
     HotkeyNodeItem,
@@ -116,6 +118,10 @@ def macro_to_graph(
             node = VisionNodeItem(vision_type="wait_image", properties=step)
         elif st_type == "if_condition":
             node = IfConditionNodeItem(properties=step)
+        elif st_type == "compare":
+            node = CompareNodeItem(properties=step)
+        elif st_type == "timer":
+            node = TimerNodeItem(properties=step)
         elif st_type == "math_op":
             node = MathNodeItem(properties=step)
         elif st_type == "pixel_color":
@@ -442,6 +448,37 @@ def graph_to_macro(scene: NodeScene) -> List[Dict[str, Any]]:
             step["val_b"] = props.get("val_b", "5")
             step["found_next"] = get_target_id(0)
             step["miss_next"] = get_target_id(1)
+            current_dt += 10
+            step["dt"] = current_dt
+
+        elif isinstance(node, CompareNodeItem):
+            step["type"] = "compare"
+            step["var_a"] = props.get("var_a", "$val1")
+            step["op_a"] = props.get("op_a", "==")
+            step["val_a"] = props.get("val_a", "1")
+            step["logic_gate"] = props.get("logic_gate", "OR")
+            step["enable_cond_b"] = bool(props.get("enable_cond_b", True))
+            step["var_b"] = props.get("var_b", "$val2")
+            step["op_b"] = props.get("op_b", "==")
+            step["val_b"] = props.get("val_b", "1")
+            step["found_next"] = get_target_id(0)
+            step["miss_next"] = get_target_id(1)
+            current_dt += 10
+            step["dt"] = current_dt
+
+        elif isinstance(node, TimerNodeItem):
+            step["type"] = "timer"
+            step["timer_name"] = props.get("timer_name", "timer_1")
+            t_mode = props.get("mode", "check")
+            step["mode"] = t_mode
+            step["threshold_ms"] = props.get("threshold_ms", 3000)
+            step["auto_reset"] = bool(props.get("auto_reset", True))
+            step["var_name"] = props.get("var_name", "elapsed_ms")
+            if t_mode == "check":
+                step["found_next"] = get_target_id(0)
+                step["miss_next"] = get_target_id(1)
+            else:
+                step["next"] = get_target_id(0)
             current_dt += 10
             step["dt"] = current_dt
 

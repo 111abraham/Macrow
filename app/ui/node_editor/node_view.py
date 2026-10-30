@@ -32,6 +32,8 @@ from app.ui.node_editor.node_items import (
     ActionNodeItem,
     VisionNodeItem,
     IfConditionNodeItem,
+    CompareNodeItem,
+    TimerNodeItem,
     MathNodeItem,
     PixelColorNodeItem,
     HotkeyNodeItem,
@@ -204,7 +206,9 @@ class NodeView(QGraphicsView):
         menu.addSeparator()
         menu.addSection("LOGIC & CONDITIONS")
         menu.addAction("🔁 C-Clamp Repeat Zone (Loop)", lambda: add_node_item(LoopNodeItem()))
-        menu.addAction("🔀 If / Compare Condition", lambda: add_node_item(IfConditionNodeItem()))
+        menu.addAction("🔀 If Condition (Single)", lambda: add_node_item(IfConditionNodeItem()))
+        menu.addAction("⚖ Compare / Logic Gate (AND/OR)", lambda: add_node_item(CompareNodeItem()))
+        menu.addAction("⏱️ Timer / Cooldown", lambda: add_node_item(TimerNodeItem()))
         menu.addAction("🎨 Pixel Color Check", lambda: add_node_item(PixelColorNodeItem()))
         menu.addAction("🔢 Math / Variable", lambda: add_node_item(MathNodeItem()))
 

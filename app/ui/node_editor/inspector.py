@@ -32,6 +32,8 @@ from app.ui.node_editor.node_items import (
     ActionNodeItem,
     VisionNodeItem,
     IfConditionNodeItem,
+    CompareNodeItem,
+    TimerNodeItem,
     MathNodeItem,
     PixelColorNodeItem,
     HotkeyNodeItem,
@@ -321,6 +323,10 @@ class PropertyInspector(QWidget):
             self._build_vision_controls(node)
         elif isinstance(node, IfConditionNodeItem):
             self._build_if_controls(node)
+        elif isinstance(node, CompareNodeItem):
+            self._build_compare_controls(node)
+        elif isinstance(node, TimerNodeItem):
+            self._build_timer_controls(node)
         elif isinstance(node, MathNodeItem):
             self._build_math_controls(node)
         elif isinstance(node, PixelColorNodeItem):
@@ -1269,6 +1275,268 @@ class PropertyInspector(QWidget):
         info.setStyleSheet("color: #94a3b8; font-size: 10px;")
         info.setWordWrap(True)
         layout.addWidget(info)
+
+        self.content_layout.addWidget(box)
+
+    def _build_compare_controls(self, node: CompareNodeItem):
+        box = QFrame()
+        box.setStyleSheet("background: #1e293b; border-radius: 6px; padding: 10px;")
+        layout = QVBoxLayout(box)
+        layout.setSpacing(8)
+
+        lbl = QLabel("⚖ Multi-Condition Logic Gate (AND / OR)")
+        lbl.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+        lbl.setStyleSheet("color: #a78bfa;")
+        layout.addWidget(lbl)
+
+        # Condition A Frame
+        box_a = QFrame()
+        box_a.setStyleSheet("background: #0f172a; border-radius: 4px; padding: 6px;")
+        lay_a = QVBoxLayout(box_a)
+        lay_a.setSpacing(6)
+
+        lbl_a = QLabel("Condition 1:")
+        lbl_a.setFont(QFont("Segoe UI", 8, QFont.Weight.Bold))
+        lbl_a.setStyleSheet("color: #38bdf8;")
+        lay_a.addWidget(lbl_a)
+
+        lay_a.addWidget(QLabel("Variable A (e.g. $val1):"))
+        widget_a, _ = self._create_param_input(
+            node.properties.get("var_a", "$val1"),
+            lambda val: (node.properties.__setitem__("var_a", str(val)), node.update(), self.property_changed.emit()),
+            placeholder="$variable or value",
+            tooltip="First variable or operand of Condition 1",
+        )
+        lay_a.addWidget(widget_a)
+
+        lay_a.addWidget(QLabel("Operator:"))
+        combo_op_a = QComboBox()
+        ops = ["== (Equal)", "!= (Not Equal)", "> (Greater Than)", "< (Less Than)", ">= (Greater or Equal)", "<= (Less or Equal)", "contains", "is empty"]
+        combo_op_a.addItems(ops)
+        curr_op_a = node.properties.get("op_a", "==")
+        for i, o in enumerate(ops):
+            if o.startswith(curr_op_a + " ") or o == curr_op_a:
+                combo_op_a.setCurrentIndex(i)
+                break
+        combo_op_a.currentTextChanged.connect(lambda txt: (
+            node.properties.__setitem__("op_a", txt.split(" ")[0]),
+            node.update(),
+            self.property_changed.emit()
+        ))
+        lay_a.addWidget(combo_op_a)
+
+        lay_a.addWidget(QLabel("Value A:"))
+        widget_val_a, _ = self._create_param_input(
+            node.properties.get("val_a", "1"),
+            lambda val: (node.properties.__setitem__("val_a", str(val)), node.update(), self.property_changed.emit()),
+            placeholder="1 or $target",
+            tooltip="Second operand of Condition 1",
+        )
+        lay_a.addWidget(widget_val_a)
+        layout.addWidget(box_a)
+
+        # Logic Gate Selector (AND / OR)
+        layout.addWidget(QLabel("Logic Relationship:"))
+        combo_gate = QComboBox()
+        combo_gate.addItems(["OR (At least one condition matches)", "AND (Both conditions must match)"])
+        if node.properties.get("logic_gate", "OR") == "AND":
+            combo_gate.setCurrentIndex(1)
+        else:
+            combo_gate.setCurrentIndex(0)
+
+        def on_gate_change(idx):
+            node.properties["logic_gate"] = "AND" if idx == 1 else "OR"
+            node.update()
+            self.property_changed.emit()
+
+        combo_gate.currentIndexChanged.connect(on_gate_change)
+        layout.addWidget(combo_gate)
+
+        # Condition B Frame
+        box_b = QFrame()
+        box_b.setStyleSheet("background: #0f172a; border-radius: 4px; padding: 6px;")
+        lay_b = QVBoxLayout(box_b)
+        lay_b.setSpacing(6)
+
+        chk_enable_b = QCheckBox("Enable Condition 2")
+        chk_enable_b.setChecked(bool(node.properties.get("enable_cond_b", True)))
+        chk_enable_b.setFont(QFont("Segoe UI", 8, QFont.Weight.Bold))
+        chk_enable_b.setStyleSheet("color: #38bdf8;")
+        lay_b.addWidget(chk_enable_b)
+
+        widget_b_container = QWidget()
+        lay_b_sub = QVBoxLayout(widget_b_container)
+        lay_b_sub.setContentsMargins(0, 0, 0, 0)
+        lay_b_sub.setSpacing(6)
+
+        lay_b_sub.addWidget(QLabel("Variable B (e.g. $val2):"))
+        widget_b, _ = self._create_param_input(
+            node.properties.get("var_b", "$val2"),
+            lambda val: (node.properties.__setitem__("var_b", str(val)), node.update(), self.property_changed.emit()),
+            placeholder="$variable or value",
+            tooltip="First operand of Condition 2",
+        )
+        lay_b_sub.addWidget(widget_b)
+
+        lay_b_sub.addWidget(QLabel("Operator B:"))
+        combo_op_b = QComboBox()
+        combo_op_b.addItems(ops)
+        curr_op_b = node.properties.get("op_b", "==")
+        for i, o in enumerate(ops):
+            if o.startswith(curr_op_b + " ") or o == curr_op_b:
+                combo_op_b.setCurrentIndex(i)
+                break
+        combo_op_b.currentTextChanged.connect(lambda txt: (
+            node.properties.__setitem__("op_b", txt.split(" ")[0]),
+            node.update(),
+            self.property_changed.emit()
+        ))
+        lay_b_sub.addWidget(combo_op_b)
+
+        lay_b_sub.addWidget(QLabel("Value B:"))
+        widget_val_b, _ = self._create_param_input(
+            node.properties.get("val_b", "1"),
+            lambda val: (node.properties.__setitem__("val_b", str(val)), node.update(), self.property_changed.emit()),
+            placeholder="1 or $target2",
+            tooltip="Second operand of Condition 2",
+        )
+        lay_b_sub.addWidget(widget_val_b)
+        lay_b.addWidget(widget_b_container)
+
+        widget_b_container.setVisible(chk_enable_b.isChecked())
+
+        def on_toggle_b(checked):
+            node.properties["enable_cond_b"] = checked
+            widget_b_container.setVisible(checked)
+            node.update()
+            self.property_changed.emit()
+
+        chk_enable_b.toggled.connect(on_toggle_b)
+        layout.addWidget(box_b)
+
+        info = QLabel("Evaluates Condition 1 and/or Condition 2. Routes to '✓ True →' if condition matches, else '✗ False →'.")
+        info.setStyleSheet("color: #94a3b8; font-size: 10px;")
+        info.setWordWrap(True)
+        layout.addWidget(info)
+
+        self.content_layout.addWidget(box)
+
+    def _build_timer_controls(self, node: TimerNodeItem):
+        box = QFrame()
+        box.setStyleSheet("background: #1e293b; border-radius: 6px; padding: 10px;")
+        layout = QVBoxLayout(box)
+        layout.setSpacing(8)
+
+        lbl = QLabel("⏱️ Non-Blocking Timer & Cooldown")
+        lbl.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+        lbl.setStyleSheet("color: #14b8a6;")
+        layout.addWidget(lbl)
+
+        # Timer Name
+        layout.addWidget(QLabel("Timer Identifier Name:"))
+        edit_tname = QLineEdit(node.properties.get("timer_name", "timer_1"))
+        edit_tname.setPlaceholderText("e.g. cooldown_ability, timer_boss")
+        edit_tname.textChanged.connect(lambda txt: (
+            node.properties.__setitem__("timer_name", txt.strip()),
+            node.update(),
+            self.property_changed.emit()
+        ))
+        layout.addWidget(edit_tname)
+
+        # Timer Mode
+        layout.addWidget(QLabel("Operating Mode:"))
+        combo_mode = QComboBox()
+        modes = [
+            ("Check Cooldown / Elapsed Threshold", "check"),
+            ("Reset Timer (Restart at 0s)", "reset"),
+            ("Read Elapsed Time into Variable", "read"),
+        ]
+        for title, key in modes:
+            combo_mode.addItem(title, key)
+
+        curr_mode = node.properties.get("mode", "check")
+        for i, (_, key) in enumerate(modes):
+            if key == curr_mode:
+                combo_mode.setCurrentIndex(i)
+                break
+        layout.addWidget(combo_mode)
+
+        # Dynamic containers for mode-specific options
+        check_container = QWidget()
+        lay_check = QVBoxLayout(check_container)
+        lay_check.setContentsMargins(0, 0, 0, 0)
+        lay_check.setSpacing(6)
+
+        lay_check.addWidget(QLabel("Threshold Duration (ms):"))
+        widget_thresh, _ = self._create_param_input(
+            node.properties.get("threshold_ms", 3000),
+            lambda val: (node.properties.__setitem__("threshold_ms", val), node.update(), self.property_changed.emit()),
+            placeholder="3000 or $cooldown",
+            tooltip="Cooldown duration in milliseconds to test against (e.g. 1000 = 1 sec, 5000 = 5 sec)",
+        )
+        lay_check.addWidget(widget_thresh)
+
+        chk_reset = QCheckBox("Auto-Reset timer on elapsed")
+        chk_reset.setChecked(bool(node.properties.get("auto_reset", True)))
+        chk_reset.setToolTip("Automatically restarts the timer at 0 when the elapsed threshold is met so the next cycle can begin.")
+        chk_reset.toggled.connect(lambda chk: (
+            node.properties.__setitem__("auto_reset", chk),
+            node.update(),
+            self.property_changed.emit()
+        ))
+        lay_check.addWidget(chk_reset)
+
+        lbl_check_hint = QLabel("⚡ Non-blocking: If elapsed time >= threshold, routes to '⏱ Elapsed →' (and resets if enabled). Otherwise immediately continues down '⏳ Waiting →' without pausing or stalling playback!")
+        lbl_check_hint.setStyleSheet("color: #38bdf8; font-size: 10px;")
+        lbl_check_hint.setWordWrap(True)
+        lay_check.addWidget(lbl_check_hint)
+        layout.addWidget(check_container)
+
+        read_container = QWidget()
+        lay_read = QVBoxLayout(read_container)
+        lay_read.setContentsMargins(0, 0, 0, 0)
+        lay_read.setSpacing(6)
+
+        lay_read.addWidget(QLabel("Store Elapsed Milliseconds Into Variable:"))
+        edit_var = QLineEdit(node.properties.get("var_name", "elapsed_ms"))
+        edit_var.setPlaceholderText("e.g. elapsed_ms, boss_dt")
+        edit_var.textChanged.connect(lambda txt: (
+            node.properties.__setitem__("var_name", txt.strip()),
+            node.update(),
+            self.property_changed.emit()
+        ))
+        lay_read.addWidget(edit_var)
+
+        lbl_read_hint = QLabel("Reads current elapsed milliseconds into variable (e.g. $elapsed_ms) and continues flow down 'Out →'.")
+        lbl_read_hint.setStyleSheet("color: #94a3b8; font-size: 10px;")
+        lbl_read_hint.setWordWrap(True)
+        lay_read.addWidget(lbl_read_hint)
+        layout.addWidget(read_container)
+
+        reset_container = QWidget()
+        lay_rst = QVBoxLayout(reset_container)
+        lay_rst.setContentsMargins(0, 0, 0, 0)
+        lbl_rst_hint = QLabel("Restarts this timer at current timestamp (0s) and continues down 'Out →'.")
+        lbl_rst_hint.setStyleSheet("color: #94a3b8; font-size: 10px;")
+        lbl_rst_hint.setWordWrap(True)
+        lay_rst.addWidget(lbl_rst_hint)
+        layout.addWidget(reset_container)
+
+        def update_mode_visibility(m):
+            check_container.setVisible(m == "check")
+            read_container.setVisible(m == "read")
+            reset_container.setVisible(m == "reset")
+
+        update_mode_visibility(curr_mode)
+
+        def on_mode_changed(idx):
+            selected_mode = combo_mode.itemData(idx)
+            node.properties["mode"] = selected_mode
+            update_mode_visibility(selected_mode)
+            node.update()
+            self.property_changed.emit()
+
+        combo_mode.currentIndexChanged.connect(on_mode_changed)
 
         self.content_layout.addWidget(box)
 

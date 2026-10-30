@@ -1503,12 +1503,15 @@ class TestNodeEditor(unittest.TestCase):
         from app.ui.indicator import get_safe_overlay_color
         # Test across various shades (dark, bright, vibrant, gray)
         for hex_code in ["#535353", "#FFFFFF", "#000000", "#FF0000", "#00FF00", "#0000FF", "#38BDF8"]:
-            safe, target = get_safe_overlay_color(hex_code)
+            safe, corner, target = get_safe_overlay_color(hex_code)
             self.assertTrue(safe.isValid())
+            self.assertTrue(corner.isValid())
             self.assertTrue(target.isValid())
             dist = abs(safe.red() - target.red()) + abs(safe.green() - target.green()) + abs(safe.blue() - target.blue())
+            corner_dist = abs(corner.red() - target.red()) + abs(corner.green() - target.green()) + abs(corner.blue() - target.blue())
             # Manhattan distance should be comfortably large (> 120) to prevent false positives
             self.assertGreater(dist, 120, f"Distance {dist} too low for {hex_code}")
+            self.assertGreater(corner_dist, 120, f"Corner distance {corner_dist} too low for {hex_code}")
 
     def test_region_highlight_interactive_drag_sync(self):
         from app.ui.node_editor.inspector import PropertyInspector
@@ -1677,6 +1680,146 @@ class TestNodeEditor(unittest.TestCase):
 
         snipper.reject()
         self.assertFalse(snipper.track_timer.isActive())
+
+    def test_compare_node_creation_and_compilation(self):
+        from app.ui.node_editor.node_items import CompareNodeItem
+        node = CompareNodeItem(properties={
+            "var_a": "$hp",
+            "op_a": "<",
+            "val_a": "50",
+            "logic_gate": "OR",
+            "enable_cond_b": True,
+            "var_b": "$mana",
+            "op_b": "<",
+            "val_b": "20",
+        })
+        self.assertEqual(node.properties["var_a"], "$hp")
+        self.assertEqual(node.properties["logic_gate"], "OR")
+        self.scene.add_node(node)
+        self.assertIn("True", [s.name for s in node.output_sockets])
+        self.assertIn("False", [s.name for s in node.output_sockets])
+
+        # Test clone
+        cloned = node.clone()
+        self.assertEqual(cloned.properties["logic_gate"], "OR")
+
+        # Test compilation
+        steps = graph_to_macro(self.scene)
+        # Even floating, lets test macro_to_graph
+        macro_steps = [{
+            "type": "compare",
+            "var_a": "$hp",
+            "op_a": "<",
+            "val_a": "50",
+            "logic_gate": "AND",
+            "enable_cond_b": True,
+            "var_b": "$stamina",
+            "op_b": ">",
+            "val_b": "10",
+        }]
+        scene2 = NodeScene()
+        macro_to_graph(macro_steps, scene2)
+        compare_nodes = [n for n in scene2.nodes if isinstance(n, CompareNodeItem)]
+        self.assertEqual(len(compare_nodes), 1)
+        self.assertEqual(compare_nodes[0].properties["logic_gate"], "AND")
+
+    def test_compare_node_player_evaluation(self):
+        from app.core.input_simulator import InputSimulator
+        from app.core.player import MacroPlayer
+        sim = InputSimulator()
+        player = MacroPlayer(simulator=sim)
+
+        # Set variables
+        player.variables["hp"] = 30
+        player.variables["mana"] = 100
+
+        # Test OR logic (hp < 50 OR mana < 50) -> True
+        step_or = {
+            "type": "compare",
+            "var_a": "$hp",
+            "op_a": "<",
+            "val_a": "50",
+            "logic_gate": "OR",
+            "enable_cond_b": True,
+            "var_b": "$mana",
+            "op_b": "<",
+            "val_b": "50",
+        }
+        res_or = player._execute_step(step_or)
+        self.assertTrue(res_or)
+
+        # Test AND logic (hp < 50 AND mana < 50) -> False (since mana is 100)
+        step_and = {
+            "type": "compare",
+            "var_a": "$hp",
+            "op_a": "<",
+            "val_a": "50",
+            "logic_gate": "AND",
+            "enable_cond_b": True,
+            "var_b": "$mana",
+            "op_b": "<",
+            "val_b": "50",
+        }
+        res_and = player._execute_step(step_and)
+        self.assertFalse(res_and)
+
+    def test_timer_node_creation_and_compilation(self):
+        from app.ui.node_editor.node_items import TimerNodeItem
+        node = TimerNodeItem(properties={
+            "timer_name": "boss_cooldown",
+            "mode": "check",
+            "threshold_ms": 5000,
+            "auto_reset": True,
+        })
+        self.assertEqual(node.properties["timer_name"], "boss_cooldown")
+        self.scene.add_node(node)
+        self.assertIn("Elapsed", [s.name for s in node.output_sockets])
+        self.assertIn("Waiting", [s.name for s in node.output_sockets])
+
+        # Test round-trip compilation
+        macro_steps = [{
+            "type": "timer",
+            "timer_name": "boss_cooldown",
+            "mode": "check",
+            "threshold_ms": 5000,
+            "auto_reset": True,
+        }]
+        scene2 = NodeScene()
+        macro_to_graph(macro_steps, scene2)
+        t_nodes = [n for n in scene2.nodes if isinstance(n, TimerNodeItem)]
+        self.assertEqual(len(t_nodes), 1)
+        self.assertEqual(t_nodes[0].properties["timer_name"], "boss_cooldown")
+
+    def test_timer_node_player_execution(self):
+        from app.core.input_simulator import InputSimulator
+        from app.core.player import MacroPlayer
+        import time
+
+        sim = InputSimulator()
+        player = MacroPlayer(simulator=sim)
+
+        # 1. Reset mode
+        step_reset = {"type": "timer", "timer_name": "test_t", "mode": "reset"}
+        self.assertTrue(player._execute_step(step_reset))
+        self.assertIn("test_t", player.timers)
+
+        # 2. Check mode before elapsed (threshold = 5000ms) -> False
+        step_check = {"type": "timer", "timer_name": "test_t", "mode": "check", "threshold_ms": 5000, "auto_reset": False}
+        res = player._execute_step(step_check)
+        self.assertFalse(res)
+
+        # Artificially age the timer by 6 seconds
+        player.timers["test_t"] = time.perf_counter() - 6.0
+
+        # 3. Check mode after threshold met -> True
+        step_check_reset = {"type": "timer", "timer_name": "test_t", "mode": "check", "threshold_ms": 5000, "auto_reset": True}
+        res2 = player._execute_step(step_check_reset)
+        self.assertTrue(res2)
+
+        # 4. Read mode
+        step_read = {"type": "timer", "timer_name": "test_t", "mode": "read", "var_name": "elapsed_val"}
+        self.assertTrue(player._execute_step(step_read))
+        self.assertIn("elapsed_val", player.variables)
 
 
 if __name__ == "__main__":

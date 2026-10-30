@@ -48,6 +48,7 @@ class MacroPlayer:
         self.on_pass_progress = None  # (current_pass, total_passes) - 0 if infinite
         self.on_cursor_action = None  # (x, y, action_type) for visual indicator
         self.on_step_executing = None  # (step_id, step_index, step_dict) for live node highlight
+        self.timers: Dict[str, float] = {}  # Non-blocking stopwatch / cooldown timers
 
     def is_playing(self):
         with self.state_lock:
@@ -125,6 +126,8 @@ class MacroPlayer:
         with self._repeat_lock:
             self._active_repeats.clear()
 
+        self.timers.clear()
+
         if self.on_step_executing:
             try:
                 self.on_step_executing(None, -1, None)
@@ -185,6 +188,7 @@ class MacroPlayer:
                 else:
                     break
         finally:
+            self.timers.clear()
             if self.on_step_executing:
                 try:
                     self.on_step_executing(None, -1, None)
@@ -207,7 +211,7 @@ class MacroPlayer:
             or "miss_next" in s
             or "body_next" in s
             or "next" in s
-            or s.get("type") in ("loop_count", "if_condition")
+            or s.get("type") in ("loop_count", "if_condition", "compare", "timer")
             for s in steps
         )
         if has_branching:
@@ -731,6 +735,86 @@ class MacroPlayer:
 
             self.variables["$last_condition"] = res
             return res
+
+        elif st_type == "compare":
+            def eval_sub_cond(var_raw, op, val_raw):
+                if str(var_raw).startswith("$"):
+                    k = str(var_raw).lstrip("$")
+                    va = self.variables.get(k, self.variables.get(str(var_raw), ""))
+                else:
+                    va = var_raw
+
+                if str(val_raw).startswith("$"):
+                    k = str(val_raw).lstrip("$")
+                    vb = self.variables.get(k, self.variables.get(str(val_raw), ""))
+                else:
+                    vb = val_raw
+
+                try:
+                    fa = float(va)
+                    fb = float(vb)
+                    if op == "==": return (fa == fb)
+                    elif op == "!=": return (fa != fb)
+                    elif op == ">": return (fa > fb)
+                    elif op == "<": return (fa < fb)
+                    elif op == ">=": return (fa >= fb)
+                    elif op == "<=": return (fa <= fb)
+                except (ValueError, TypeError):
+                    sa = str(va)
+                    sb = str(vb)
+                    if op == "==": return (sa == sb)
+                    elif op == "!=": return (sa != sb)
+                    elif op == "contains": return (sb in sa)
+                    elif op == "is empty": return (len(sa.strip()) == 0)
+                return False
+
+            res_a = eval_sub_cond(step.get("var_a", "$val1"), step.get("op_a", "=="), step.get("val_a", "1"))
+            logic = str(step.get("logic_gate", "OR")).upper()
+            if step.get("enable_cond_b", True):
+                res_b = eval_sub_cond(step.get("var_b", "$val2"), step.get("op_b", "=="), step.get("val_b", "1"))
+                final_res = (res_a and res_b) if logic == "AND" else (res_a or res_b)
+            else:
+                final_res = res_a
+
+            self.variables["$last_condition"] = final_res
+            return final_res
+
+        elif st_type == "timer":
+            tname = str(step.get("timer_name", "timer_1")).lstrip("$")
+            mode = str(step.get("mode", "check")).lower()
+
+            if mode == "reset":
+                self.timers[tname] = time.perf_counter()
+                return True
+
+            elif mode == "read":
+                start_t = self.timers.get(tname, time.perf_counter())
+                elapsed_ms = int((time.perf_counter() - start_t) * 1000.0)
+                vn = str(step.get("var_name", "elapsed_ms")).lstrip("$")
+                self.variables[vn] = elapsed_ms
+                self.variables["$" + vn] = elapsed_ms
+                return True
+
+            else:  # "check" (non-blocking cooldown / threshold check)
+                raw_thresh = self._resolve_coord(step.get("threshold_ms", 3000), default=3000)
+                thresh_ms = max(0, int(raw_thresh))
+                auto_reset = bool(step.get("auto_reset", True))
+
+                start_t = self.timers.get(tname)
+                if start_t is None:
+                    # First evaluation starts the timer
+                    start_t = time.perf_counter()
+                    self.timers[tname] = start_t
+
+                elapsed_ms = (time.perf_counter() - start_t) * 1000.0
+                is_elapsed = elapsed_ms >= thresh_ms
+
+                if is_elapsed and auto_reset:
+                    self.timers[tname] = time.perf_counter()
+
+                self.variables[f"${tname}_elapsed_ms"] = int(elapsed_ms)
+                self.variables["$last_timer_elapsed"] = is_elapsed
+                return is_elapsed
 
         elif st_type == "hotkey":
             combo = step.get("combo", "")

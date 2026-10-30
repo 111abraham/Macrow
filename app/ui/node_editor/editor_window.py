@@ -34,6 +34,8 @@ from app.ui.node_editor.node_items import (
     ActionNodeItem,
     VisionNodeItem,
     IfConditionNodeItem,
+    CompareNodeItem,
+    TimerNodeItem,
     MathNodeItem,
     PixelColorNodeItem,
     HotkeyNodeItem,
@@ -171,7 +173,9 @@ class MacroNodeEditorWindow(QMainWindow):
 
         # Logic & Conditions
         add_menu.addSection("LOGIC & CONDITIONS")
-        add_menu.addAction("🔀 If / Compare Condition", lambda: self._add_custom_node(IfConditionNodeItem()))
+        add_menu.addAction("🔀 If Condition (Single)", lambda: self._add_custom_node(IfConditionNodeItem()))
+        add_menu.addAction("⚖ Compare / Logic Gate (AND / OR)", lambda: self._add_custom_node(CompareNodeItem()))
+        add_menu.addAction("⏱️ Timer / Cooldown", lambda: self._add_custom_node(TimerNodeItem()))
         add_menu.addAction("🎨 Pixel Color Check", lambda: self._add_custom_node(PixelColorNodeItem()))
         add_menu.addAction("🔁 Loop (N Times)", lambda: self._add_custom_node(LoopNodeItem()))
         add_menu.addSeparator()
