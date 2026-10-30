@@ -1556,6 +1556,42 @@ class TestNodeEditor(unittest.TestCase):
         self.assertEqual(dropper.cur_y, 456)
         self.assertEqual(dropper.cur_hex, "#AABBCC")
 
+    def test_badge_overlay_strictly_outside_bounding_box(self):
+        from app.ui.indicator import RegionHighlightOverlay
+        overlay = RegionHighlightOverlay()
+        # Test box located at (200, 200, 150, 100)
+        overlay.show_region(200, 200, 150, 100, label="Dino Sensor", color_hex="#FFA500")
+
+        box_rect = overlay.geometry()
+        badge_rect = overlay.badge_overlay.geometry()
+
+        # The badge must be visible and placed outside the box
+        self.assertTrue(overlay.badge_overlay.isVisible())
+        self.assertFalse(box_rect.intersects(badge_rect), "Badge must not overlap or sit inside the search box!")
+        # Placed directly above the box
+        self.assertLessEqual(badge_rect.bottom(), box_rect.top())
+
+        overlay.hide_overlay()
+        self.assertFalse(overlay.badge_overlay.isVisible())
+        overlay.close()
+
+    def test_click_node_selection_synchronization(self):
+        from app.ui.node_editor.inspector import PropertyInspector
+        scene = NodeScene()
+        node1 = ActionNodeItem("click", {"x": 100, "y": 200})
+        node2 = ActionNodeItem("delay", {"duration": 750})
+        scene.add_node(node1)
+        scene.add_node(node2)
+
+        inspector = PropertyInspector(scene)
+        # Select node 1
+        scene.node_selected.emit(node1)
+        self.assertIs(inspector.current_node, node1)
+
+        # Direct selection of node 2 without clicking off
+        scene.node_selected.emit(node2)
+        self.assertIs(inspector.current_node, node2)
+
 
 if __name__ == "__main__":
     unittest.main()

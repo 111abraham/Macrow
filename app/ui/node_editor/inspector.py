@@ -272,6 +272,8 @@ class PropertyInspector(QWidget):
         self.content_layout.addStretch()
 
     def set_node(self, node: Optional[BaseNodeItem], force: bool = False):
+        if getattr(self, "_updating_from_overlay", False):
+            return
         if node is self.current_node and not force and self.content_layout.count() > 1:
             self._update_region_overlay(node)
             return

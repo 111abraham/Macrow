@@ -6,7 +6,7 @@ Click-through and non-activating so it never steals focus or blocks real input.
 
 from PyQt6.QtWidgets import QWidget
 from PyQt6.QtCore import Qt, QTimer, QPoint, QRect, pyqtSignal
-from PyQt6.QtGui import QPainter, QColor, QBrush, QPen, QFont, QCursor
+from PyQt6.QtGui import QPainter, QColor, QBrush, QPen, QFont, QFontMetrics, QCursor
 import ctypes
 from typing import Tuple
 from app.core.win32_api import user32, GWL_EXSTYLE, WS_EX_LAYERED, WS_EX_NOACTIVATE, WS_EX_TRANSPARENT
@@ -99,10 +99,147 @@ class VisualIndicator(QWidget):
         self.hide()
 
 
+class RegionBadgeOverlay(QWidget):
+    """Floating dimension and target color pill badge situated entirely OUTSIDE the bounding box.
+    Guarantees that Pixel Color Check never scans the badge or target color swatch itself.
+    """
+
+    def __init__(self, owner: "RegionHighlightOverlay"):
+        super().__init__()
+        self.owner = owner
+        self.setWindowFlags(
+            Qt.WindowType.FramelessWindowHint
+            | Qt.WindowType.WindowStaysOnTopHint
+            | Qt.WindowType.Tool
+            | Qt.WindowType.WindowDoesNotAcceptFocus
+        )
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating, True)
+        self.setMouseTracking(True)
+        self.setCursor(Qt.CursorShape.SizeAllCursor)
+
+        self.pill_text = ""
+        self.safe_accent_color = QColor(6, 182, 212)
+        self.target_color = QColor(217, 70, 239)
+        self.swatch_sz = 12
+        self.swatch_gap = 6
+        self._drag_start_global = None
+        self._drag_orig_region = None
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        try:
+            hwnd = int(self.winId())
+            ex_style = user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
+            user32.SetWindowLongW(
+                hwnd, GWL_EXSTYLE, (ex_style | WS_EX_LAYERED | WS_EX_NOACTIVATE) & ~WS_EX_TRANSPARENT
+            )
+        except Exception:
+            pass
+
+    def update_badge(self, rx: int, ry: int, rw: int, rh: int, label: str, safe_col: QColor, target_col: QColor):
+        self.safe_accent_color = safe_col
+        self.target_color = target_col
+        font = QFont("Segoe UI", 9, QFont.Weight.Bold)
+        fm = QFontMetrics(font)
+
+        badge_text = f"✥ {label}: {rw}×{rh} (X:{rx}, Y:{ry})"
+        txt_w = fm.horizontalAdvance(badge_text) + self.swatch_sz + self.swatch_gap + 20
+        badge_h = fm.height() + 8
+
+        if rw >= txt_w or rw >= 120:
+            self.pill_text = badge_text
+            pw = txt_w
+        else:
+            self.pill_text = f"{rw}×{rh}"
+            pw = fm.horizontalAdvance(self.pill_text) + self.swatch_sz + self.swatch_gap + 16
+
+        # Position strictly OUTSIDE the main bounding box:
+        # Default: float 4px above the top-left edge of the box.
+        # Fallback: if the box is within 30px of the top edge of screen, float 4px below the box!
+        bx = rx
+        by = ry - badge_h - 4
+        if by < 10:
+            by = ry + rh + 4
+
+        self.setGeometry(bx, by, pw, badge_h)
+        self.show()
+        self.update()
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._drag_start_global = event.globalPosition().toPoint()
+            self._drag_orig_region = QRect(self.owner.region_rect)
+            event.accept()
+        else:
+            super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if (event.buttons() & Qt.MouseButton.LeftButton) and self._drag_start_global and self._drag_orig_region:
+            cur_global = event.globalPosition().toPoint()
+            dx = cur_global.x() - self._drag_start_global.x()
+            dy = cur_global.y() - self._drag_start_global.y()
+            og = self._drag_orig_region
+            nx = og.x() + dx
+            ny = og.y() + dy
+            nw = og.width()
+            nh = og.height()
+            self.owner.region_rect = QRect(nx, ny, nw, nh)
+            self.owner.setGeometry(self.owner.region_rect)
+            self.update_badge(nx, ny, nw, nh, self.owner.label_text, self.safe_accent_color, self.target_color)
+            self.owner.region_changed.emit(nx, ny, nw, nh)
+            self.owner.update()
+            event.accept()
+        else:
+            super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton and self._drag_start_global:
+            self._drag_start_global = None
+            self._drag_orig_region = None
+            g = self.owner.region_rect
+            self.owner.region_committed.emit(g.x(), g.y(), g.width(), g.height())
+            event.accept()
+        else:
+            super().mouseReleaseEvent(event)
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        r = self.rect().adjusted(1, 1, -1, -1)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QBrush(QColor(15, 23, 42, 230)))
+        painter.drawRoundedRect(r, 4, 4)
+
+        painter.setPen(QPen(self.safe_accent_color, 1))
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawRoundedRect(r, 4, 4)
+
+        # Target Color Preview Swatch (strictly OUTSIDE search box!)
+        sw_x = r.left() + 6
+        sw_y = r.top() + (r.height() - self.swatch_sz) // 2
+        swatch_rect = QRect(sw_x, sw_y, self.swatch_sz, self.swatch_sz)
+        painter.setPen(QPen(QColor(255, 255, 255, 220), 1))
+        painter.setBrush(QBrush(self.target_color))
+        painter.drawRoundedRect(swatch_rect, 2, 2)
+
+        # Dimension / Region Label Text
+        text_rect = QRect(
+            sw_x + self.swatch_sz + self.swatch_gap,
+            r.top(),
+            r.width() - (self.swatch_sz + self.swatch_gap + 8),
+            r.height(),
+        )
+        painter.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+        painter.setPen(QColor(241, 245, 249))
+        painter.drawText(text_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, self.pill_text)
+
+
 class RegionHighlightOverlay(QWidget):
     """Interactive on-screen bounding box overlay with edge/corner resize handles and move dragging.
     Uses safe off-color display lines to completely prevent self-detection while displaying
-    the true sampled target color swatch in the dimension badge.
+    the true sampled target color swatch in a companion badge OUTSIDE the bounding box.
     """
 
     region_changed = pyqtSignal(int, int, int, int)    # (x, y, w, h) emitted live during drag
@@ -125,10 +262,17 @@ class RegionHighlightOverlay(QWidget):
         self.target_color = QColor(217, 70, 239)        # Target preview swatch
         self.label_text = "Pixel Search Region"
 
+        # Floating pill badge positioned strictly outside the bounding box
+        self.badge_overlay = RegionBadgeOverlay(self)
+
         # Interactive drag state
         self._drag_mode = None
         self._drag_start_global = None
         self._drag_orig_geom = None
+
+    def closeEvent(self, event):
+        self.badge_overlay.close()
+        super().closeEvent(event)
 
     def showEvent(self, event):
         super().showEvent(event)
@@ -158,7 +302,7 @@ class RegionHighlightOverlay(QWidget):
             iw = max(20, int(w))
             ih = max(20, int(h))
         except (ValueError, TypeError):
-            self.hide()
+            self.hide_overlay()
             return
 
         self.region_rect = QRect(ix, iy, iw, ih)
@@ -167,12 +311,16 @@ class RegionHighlightOverlay(QWidget):
 
         self.setGeometry(self.region_rect)
         self.show()
+        self.badge_overlay.update_badge(
+            ix, iy, iw, ih, label, self.safe_accent_color, self.target_color
+        )
         self.update()
 
     def hide_overlay(self):
-        """Hides the highlight overlay."""
+        """Hides the highlight overlay and companion badge."""
         self._drag_mode = None
         self.hide()
+        self.badge_overlay.hide()
 
     def _get_hit_zone(self, pos: QPoint) -> str:
         """Determines which resize edge, corner, or move zone the mouse is over."""
@@ -261,6 +409,9 @@ class RegionHighlightOverlay(QWidget):
 
             self.region_rect = QRect(nx, ny, nw, nh)
             self.setGeometry(self.region_rect)
+            self.badge_overlay.update_badge(
+                nx, ny, nw, nh, self.label_text, self.safe_accent_color, self.target_color
+            )
             self.region_changed.emit(nx, ny, nw, nh)
             self.update()
             event.accept()
@@ -274,6 +425,9 @@ class RegionHighlightOverlay(QWidget):
             self._drag_mode = None
             g = self.geometry()
             self.region_rect = g
+            self.badge_overlay.update_badge(
+                g.x(), g.y(), g.width(), g.height(), self.label_text, self.safe_accent_color, self.target_color
+            )
             self.region_committed.emit(g.x(), g.y(), g.width(), g.height())
             zone = self._get_hit_zone(event.pos())
             self._update_cursor_for_zone(zone)
@@ -289,14 +443,9 @@ class RegionHighlightOverlay(QWidget):
         h = self.height()
         r = QRect(1, 1, w - 2, h - 2)
 
-        # 1. Soft interior tint (using safe off-color)
-        tint_col = QColor(
-            self.safe_accent_color.red(),
-            self.safe_accent_color.green(),
-            self.safe_accent_color.blue(),
-            28,
-        )
-        painter.fillRect(r, tint_col)
+        # 1. Nearly invisible fill (alpha=1) so the interior captures mouse drag/move
+        # while keeping screen pixels 100% true with ZERO color alteration or tint!
+        painter.fillRect(r, QColor(0, 0, 0, 1))
 
         # 2. Dashed perimeter border (using safe off-color)
         dash_pen = QPen(self.safe_accent_color, 2, Qt.PenStyle.DashLine)
@@ -322,51 +471,5 @@ class RegionHighlightOverlay(QWidget):
         painter.drawLine(w - 2, h - 2, w - 2 - c_len, h - 2)
         painter.drawLine(w - 2, h - 2, w - 2, h - 2 - c_len)
 
-        # 4. Info badge / pill label with Target Color Swatch
-        rx = self.region_rect.x()
-        ry = self.region_rect.y()
-        badge_text = f"✥ {self.label_text}: {w}×{h} (X:{rx}, Y:{ry})"
-        font = QFont("Segoe UI", 9, QFont.Weight.Bold)
-        painter.setFont(font)
-        fm = painter.fontMetrics()
-
-        swatch_sz = 12
-        swatch_gap = 6
-        txt_w = fm.horizontalAdvance(badge_text) + swatch_sz + swatch_gap + 20
-        txt_h = fm.height() + 8
-
-        pill_text = None
-        if w >= txt_w and h >= (txt_h + 8):
-            pill_text = badge_text
-        elif w >= 60 and h >= 24:
-            pill_text = f"{w}×{h}"
-            txt_w = fm.horizontalAdvance(pill_text) + swatch_sz + swatch_gap + 14
-            txt_h = fm.height() + 4
-
-        if pill_text:
-            pill_rect = QRect(5, 5, min(txt_w, w - 10), min(txt_h, h - 10))
-            painter.setPen(Qt.PenStyle.NoPen)
-            painter.setBrush(QBrush(QColor(15, 23, 42, 225)))  # Slate 900 dark translucent
-            painter.drawRoundedRect(pill_rect, 4, 4)
-
-            painter.setPen(QPen(self.safe_accent_color, 1))
-            painter.setBrush(Qt.BrushStyle.NoBrush)
-            painter.drawRoundedRect(pill_rect, 4, 4)
-
-            # Target Color Preview Swatch (so user sees their sampled color)
-            sw_x = pill_rect.left() + 6
-            sw_y = pill_rect.top() + (pill_rect.height() - swatch_sz) // 2
-            swatch_rect = QRect(sw_x, sw_y, swatch_sz, swatch_sz)
-            painter.setPen(QPen(QColor(255, 255, 255, 200), 1))
-            painter.setBrush(QBrush(self.target_color))
-            painter.drawRoundedRect(swatch_rect, 2, 2)
-
-            # Text beside swatch
-            text_rect = QRect(
-                sw_x + swatch_sz + swatch_gap,
-                pill_rect.top(),
-                pill_rect.width() - (swatch_sz + swatch_gap + 10),
-                pill_rect.height(),
-            )
-            painter.setPen(QColor(241, 245, 249))
-            painter.drawText(text_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, pill_text)
+        # Notice: Pill badge & target color swatch are rendered strictly OUTSIDE
+        # this bounding box by RegionBadgeOverlay to guarantee ZERO self-detection!

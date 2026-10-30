@@ -6,6 +6,7 @@ color shifting, or mouse clipping.
 
 from __future__ import annotations
 
+import time
 import ctypes
 from ctypes import wintypes
 from typing import Optional, Tuple, List
@@ -96,7 +97,7 @@ class EyeDropperScreenOverlay(QWidget):
             | Qt.WindowType.WindowStaysOnTopHint
             | Qt.WindowType.Tool
         )
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
         self.setScreen(screen)
         self.setGeometry(screen.geometry())
         self.setCursor(Qt.CursorShape.BlankCursor)
@@ -194,9 +195,9 @@ class EyeDropperScreenOverlay(QWidget):
     def paintEvent(self, event):
         painter = QPainter(self)
 
-        # 1. Fill entire window with almost-invisible alpha=1 tint.
-        # This prevents Windows layered click-through so clicking commits EVERYWHERE!
-        painter.fillRect(self.rect(), QColor(0, 0, 0, 1))
+        # 1. 1:1 unscaled hardware desktop screenshot
+        # Renders the exact desktop surface as an opaque canvas so mouse clicks never punch through
+        painter.drawPixmap(self.rect(), self.pixmap)
 
         if not self.has_cursor:
             painter.end()
@@ -328,11 +329,12 @@ class CoordinateEyeDropper(QDialog):
             Qt.WindowType.FramelessWindowHint
             | Qt.WindowType.Tool
         )
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
         self.setGeometry(0, 0, 1, 1)
         self.setWindowIcon(get_app_icon())
 
         self._is_committed = False
+        self._start_time = time.time()
         self.cur_x, self.cur_y = get_real_cursor_pos()
         self.cur_hex = "#FFFFFF"
         self.cur_rgb = (255, 255, 255)
@@ -360,10 +362,22 @@ class CoordinateEyeDropper(QDialog):
     def _track_cursor(self):
         # Universal Escape key check: cancels immediately even if focus shifted
         VK_ESCAPE = 0x1B
+        VK_LBUTTON = 0x01
+        VK_RBUTTON = 0x02
+
         try:
             if user32.GetAsyncKeyState(VK_ESCAPE) & 0x8000:
                 self.reject()
                 return
+
+            # OS-level physical click detection (after 150ms startup threshold to prevent false triggers)
+            if (time.time() - self._start_time) > 0.150:
+                if user32.GetAsyncKeyState(VK_LBUTTON) & 0x8000:
+                    self.commit(self.cur_x, self.cur_y, self.cur_hex, self.cur_rgb)
+                    return
+                if user32.GetAsyncKeyState(VK_RBUTTON) & 0x8000:
+                    self.reject()
+                    return
         except Exception:
             pass
 
@@ -392,6 +406,9 @@ class CoordinateEyeDropper(QDialog):
     def exec(self):
         for ov in self.overlays:
             ov.show()
+            ov.raise_()
+            ov.activateWindow()
+            ov.setFocus()
         return super().exec()
 
     def accept(self):

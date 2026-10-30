@@ -843,9 +843,9 @@
           "tolerance": 3,
           "use_region": true,
           "region_x": -1884,
-          "region_y": 732,
+          "region_y": 790,
           "region_w": 67,
-          "region_h": 170,
+          "region_h": 112,
           "found_next": "b6a2189d",
           "miss_next": "b0c51dd2",
           "dt": 130
@@ -875,525 +875,6 @@
             "properties": {}
           },
           {
-            "id": "a68509e8",
-            "class_name": "LoopNodeItem",
-            "node_type": "loop_count",
-            "title": "🔁 Repeat Zone (Loop)",
-            "pos": [
-              539.1864167141382,
-              128.46996624916812
-            ],
-            "bypassed": false,
-            "properties": {
-              "count": 1,
-              "infinite": true,
-              "var_name": "wave",
-              "action_type": "loop_count"
-            }
-          },
-          {
-            "id": "daafd46a",
-            "class_name": "HotkeyNodeItem",
-            "node_type": "hotkey",
-            "title": "⌨ Key Combination",
-            "pos": [
-              1407.2324773396842,
-              179.66288560213866
-            ],
-            "bypassed": false,
-            "properties": {
-              "combo": "space",
-              "action_type": "hotkey"
-            }
-          },
-          {
-            "id": "61ff04b6",
-            "class_name": "VisionNodeItem",
-            "node_type": "wait_image",
-            "title": "⏱ Wait For Image",
-            "pos": [
-              646.6808280893397,
-              186.00128299487938
-            ],
-            "bypassed": false,
-            "properties": {
-              "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261030_093912.png",
-              "confidence": 0.85,
-              "timeout": 1.0,
-              "break_loop_on_found": false,
-              "action_type": "wait_image",
-              "action": "none",
-              "button": "left"
-            }
-          },
-          {
-            "id": "f84721ee",
-            "class_name": "ActionNodeItem",
-            "node_type": "click",
-            "title": "🖱 Mouse Click",
-            "pos": [
-              323.3766021318249,
-              282.8936417343956
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "click",
-              "x": 1314,
-              "y": 837
-            }
-          },
-          {
-            "id": "22e1615d",
-            "class_name": "ActionNodeItem",
-            "node_type": "dblclick",
-            "title": "🖱 Double Click",
-            "pos": [
-              956.4613066850545,
-              -420.49360561368366
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "dblclick",
-              "x": 422,
-              "y": 350
-            }
-          },
-          {
-            "id": "eb465f6d",
-            "class_name": "VisionNodeItem",
-            "node_type": "wait_image",
-            "title": "⏱ Wait For Image",
-            "pos": [
-              940.1477951852833,
-              298.6318103248534
-            ],
-            "bypassed": false,
-            "properties": {
-              "template": "D:/anti gravity experimenting folder/desktop auto clicker gemini/dist/snippets/snippet_20261029_200434.png",
-              "confidence": 0.85,
-              "timeout": 1.0,
-              "break_loop_on_found": false,
-              "action_type": "wait_image",
-              "action": "none",
-              "button": "left"
-            }
-          },
-          {
-            "id": "a5cd7b53",
-            "class_name": "VisionNodeItem",
-            "node_type": "wait_image",
-            "title": "⏱ Wait For Image",
-            "pos": [
-              1242.1011816860982,
-              401.9706300745272
-            ],
-            "bypassed": false,
-            "properties": {
-              "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261030_093946.png",
-              "confidence": 0.85,
-              "timeout": 1.0,
-              "break_loop_on_found": false,
-              "action_type": "wait_image",
-              "action": "none",
-              "button": "left"
-            }
-          },
-          {
-            "id": "e6ef2651",
-            "class_name": "VisionNodeItem",
-            "node_type": "wait_image",
-            "title": "⏱ Wait For Image",
-            "pos": [
-              1500.1964055373483,
-              523.873317477443
-            ],
-            "bypassed": false,
-            "properties": {
-              "template": "D:/anti gravity experimenting folder/desktop auto clicker gemini/dist/snippets/snippet_20261029_200543.png",
-              "confidence": 0.85,
-              "timeout": 1.0,
-              "break_loop_on_found": false,
-              "action_type": "wait_image",
-              "action": "none",
-              "button": "left"
-            }
-          },
-          {
-            "id": "fd2a5dea",
-            "class_name": "VisionNodeItem",
-            "node_type": "wait_image",
-            "title": "⏱ Wait For Image",
-            "pos": [
-              1764.6408282809396,
-              649.283473323029
-            ],
-            "bypassed": false,
-            "properties": {
-              "template": "D:/anti gravity experimenting folder/desktop auto clicker gemini/dist/snippets/snippet_20261029_200755.png",
-              "confidence": 0.85,
-              "timeout": 1.0,
-              "break_loop_on_found": false,
-              "action_type": "wait_image",
-              "action": "none",
-              "button": "left"
-            }
-          },
-          {
-            "id": "59a4443e",
-            "class_name": "ActionNodeItem",
-            "node_type": "key_down",
-            "title": "⌨ Key Down (Hold)",
-            "pos": [
-              1437.4713576261306,
-              -420.49360561368366
-            ],
-            "bypassed": false,
-            "properties": {
-              "key": "Space",
-              "vk": 32,
-              "action_type": "key_down",
-              "hold_duration": 0,
-              "auto_repeat": true
-            }
-          },
-          {
-            "id": "96e178d0",
-            "class_name": "ActionNodeItem",
-            "node_type": "delay",
-            "title": "⏳ Delay Wait",
-            "pos": [
-              1197.4713576261306,
-              -420.49360561368366
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "delay",
-              "duration": 250
-            }
-          },
-          {
-            "id": "d1950ece",
-            "class_name": "VisionNodeItem",
-            "node_type": "wait_image",
-            "title": "⏱ Wait For Image",
-            "pos": [
-              741.970740562338,
-              968.0357883155214
-            ],
-            "bypassed": false,
-            "properties": {
-              "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261030_091331.png;D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261030_091417.png;D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261030_091443.png;D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261030_091512.png;D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261030_091604.png",
-              "timeout": 5.0,
-              "action_type": "wait_image",
-              "confidence": 0.85,
-              "action": "none",
-              "button": "left",
-              "break_loop_on_found": false
-            }
-          },
-          {
-            "id": "a75f9ba2",
-            "class_name": "ActionNodeItem",
-            "node_type": "click",
-            "title": "🖱 Mouse Click",
-            "pos": [
-              397.17868580756203,
-              866.276640255225
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "click",
-              "x": 1314,
-              "y": 837
-            }
-          },
-          {
-            "id": "408bb530",
-            "class_name": "LoopNodeItem",
-            "node_type": "loop_count",
-            "title": "🔁 Repeat Zone (Loop)",
-            "pos": [
-              661.0430560625268,
-              885.3681364591966
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "loop_count",
-              "infinite": true,
-              "count": 5,
-              "var_name": "i"
-            }
-          },
-          {
-            "id": "a86195ec",
-            "class_name": "HotkeyNodeItem",
-            "node_type": "hotkey",
-            "title": "⌨ Key Combination",
-            "pos": [
-              989.6282761414705,
-              974.7416005252328
-            ],
-            "bypassed": false,
-            "properties": {
-              "combo": "space",
-              "action_type": "hotkey"
-            }
-          },
-          {
-            "id": "6bac0626",
-            "class_name": "HotkeyNodeItem",
-            "node_type": "hotkey",
-            "title": "⌨ Key Combination",
-            "pos": [
-              1535.9004060588175,
-              291.5412187445072
-            ],
-            "bypassed": false,
-            "properties": {
-              "combo": "space",
-              "action_type": "hotkey"
-            }
-          },
-          {
-            "id": "fa10b4d9",
-            "class_name": "ActionNodeItem",
-            "node_type": "delay",
-            "title": "⏳ Delay Wait",
-            "pos": [
-              951.4082762337869,
-              180.943118760213
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "delay",
-              "duration": 50
-            }
-          },
-          {
-            "id": "dc14c7e0",
-            "class_name": "ActionNodeItem",
-            "node_type": "delay",
-            "title": "⏳ Delay Wait",
-            "pos": [
-              1218.1588601636977,
-              286.07423125023683
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "delay",
-              "duration": 50
-            }
-          },
-          {
-            "id": "3eadd06a",
-            "class_name": "ActionNodeItem",
-            "node_type": "delay",
-            "title": "⏳ Delay Wait",
-            "pos": [
-              1492.7550495033113,
-              411.6039178054889
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "delay",
-              "duration": 50
-            }
-          },
-          {
-            "id": "6b80f355",
-            "class_name": "HotkeyNodeItem",
-            "node_type": "hotkey",
-            "title": "⌨ Key Combination",
-            "pos": [
-              1732.040541301399,
-              399.8105733984122
-            ],
-            "bypassed": false,
-            "properties": {
-              "combo": "space",
-              "action_type": "hotkey"
-            }
-          },
-          {
-            "id": "9c768d0e",
-            "class_name": "ActionNodeItem",
-            "node_type": "delay",
-            "title": "⏳ Delay Wait",
-            "pos": [
-              1774.255371603464,
-              532.5046971690161
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "delay",
-              "duration": 50
-            }
-          },
-          {
-            "id": "51e4e87a",
-            "class_name": "HotkeyNodeItem",
-            "node_type": "hotkey",
-            "title": "⌨ Key Combination",
-            "pos": [
-              2011.73637415732,
-              533.3427774715616
-            ],
-            "bypassed": false,
-            "properties": {
-              "combo": "space",
-              "action_type": "hotkey"
-            }
-          },
-          {
-            "id": "bdaafe73",
-            "class_name": "HotkeyNodeItem",
-            "node_type": "hotkey",
-            "title": "⌨ Key Combination",
-            "pos": [
-              2284.7634424149937,
-              679.2710380920422
-            ],
-            "bypassed": false,
-            "properties": {
-              "combo": "space",
-              "action_type": "hotkey"
-            }
-          },
-          {
-            "id": "e4a57b1c",
-            "class_name": "ActionNodeItem",
-            "node_type": "delay",
-            "title": "⏳ Delay Wait",
-            "pos": [
-              2047.2824398611365,
-              678.4329577894968
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "delay",
-              "duration": 50
-            }
-          },
-          {
-            "id": "3e3fa306",
-            "class_name": "ActionNodeItem",
-            "node_type": "delay",
-            "title": "⏳ Delay Wait",
-            "pos": [
-              1677.4713576261306,
-              -420.49360561368366
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "delay",
-              "duration": 1000
-            }
-          },
-          {
-            "id": "367cd7af",
-            "class_name": "ActionNodeItem",
-            "node_type": "key_up",
-            "title": "⌨ Key Up (Release)",
-            "pos": [
-              1917.4713576261306,
-              -420.49360561368366
-            ],
-            "bypassed": false,
-            "properties": {
-              "key": "Space",
-              "vk": 32,
-              "action_type": "key_up",
-              "hold_duration": 0,
-              "auto_repeat": true
-            }
-          },
-          {
-            "id": "a139f9e0",
-            "class_name": "LoopNodeItem",
-            "node_type": "loop_count",
-            "title": "🔁 Repeat Zone (Loop)",
-            "pos": [
-              888.8723020643656,
-              -775.1506195998059
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "loop_count",
-              "infinite": true,
-              "count": 5,
-              "var_name": "i"
-            }
-          },
-          {
-            "id": "61564ffb",
-            "class_name": "ActionNodeItem",
-            "node_type": "key_press",
-            "title": "⌨ Key Press (Tap)",
-            "pos": [
-              1294.079174423703,
-              -723.4486162080715
-            ],
-            "bypassed": false,
-            "properties": {
-              "key": "Windows Key",
-              "vk": 91,
-              "action_type": "key_press"
-            }
-          },
-          {
-            "id": "bc90e261",
-            "class_name": "ActionNodeItem",
-            "node_type": "delay",
-            "title": "⏳ Delay Wait",
-            "pos": [
-              1513.7662837450368,
-              -728.4505945326376
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "delay",
-              "duration": 500
-            }
-          },
-          {
-            "id": "ed223a0b",
-            "class_name": "ActionNodeItem",
-            "node_type": "delay",
-            "title": "⏳ Delay Wait",
-            "pos": [
-              2168.3561149890024,
-              -421.5036565547597
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "delay",
-              "duration": 3000
-            }
-          },
-          {
-            "id": "97e5e68d",
-            "class_name": "PixelColorNodeItem",
-            "node_type": "pixel_color",
-            "title": "🎨 Pixel Color Check",
-            "pos": [
-              1024.0957844306186,
-              -724.6170346470535
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "pixel_color",
-              "x": 500,
-              "y": 300,
-              "color": "#FFF000",
-              "tolerance": 15,
-              "use_region": true,
-              "region_x": -1423,
-              "region_y": 106,
-              "region_w": 297,
-              "region_h": 379
-            }
-          },
-          {
             "id": "b0c51dd2",
             "class_name": "LoopNodeItem",
             "node_type": "loop_count",
@@ -1416,8 +897,8 @@
             "node_type": "pixel_color",
             "title": "🎨 Pixel Color Check",
             "pos": [
-              1047.0563076303254,
-              -178.77717421826935
+              1035.967703685351,
+              -173.11234394203245
             ],
             "bypassed": false,
             "properties": {
@@ -1428,9 +909,9 @@
               "tolerance": 3,
               "use_region": true,
               "region_x": -1884,
-              "region_y": 732,
+              "region_y": 790,
               "region_w": 67,
-              "region_h": 170
+              "region_h": 112
             }
           },
           {
@@ -1439,8 +920,8 @@
             "node_type": "key_press",
             "title": "⌨ Key Press (Tap)",
             "pos": [
-              1302.8189897480868,
-              -162.9513846753435
+              1290.9982667566244,
+              -165.37563937578534
             ],
             "bypassed": false,
             "properties": {
@@ -1466,13 +947,13 @@
             }
           },
           {
-            "id": "5b8e4bb8",
+            "id": "82be78c9",
             "class_name": "PixelColorNodeItem",
             "node_type": "pixel_color",
             "title": "🎨 Pixel Color Check",
             "pos": [
-              1047.0563076303254,
-              -178.77717421826935
+              683.1592902157203,
+              -435.8699555184075
             ],
             "bypassed": false,
             "properties": {
@@ -1483,263 +964,13 @@
               "tolerance": 3,
               "use_region": true,
               "region_x": -1884,
-              "region_y": 732,
+              "region_y": 790,
               "region_w": 67,
-              "region_h": 170
-            }
-          },
-          {
-            "id": "65f41f39",
-            "class_name": "PixelColorNodeItem",
-            "node_type": "pixel_color",
-            "title": "🎨 Pixel Color Check",
-            "pos": [
-              1047.0563076303254,
-              -178.77717421826935
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "pixel_color",
-              "x": 500,
-              "y": 300,
-              "color": "#ACACAC",
-              "tolerance": 3,
-              "use_region": true,
-              "region_x": -1884,
-              "region_y": 766,
-              "region_w": 67,
-              "region_h": 137
-            }
-          },
-          {
-            "id": "6a65bb05",
-            "class_name": "PixelColorNodeItem",
-            "node_type": "pixel_color",
-            "title": "🎨 Pixel Color Check",
-            "pos": [
-              665.4670396019292,
-              -424.275164837937
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "pixel_color",
-              "x": 500,
-              "y": 300,
-              "color": "#ACACAC",
-              "tolerance": 3,
-              "use_region": true,
-              "region_x": -1884,
-              "region_y": 732,
-              "region_w": 67,
-              "region_h": 170
+              "region_h": 112
             }
           }
         ],
         "connections": [
-          {
-            "from_node": "f84721ee",
-            "from_socket_idx": 0,
-            "to_node": "a68509e8",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "a68509e8",
-            "from_socket_idx": 0,
-            "to_node": "61ff04b6",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "a75f9ba2",
-            "from_socket_idx": 0,
-            "to_node": "408bb530",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "408bb530",
-            "from_socket_idx": 0,
-            "to_node": "d1950ece",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "d1950ece",
-            "from_socket_idx": 0,
-            "to_node": "a86195ec",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "d1950ece",
-            "from_socket_idx": 1,
-            "to_node": "408bb530",
-            "to_socket_idx": 1
-          },
-          {
-            "from_node": "a86195ec",
-            "from_socket_idx": 0,
-            "to_node": "408bb530",
-            "to_socket_idx": 1
-          },
-          {
-            "from_node": "61ff04b6",
-            "from_socket_idx": 1,
-            "to_node": "eb465f6d",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "61ff04b6",
-            "from_socket_idx": 0,
-            "to_node": "fa10b4d9",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "fa10b4d9",
-            "from_socket_idx": 0,
-            "to_node": "daafd46a",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "eb465f6d",
-            "from_socket_idx": 0,
-            "to_node": "dc14c7e0",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "dc14c7e0",
-            "from_socket_idx": 0,
-            "to_node": "6bac0626",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "eb465f6d",
-            "from_socket_idx": 1,
-            "to_node": "a5cd7b53",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "a5cd7b53",
-            "from_socket_idx": 0,
-            "to_node": "3eadd06a",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "3eadd06a",
-            "from_socket_idx": 0,
-            "to_node": "6b80f355",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "a5cd7b53",
-            "from_socket_idx": 1,
-            "to_node": "e6ef2651",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "9c768d0e",
-            "from_socket_idx": 0,
-            "to_node": "51e4e87a",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "e6ef2651",
-            "from_socket_idx": 0,
-            "to_node": "9c768d0e",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "e6ef2651",
-            "from_socket_idx": 1,
-            "to_node": "fd2a5dea",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "e4a57b1c",
-            "from_socket_idx": 0,
-            "to_node": "bdaafe73",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "fd2a5dea",
-            "from_socket_idx": 0,
-            "to_node": "e4a57b1c",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "fd2a5dea",
-            "from_socket_idx": 1,
-            "to_node": "a68509e8",
-            "to_socket_idx": 1
-          },
-          {
-            "from_node": "61564ffb",
-            "from_socket_idx": 0,
-            "to_node": "bc90e261",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "22e1615d",
-            "from_socket_idx": 0,
-            "to_node": "96e178d0",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "3e3fa306",
-            "from_socket_idx": 0,
-            "to_node": "367cd7af",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "59a4443e",
-            "from_socket_idx": 0,
-            "to_node": "3e3fa306",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "96e178d0",
-            "from_socket_idx": 0,
-            "to_node": "59a4443e",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "367cd7af",
-            "from_socket_idx": 0,
-            "to_node": "ed223a0b",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "a139f9e0",
-            "from_socket_idx": 0,
-            "to_node": "97e5e68d",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "97e5e68d",
-            "from_socket_idx": 0,
-            "to_node": "61564ffb",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "97e5e68d",
-            "from_socket_idx": 1,
-            "to_node": "a139f9e0",
-            "to_socket_idx": 1
-          },
-          {
-            "from_node": "c5f173bd",
-            "from_socket_idx": 0,
-            "to_node": "b6a2189d",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "b0c51dd2",
-            "from_socket_idx": 0,
-            "to_node": "c5f173bd",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "c5f173bd",
-            "from_socket_idx": 1,
-            "to_node": "b0c51dd2",
-            "to_socket_idx": 1
-          },
           {
             "from_node": "d1b64dc2",
             "from_socket_idx": 0,
@@ -1751,6 +982,24 @@
             "from_socket_idx": 0,
             "to_node": "b0c51dd2",
             "to_socket_idx": 0
+          },
+          {
+            "from_node": "b0c51dd2",
+            "from_socket_idx": 0,
+            "to_node": "c5f173bd",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "c5f173bd",
+            "from_socket_idx": 0,
+            "to_node": "b6a2189d",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "c5f173bd",
+            "from_socket_idx": 1,
+            "to_node": "b0c51dd2",
+            "to_socket_idx": 1
           }
         ],
         "groups": [],
@@ -2857,14 +2106,14 @@
   },
   "instances": {
     "1": {
-      "x": 1289,
-      "y": 232,
+      "x": 1233,
+      "y": 541,
       "minimized": false,
       "selected_macro": "Macro 1",
       "speed": 0.98,
       "repeat": false,
-      "width": 721,
-      "height": 688
+      "width": 422,
+      "height": 512
     }
   },
   "hotkeys": {

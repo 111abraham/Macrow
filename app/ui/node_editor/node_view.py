@@ -376,6 +376,22 @@ class NodeView(QGraphicsView):
                 self._shake_samples = [(now, target_node.pos().x(), target_node.pos().y())]
                 self._shake_triggered = False
 
+                # Ensure clicking a node immediately focuses and updates Property Inspector
+                if not (event.modifiers() & (Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier)):
+                    sel = self.node_scene.selectedItems()
+                    if len(sel) > 1 or (len(sel) == 1 and sel[0] is not target_node):
+                        self.node_scene.clearSelection()
+                        target_node.setSelected(True)
+                self.node_scene._current_selected_node = target_node
+                self.node_scene.node_selected.emit(target_node)
+            else:
+                # Clicked empty canvas: clear selection and empty inspector
+                from app.ui.node_editor.node_socket import NodeSocketItem
+                if not isinstance(raw_item, NodeSocketItem) and not (event.modifiers() & (Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier)):
+                    self.node_scene._current_selected_node = None
+                    self.node_scene.clearSelection()
+                    self.node_scene.node_selected.emit(None)
+
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event: QMouseEvent):

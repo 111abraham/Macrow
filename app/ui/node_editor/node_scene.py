@@ -43,16 +43,21 @@ class NodeScene(QGraphicsScene):
         self._drag_start_socket: Optional[NodeSocketItem] = None
         self._unplugged_from_socket: Optional[NodeSocketItem] = None
         self._current_snap_socket: Optional[NodeSocketItem] = None
+        self._current_selected_node: Optional[BaseNodeItem] = None
 
         self.selectionChanged.connect(self._on_selection_changed)
 
     def _on_selection_changed(self):
         sel = self.selectedItems()
         node = None
-        for item in sel:
-            if isinstance(item, BaseNodeItem):
-                node = item
-                break
+        if hasattr(self, "_current_selected_node") and self._current_selected_node in sel:
+            node = self._current_selected_node
+        else:
+            for item in sel:
+                if isinstance(item, BaseNodeItem):
+                    node = item
+                    break
+            self._current_selected_node = node
         self.node_selected.emit(node)
 
     def register_custom_variable(self, var_name: str):
