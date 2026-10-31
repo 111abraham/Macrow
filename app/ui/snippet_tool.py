@@ -13,7 +13,7 @@ from ctypes import wintypes
 from datetime import datetime
 from typing import Optional, List
 
-from PyQt6.QtCore import Qt, QRect, QPoint, QTimer, pyqtSignal
+from PyQt6.QtCore import Qt, QRect, QPoint, QTimer, pyqtSignal, QEventLoop
 from PyQt6.QtGui import (
     QPainter,
     QColor,
@@ -46,10 +46,11 @@ class SnipperCanvasOverlay(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
         self.setScreen(screen)
 
-        # 1:1 physical screen rectangle across multi-monitor desktop
+        # Set overlay to screen logical geometry
+        self.dpr = screen.devicePixelRatio()
+        self.screen_geo = screen.geometry()
         self.phys_rect = get_screen_physical_rect(screen)
-        px, py, pw, ph = self.phys_rect
-        self.setGeometry(px, py, pw, ph)
+        self.setGeometry(self.screen_geo)
         self.setCursor(Qt.CursorShape.CrossCursor)
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -57,49 +58,51 @@ class SnipperCanvasOverlay(QWidget):
         # 1:1 native hardware screen capture
         self.pixmap = screen.grabWindow(0)
         self.image = self.pixmap.toImage()
-        self.dpr = screen.devicePixelRatio()
-        self.screen_geo = screen.geometry()
 
         self.start_pos: Optional[QPoint] = None
         self.is_selecting = False
+        self.current_pos: Optional[QPoint] = None
 
-        # Pre-seed current_pos from actual physical cursor position
-        cur_px, cur_py = get_cursor_pos()
-        if px <= cur_px < px + pw and py <= cur_py < py + ph:
-            self.current_pos: Optional[QPoint] = QPoint(cur_px - px, cur_py - py)
-        else:
-            self.current_pos = None
+        # Pre-seed current_pos from cursor position
+        cur_pos = QCursor.pos()
+        if self.screen_geo.contains(cur_pos):
+            self.current_pos = cur_pos - self.screen_geo.topLeft()
 
     def showEvent(self, event):
         super().showEvent(event)
         self.raise_()
         self.activateWindow()
         self.setFocus()
-        try:
-            hwnd = int(self.winId())
-            px, py, pw, ph = self.phys_rect
-            # SWP_NOZORDER = 0x0004, SWP_SHOWWINDOW = 0x0040
-            user32.SetWindowPos(hwnd, 0, px, py, pw, ph, 0x0004 | 0x0040)
-            user32.SetForegroundWindow(hwnd)
-        except Exception:
-            pass
 
     def update_cursor_at(self, phys_gx, phys_gy=None):
-        """Update crosshair and selection rect from physical cursor position (called by timer)."""
+        """Update crosshair and selection rect from cursor position (called by timer or events)."""
         if phys_gy is None:
             if hasattr(phys_gx, "x") and hasattr(phys_gx, "y"):
-                phys_gy = int(phys_gx.y())
-                phys_gx = int(phys_gx.x())
+                gx = int(phys_gx.x())
+                gy = int(phys_gx.y())
             elif isinstance(phys_gx, (tuple, list)):
-                phys_gx, phys_gy = int(phys_gx[0]), int(phys_gx[1])
+                gx, gy = int(phys_gx[0]), int(phys_gx[1])
             else:
                 return
+        else:
+            gx, gy = int(phys_gx), int(phys_gy)
 
+        pt = QPoint(gx, gy)
         px, py, pw, ph = self.phys_rect
-        in_screen = (px <= phys_gx < px + pw and py <= phys_gy < py + ph)
-        if in_screen or self.is_selecting:
-            local_pt = QPoint(phys_gx - px, phys_gy - py)
-            if self.current_pos != local_pt:
+        in_screen = self.screen_geo.contains(pt)
+        is_phys = (px <= gx < px + pw and py <= gy < py + ph)
+
+        if in_screen:
+            local_pt = pt - self.screen_geo.topLeft()
+        elif is_phys:
+            lx = int(round((gx - px) / self.dpr))
+            ly = int(round((gy - py) / self.dpr))
+            local_pt = QPoint(lx, ly)
+        else:
+            local_pt = None
+
+        if (local_pt is not None) or self.is_selecting:
+            if local_pt is not None and self.current_pos != local_pt:
                 self.current_pos = local_pt
                 self.update()
         elif self.current_pos is not None:
@@ -139,19 +142,22 @@ class SnipperCanvasOverlay(QWidget):
             self.current_pos = end_pos
         sel_rect = self._get_selected_rect()
 
-        if sel_rect.width() >= 5 and sel_rect.height() >= 5:
-            # 1. Native 1:1 hardware pixel crop
-            nx = max(0, min(sel_rect.x(), self.image.width() - 1))
-            ny = max(0, min(sel_rect.y(), self.image.height() - 1))
-            nw = min(sel_rect.width(), self.image.width() - nx)
-            nh = min(sel_rect.height(), self.image.height() - ny)
+        if sel_rect.width() >= 4 and sel_rect.height() >= 4:
+            # 1. Native 1:1 hardware pixel crop mapped from logical coordinates
+            nx = int(round(sel_rect.x() * self.dpr))
+            ny = int(round(sel_rect.y() * self.dpr))
+            nw = int(round(sel_rect.width() * self.dpr))
+            nh = int(round(sel_rect.height() * self.dpr))
+
+            nx = max(0, min(nx, self.image.width() - 1))
+            ny = max(0, min(ny, self.image.height() - 1))
+            nw = max(1, min(nw, self.image.width() - nx))
+            nh = max(1, min(nh, self.image.height() - ny))
             cropped = self.image.copy(nx, ny, nw, nh)
 
             # 2. Sample target color at center of bounding box
-            c_px = nx + nw // 2
-            c_py = ny + nh // 2
-            c_px = max(0, min(c_px, self.image.width() - 1))
-            c_py = max(0, min(c_py, self.image.height() - 1))
+            c_px = max(0, min(nx + nw // 2, self.image.width() - 1))
+            c_py = max(0, min(ny + nh // 2, self.image.height() - 1))
             c_col = self.image.pixelColor(c_px, c_py)
             self.controller.last_sampled_color = c_col.name().upper()
 
@@ -205,9 +211,10 @@ class SnipperCanvasOverlay(QWidget):
                 painter.setPen(pen)
                 painter.drawRect(sel_rect)
 
-                # Dimension badge
-                w, h = sel_rect.width(), sel_rect.height()
-                badge_text = f" {w} × {h} px "
+                # Dimension badge (shows physical pixels!)
+                pw = int(round(sel_rect.width() * self.dpr))
+                ph = int(round(sel_rect.height() * self.dpr))
+                badge_text = f" {pw} × {ph} px "
                 painter.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
                 fm = painter.fontMetrics()
                 bw = fm.horizontalAdvance(badge_text) + 8
@@ -278,6 +285,7 @@ class ScreenSnipper(QDialog):
         self.active_overlay: Optional[SnipperCanvasOverlay] = None
         self._start_time = time.time()
         self._drag_active_via_os = False
+        self._event_loop: Optional[QEventLoop] = None
 
         # Create one independent native canvas per connected screen
         screens = QGuiApplication.screens()
@@ -322,33 +330,15 @@ class ScreenSnipper(QDialog):
                 return
 
             # 3. Global cursor tracking: ensures crosshair tracks everywhere across monitors
-            cur_px, cur_py = get_cursor_pos()
+            cur_pos = QCursor.pos()
             for ov in self.overlays:
-                ov.update_cursor_at(cur_px, cur_py)
+                ov.update_cursor_at(cur_pos)
 
-            # 4. OS-level physical drag tracking (guards against swallowed/blocked Qt mouse events)
+            # 4. OS-level drag release failsafe (guards against swallowed mouse release events)
             if (time.time() - self._start_time) > 0.120:
                 l_down = bool(user32.GetAsyncKeyState(VK_LBUTTON) & 0x8000)
-                any_qt_selecting = any(ov.is_selecting for ov in self.overlays)
-
-                if l_down and not any_qt_selecting and not self._drag_active_via_os:
-                    for ov in self.overlays:
-                        px, py, pw, ph = ov.phys_rect
-                        if px <= cur_px < px + pw and py <= cur_py < py + ph:
-                            self._drag_active_via_os = True
-                            self.active_overlay = ov
-                            ov.start_pos = QPoint(cur_px - px, cur_py - py)
-                            ov.current_pos = ov.start_pos
-                            ov.is_selecting = True
-                            ov.update()
-                            break
-                elif not l_down and (any_qt_selecting or self._drag_active_via_os):
-                    self._drag_active_via_os = False
-                    for ov in self.overlays:
-                        if ov.is_selecting:
-                            px, py, _, _ = ov.phys_rect
-                            ov.finish_selection(QPoint(cur_px - px, cur_py - py))
-                            break
+                if not l_down and self.active_overlay and self.active_overlay.is_selecting:
+                    self.active_overlay.finish_selection()
         except Exception:
             pass
 
@@ -369,11 +359,10 @@ class ScreenSnipper(QDialog):
         for ov in self.overlays:
             ov.show()
         # Find overlay under cursor and raise/activate it
-        cur_px, cur_py = get_cursor_pos()
+        cur_pos = QCursor.pos()
         target = None
         for ov in self.overlays:
-            px, py, pw, ph = ov.phys_rect
-            if px <= cur_px < px + pw and py <= cur_py < py + ph:
+            if ov.screen_geo.contains(cur_pos):
                 target = ov
                 break
         if not target and self.overlays:
@@ -381,17 +370,17 @@ class ScreenSnipper(QDialog):
         if target:
             target.raise_()
             target.activateWindow()
-            try:
-                user32.SetForegroundWindow(int(target.winId()))
-            except Exception:
-                pass
-        return super().exec()
+
+        self._event_loop = QEventLoop(self)
+        return self._event_loop.exec()
 
     def closeEvent(self, event):
         if hasattr(self, "track_timer"):
             self.track_timer.stop()
         for ov in self.overlays:
             ov.close()
+        if hasattr(self, "_event_loop") and self._event_loop and self._event_loop.isRunning():
+            self._event_loop.quit()
         super().closeEvent(event)
 
     def accept(self):
@@ -399,11 +388,15 @@ class ScreenSnipper(QDialog):
             self.track_timer.stop()
         for ov in self.overlays:
             ov.close()
-        super().accept()
+        if hasattr(self, "_event_loop") and self._event_loop and self._event_loop.isRunning():
+            self._event_loop.quit()
+        self.accepted.emit()
 
     def reject(self):
         if hasattr(self, "track_timer"):
             self.track_timer.stop()
         for ov in self.overlays:
             ov.close()
-        super().reject()
+        if hasattr(self, "_event_loop") and self._event_loop and self._event_loop.isRunning():
+            self._event_loop.quit()
+        self.rejected.emit()

@@ -118,20 +118,22 @@ class TestVision(unittest.TestCase):
             self.assertEqual(qimg.height(), 64)
 
     def test_region_highlight_overlay(self):
-        from app.ui.indicator import RegionHighlightOverlay
+        from app.ui.indicator import RegionHighlightOverlay, logical_rect_to_physical
         overlay = RegionHighlightOverlay()
         overlay.show_region(120, 150, 240, 180, label="Test Region", color_hex="#10B981")
-        self.assertEqual(overlay.x(), 120)
-        self.assertEqual(overlay.y(), 150)
-        self.assertEqual(overlay.width(), 240)
-        self.assertEqual(overlay.height(), 180)
+        px, py, pw, ph = logical_rect_to_physical(overlay.geometry())
+        self.assertEqual(px, 120)
+        self.assertEqual(py, 150)
+        self.assertEqual(pw, 240)
+        self.assertEqual(ph, 180)
         self.assertEqual(overlay.label_text, "Test Region")
         self.assertTrue(overlay.isVisible())
 
         # Test small box adapts badge
         overlay.show_region(50, 60, 45, 25, label="Mini")
-        self.assertEqual(overlay.width(), 45)
-        self.assertEqual(overlay.height(), 25)
+        m_px, m_py, m_pw, m_ph = logical_rect_to_physical(overlay.geometry())
+        self.assertEqual(m_pw, 45)
+        self.assertEqual(m_ph, 25)
 
         overlay.hide_overlay()
         self.assertFalse(overlay.isVisible())

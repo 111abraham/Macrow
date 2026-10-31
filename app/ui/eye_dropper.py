@@ -11,7 +11,7 @@ import ctypes
 from ctypes import wintypes
 from typing import Optional, Tuple, List
 
-from PyQt6.QtCore import Qt, QRect, QPoint, QTimer, pyqtSignal
+from PyQt6.QtCore import Qt, QRect, QPoint, QTimer, pyqtSignal, QEventLoop
 from PyQt6.QtGui import (
     QPainter,
     QColor,
@@ -87,9 +87,10 @@ class EyeDropperScreenOverlay(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
         self.setScreen(screen)
 
+        self.dpr: float = screen.devicePixelRatio()
+        self.screen_geo: QRect = screen.geometry()
         self.phys_rect = get_screen_physical_rect(screen)
-        px, py, pw, ph = self.phys_rect
-        self.setGeometry(px, py, pw, ph)
+        self.setGeometry(self.screen_geo)
         self.setCursor(Qt.CursorShape.BlankCursor)
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -97,8 +98,6 @@ class EyeDropperScreenOverlay(QWidget):
         # 1:1 unscaled hardware screenshot of this display
         self.pixmap: QPixmap = screen.grabWindow(0)
         self.image: QImage = self.pixmap.toImage()
-        self.dpr: float = screen.devicePixelRatio()
-        self.screen_geo: QRect = screen.geometry()
 
         self.has_cursor = False
         self.local_x = 0
@@ -115,43 +114,51 @@ class EyeDropperScreenOverlay(QWidget):
         self.raise_()
         self.activateWindow()
         self.setFocus()
-        try:
-            hwnd = int(self.winId())
-            px, py, pw, ph = self.phys_rect
-            # SWP_NOZORDER = 0x0004, SWP_SHOWWINDOW = 0x0040
-            user32.SetWindowPos(hwnd, 0, px, py, pw, ph, 0x0004 | 0x0040)
-            user32.SetForegroundWindow(hwnd)
-        except Exception:
-            pass
 
     def update_cursor_at(self, phys_gx, phys_gy=None):
-        """Updates sampling and crosshairs for the given global physical cursor coordinate."""
+        """Updates sampling and crosshairs for cursor coordinate (accepts QPoint or physical tuple)."""
         if phys_gy is None:
             if hasattr(phys_gx, "x") and hasattr(phys_gx, "y"):
-                phys_gy = int(phys_gx.y())
-                phys_gx = int(phys_gx.x())
+                gx = int(phys_gx.x())
+                gy = int(phys_gx.y())
             elif isinstance(phys_gx, (tuple, list)):
-                phys_gx, phys_gy = int(phys_gx[0]), int(phys_gx[1])
+                gx, gy = int(phys_gx[0]), int(phys_gx[1])
             else:
                 return
+        else:
+            gx, gy = int(phys_gx), int(phys_gy)
 
+        pt = QPoint(gx, gy)
         px, py, pw, ph = self.phys_rect
-        if not (px <= phys_gx < px + pw and py <= phys_gy < py + ph):
+        in_screen = self.screen_geo.contains(pt)
+        is_phys = (px <= gx < px + pw and py <= gy < py + ph)
+
+        if in_screen:
+            local_pos = pt - self.screen_geo.topLeft()
+            self.local_x = local_pos.x()
+            self.local_y = local_pos.y()
+        elif is_phys:
+            self.local_x = int(round((gx - px) / self.dpr))
+            self.local_y = int(round((gy - py) / self.dpr))
+        else:
             if self.has_cursor:
                 self.has_cursor = False
                 self.update()
             return
 
         self.has_cursor = True
-        self.local_x = phys_gx - px
-        self.local_y = phys_gy - py
-        self.global_x = phys_gx
-        self.global_y = phys_gy
 
+        # Exact hardware pixel coordinates inside the unscaled screenshot
+        img_x = int(round(self.local_x * self.dpr))
+        img_y = int(round(self.local_y * self.dpr))
         img_w = self.image.width()
         img_h = self.image.height()
-        lx = max(0, min(self.local_x, img_w - 1))
-        ly = max(0, min(self.local_y, img_h - 1))
+        lx = max(0, min(img_x, img_w - 1))
+        ly = max(0, min(img_y, img_h - 1))
+
+        # Windows global physical coordinate
+        self.global_x = px + lx
+        self.global_y = py + ly
 
         if img_w > 0 and img_h > 0:
             self.cur_color = self.image.pixelColor(lx, ly)
@@ -160,11 +167,11 @@ class EyeDropperScreenOverlay(QWidget):
 
             # 7x7 grid around cursor
             grid = []
-            for gy in range(ly - 3, ly + 4):
+            for gy_off in range(ly - 3, ly + 4):
                 row = []
-                for gx in range(lx - 3, lx + 4):
-                    if 0 <= gx < img_w and 0 <= gy < img_h:
-                        row.append(self.image.pixelColor(gx, gy))
+                for gx_off in range(lx - 3, lx + 4):
+                    if 0 <= gx_off < img_w and 0 <= gy_off < img_h:
+                        row.append(self.image.pixelColor(gx_off, gy_off))
                     else:
                         row.append(QColor(0, 0, 0))
                 grid.append(row)
@@ -349,6 +356,7 @@ class CoordinateEyeDropper(QDialog):
         self.cur_hex = "#FFFFFF"
         self.cur_rgb = (255, 255, 255)
         self.cur_color = QColor(255, 255, 255)
+        self._event_loop: Optional[QEventLoop] = None
 
         # Create one independent native canvas overlay per connected screen
         screens = QGuiApplication.screens()
@@ -380,36 +388,34 @@ class CoordinateEyeDropper(QDialog):
                 self.reject()
                 return
 
+            if user32.GetAsyncKeyState(VK_RBUTTON) & 0x8000:
+                self.reject()
+                return
+
             # OS-level physical click detection (after 150ms startup threshold to prevent false triggers)
             if (time.time() - self._start_time) > 0.150:
                 if user32.GetAsyncKeyState(VK_LBUTTON) & 0x8000:
                     self.commit(self.cur_x, self.cur_y, self.cur_hex, self.cur_rgb)
                     return
-                if user32.GetAsyncKeyState(VK_RBUTTON) & 0x8000:
-                    self.reject()
-                    return
         except Exception:
             pass
 
-        cur_px, cur_py = get_cursor_pos()
-        self.on_mouse_moved_global(cur_px, cur_py)
+        cur_pos = QCursor.pos()
+        self.on_mouse_moved_global(cur_pos)
 
-    def on_mouse_moved_global(self, phys_gx: int, phys_gy: int):
+    def on_mouse_moved_global(self, pos):
         for ov in self.overlays:
-            ov.update_cursor_at(phys_gx, phys_gy)
+            ov.update_cursor_at(pos)
 
     def commit(self, x: int, y: int, hex_col: str, rgb: Tuple[int, int, int]):
         """Commits the sampled coordinate and color, then closes."""
         if self._is_committed:
             return
         self._is_committed = True
-        self.track_timer.stop()
         self.cur_x = x
         self.cur_y = y
         self.cur_hex = hex_col
         self.cur_rgb = rgb
-        for ov in self.overlays:
-            ov.close()
         self.coord_picked.emit(x, y, hex_col, rgb)
         self.accept()
 
@@ -419,16 +425,29 @@ class CoordinateEyeDropper(QDialog):
             ov.raise_()
             ov.activateWindow()
             ov.setFocus()
-        return super().exec()
+        self._event_loop = QEventLoop(self)
+        return self._event_loop.exec()
+
+    def closeEvent(self, event):
+        self.track_timer.stop()
+        for ov in self.overlays:
+            ov.close()
+        if hasattr(self, "_event_loop") and self._event_loop and self._event_loop.isRunning():
+            self._event_loop.quit()
+        super().closeEvent(event)
 
     def accept(self):
         self.track_timer.stop()
         for ov in self.overlays:
             ov.close()
-        super().accept()
+        if hasattr(self, "_event_loop") and self._event_loop and self._event_loop.isRunning():
+            self._event_loop.quit()
+        self.accepted.emit()
 
     def reject(self):
         self.track_timer.stop()
         for ov in self.overlays:
             ov.close()
-        super().reject()
+        if hasattr(self, "_event_loop") and self._event_loop and self._event_loop.isRunning():
+            self._event_loop.quit()
+        self.rejected.emit()

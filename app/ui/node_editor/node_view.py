@@ -222,7 +222,6 @@ class NodeView(QGraphicsView):
         menu.addSection("VISION AI & MULTIMODAL")
         menu.addAction("🤖 AI Vision Action (VLA Agent)", lambda: add_node_item(AIVisionNodeItem()))
         menu.addAction("⏱ Wait For Image (AI Screen)", lambda: add_node_item(VisionNodeItem()))
-        menu.addAction("🎯 Loop Until Image Found", lambda: add_node_item(VisionNodeItem(properties={"break_loop_on_found": True})))
         menu.addAction("⏹ Stop Playback", lambda: add_node_item(StopNodeItem()))
 
         menu.addSeparator()

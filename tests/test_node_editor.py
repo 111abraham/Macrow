@@ -1472,20 +1472,23 @@ class TestNodeEditor(unittest.TestCase):
         self.assertFalse(inspector.region_overlay.isVisible())
 
         # 2. Toggle use_region to True -> overlay shows and moves to bounding box
+        from app.ui.indicator import logical_rect_to_physical
         pnode.properties["use_region"] = True
         inspector._update_region_overlay(pnode)
         self.assertTrue(inspector.region_overlay.isVisible())
-        self.assertEqual(inspector.region_overlay.x(), 350)
-        self.assertEqual(inspector.region_overlay.y(), 250)
-        self.assertEqual(inspector.region_overlay.width(), 180)
-        self.assertEqual(inspector.region_overlay.height(), 120)
+        px, py, pw, ph = logical_rect_to_physical(inspector.region_overlay.geometry())
+        self.assertEqual(px, 350)
+        self.assertEqual(py, 250)
+        self.assertEqual(pw, 180)
+        self.assertEqual(ph, 120)
 
         # 3. Live update coordinates -> overlay moves immediately
         pnode.properties["region_x"] = 520
         pnode.properties["region_y"] = 410
         inspector._update_region_overlay(pnode)
-        self.assertEqual(inspector.region_overlay.x(), 520)
-        self.assertEqual(inspector.region_overlay.y(), 410)
+        u_px, u_py, _, _ = logical_rect_to_physical(inspector.region_overlay.geometry())
+        self.assertEqual(u_px, 520)
+        self.assertEqual(u_py, 410)
 
         # 4. Deselection -> overlay hides
         inspector.set_node(None)
@@ -1675,11 +1678,44 @@ class TestNodeEditor(unittest.TestCase):
         snipper.region_captured.connect(lambda x, y, w, h: captured_data.append((x, y, w, h)))
         ov.finish_selection(QPoint(60, 60))
         self.assertEqual(len(captured_data), 1)
-        self.assertEqual(captured_data[0][2], 50)
-        self.assertEqual(captured_data[0][3], 50)
+        self.assertEqual(captured_data[0][2], int(round(50 * ov.dpr)))
+        self.assertEqual(captured_data[0][3], int(round(50 * ov.dpr)))
 
         snipper.reject()
         self.assertFalse(snipper.track_timer.isActive())
+
+    def test_eye_dropper_and_snipper_dpi_geometry(self):
+        from app.ui.eye_dropper import CoordinateEyeDropper
+        from app.ui.snippet_tool import ScreenSnipper
+        from PyQt6.QtGui import QGuiApplication
+        from PyQt6.QtCore import QPoint
+
+        screens = QGuiApplication.screens()
+        self.assertGreaterEqual(len(screens), 1)
+
+        # 1. Eye Dropper overlay geometry matches Qt screen geometry
+        dropper = CoordinateEyeDropper()
+        for ov in dropper.overlays:
+            self.assertEqual(ov.geometry(), ov.screen_geo)
+            self.assertEqual(ov.dpr, ov.screen_obj.devicePixelRatio())
+            # Test cursor mapping
+            center_pt = ov.screen_geo.center()
+            ov.update_cursor_at(center_pt)
+            self.assertTrue(ov.has_cursor)
+            self.assertEqual(ov.local_x, center_pt.x() - ov.screen_geo.x())
+            self.assertEqual(ov.local_y, center_pt.y() - ov.screen_geo.y())
+            # Hardware pixel is scaled by DPR
+            expected_img_x = int(round(ov.local_x * ov.dpr))
+            expected_global_x = ov.phys_rect[0] + expected_img_x
+            self.assertEqual(ov.global_x, expected_global_x)
+        dropper.reject()
+
+        # 2. Snipper overlay geometry matches Qt screen geometry
+        snipper = ScreenSnipper()
+        for ov in snipper.overlays:
+            self.assertEqual(ov.geometry(), ov.screen_geo)
+            self.assertEqual(ov.dpr, ov.screen_obj.devicePixelRatio())
+        snipper.reject()
 
     def test_compare_node_creation_and_compilation(self):
         from app.ui.node_editor.node_items import CompareNodeItem

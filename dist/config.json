@@ -58,7 +58,7 @@
             "id": "100a32d5",
             "class_name": "StartNodeItem",
             "node_type": "start",
-            "title": "\u25b6 Start",
+            "title": "▶ Start",
             "pos": [
               107.72925021716844,
               -212.36886831745824
@@ -70,7 +70,7 @@
             "id": "3ec5d1d9",
             "class_name": "VisionNodeItem",
             "node_type": "wait_image",
-            "title": "\u23f1 Wait For Image",
+            "title": "⏱ Wait For Image",
             "pos": [
               932.4829258340137,
               368.3397752431748
@@ -95,7 +95,7 @@
             "id": "e2fed3c1",
             "class_name": "ActionNodeItem",
             "node_type": "wheel",
-            "title": "\ud83d\udcdc Mouse Wheel",
+            "title": "📜 Mouse Wheel",
             "pos": [
               2278.0206036445156,
               344.30468211546895
@@ -117,7 +117,7 @@
             "id": "d17cd228",
             "class_name": "ActionNodeItem",
             "node_type": "click",
-            "title": "\ud83d\uddb1 Mouse Click",
+            "title": "🖱 Mouse Click",
             "pos": [
               1216.4458924069945,
               507.7769803350975
@@ -138,7 +138,7 @@
             "id": "0b62a657",
             "class_name": "ActionNodeItem",
             "node_type": "click",
-            "title": "\ud83d\uddb1 Mouse Click",
+            "title": "🖱 Mouse Click",
             "pos": [
               2576.692882508403,
               349.3278445034781
@@ -154,7 +154,7 @@
             "id": "c405d74b",
             "class_name": "VisionNodeItem",
             "node_type": "wait_image",
-            "title": "\u23f1 Wait For Image",
+            "title": "⏱ Wait For Image",
             "pos": [
               1996.197950665192,
               483.91431147187643
@@ -179,7 +179,7 @@
             "id": "8f069c50",
             "class_name": "ActionNodeItem",
             "node_type": "move",
-            "title": "\ud83c\udff9 Mouse Move",
+            "title": "🏹 Mouse Move",
             "pos": [
               1464.7776334038153,
               506.458933409539
@@ -196,7 +196,7 @@
             "id": "d9ad9eb4",
             "class_name": "VisionNodeItem",
             "node_type": "wait_image",
-            "title": "\u23f1 Wait For Image",
+            "title": "⏱ Wait For Image",
             "pos": [
               2852.515037673424,
               321.5362851899597
@@ -216,7 +216,7 @@
             "id": "8a97b671",
             "class_name": "ActionNodeItem",
             "node_type": "wheel",
-            "title": "\ud83d\udcdc Mouse Wheel",
+            "title": "📜 Mouse Wheel",
             "pos": [
               3207.733828068572,
               229.31653090417288
@@ -238,7 +238,7 @@
             "id": "2d77e0bc",
             "class_name": "ActionNodeItem",
             "node_type": "click",
-            "title": "\ud83d\uddb1 Mouse Click",
+            "title": "🖱 Mouse Click",
             "pos": [
               3866.518641603732,
               137.2351125611563
@@ -254,7 +254,7 @@
             "id": "0c251595",
             "class_name": "VisionNodeItem",
             "node_type": "wait_image",
-            "title": "\u23f1 Wait For Image",
+            "title": "⏱ Wait For Image",
             "pos": [
               3554.8885442918304,
               180.8956359446809
@@ -274,7 +274,7 @@
             "id": "fd671987",
             "class_name": "ActionNodeItem",
             "node_type": "click",
-            "title": "\ud83d\uddb1 Mouse Click",
+            "title": "🖱 Mouse Click",
             "pos": [
               3964.456640812646,
               329.5058973064239
@@ -290,7 +290,7 @@
             "id": "f1eefe80",
             "class_name": "ActionNodeItem",
             "node_type": "click",
-            "title": "\ud83d\uddb1 Mouse Click",
+            "title": "🖱 Mouse Click",
             "pos": [
               4366.51852650914,
               147.15678365269235
@@ -306,7 +306,7 @@
             "id": "fcdabd1c",
             "class_name": "ActionNodeItem",
             "node_type": "delay",
-            "title": "\u23f3 Delay Wait",
+            "title": "⏳ Delay Wait",
             "pos": [
               4128.299112977519,
               126.15052294886567
@@ -320,7 +320,7 @@
             "id": "a160afcd",
             "class_name": "ActionNodeItem",
             "node_type": "delay",
-            "title": "\u23f3 Delay Wait",
+            "title": "⏳ Delay Wait",
             "pos": [
               1716.9818573629632,
               506.1727061710035
@@ -335,7 +335,7 @@
             "id": "e52bdda4",
             "class_name": "VisionNodeItem",
             "node_type": "wait_image",
-            "title": "\u23f1 Wait For Image",
+            "title": "⏱ Wait For Image",
             "pos": [
               698.2507638308575,
               192.6858911325243
@@ -355,7 +355,7 @@
             "id": "10428247",
             "class_name": "LoopNodeItem",
             "node_type": "loop_count",
-            "title": "\ud83d\udd01 Repeat Zone (Loop)",
+            "title": "🔁 Repeat Zone (Loop)",
             "pos": [
               293.6417222679663,
               -214.48036170896341
@@ -372,7 +372,7 @@
             "id": "0f1c5c02",
             "class_name": "ActionNodeItem",
             "node_type": "delay",
-            "title": "\u23f3 Delay Wait",
+            "title": "⏳ Delay Wait",
             "pos": [
               606.8226514572214,
               -162.67232185922762
@@ -387,7 +387,7 @@
             "id": "4a19574f",
             "class_name": "VisionNodeItem",
             "node_type": "wait_image",
-            "title": "\u23f1 Wait For Image",
+            "title": "⏱ Wait For Image",
             "pos": [
               480.07446829675854,
               -424.56700874952014
@@ -407,7 +407,7 @@
             "id": "21e9b2f9",
             "class_name": "ActionNodeItem",
             "node_type": "click",
-            "title": "\ud83d\uddb1 Mouse Click",
+            "title": "🖱 Mouse Click",
             "pos": [
               829.2684227621444,
               -162.74858012553452
@@ -424,7 +424,7 @@
             "id": "55c5ee19",
             "class_name": "ActionNodeItem",
             "node_type": "click",
-            "title": "\ud83d\uddb1 Mouse Click",
+            "title": "🖱 Mouse Click",
             "pos": [
               375.5530780028521,
               -164.25283259693
@@ -713,7 +713,7 @@
             "id": "1c192dba",
             "class_name": "StartNodeItem",
             "node_type": "start",
-            "title": "\u25b6 Start",
+            "title": "▶ Start",
             "pos": [
               96.48105359094905,
               166.73317929274165
@@ -725,7 +725,7 @@
             "id": "16b2002f",
             "class_name": "TimerNodeItem",
             "node_type": "timer",
-            "title": "\u23f1\ufe0f Timer / Cooldown",
+            "title": "⏱️ Timer / Cooldown",
             "pos": [
               270.0,
               150.0
@@ -744,7 +744,7 @@
             "id": "58860093",
             "class_name": "LoopNodeItem",
             "node_type": "loop_count",
-            "title": "\ud83d\udd01 Repeat Zone (Loop)",
+            "title": "🔁 Repeat Zone (Loop)",
             "pos": [
               513.5491899156318,
               173.10918095617328
@@ -761,7 +761,7 @@
             "id": "a1b08202",
             "class_name": "PixelColorNodeItem",
             "node_type": "pixel_color",
-            "title": "\ud83c\udfa8 Pixel Color Check",
+            "title": "🎨 Pixel Color Check",
             "pos": [
               643.5491899156318,
               253.1091809561733
@@ -784,7 +784,7 @@
             "id": "33f8b94d",
             "class_name": "CompareNodeItem",
             "node_type": "compare",
-            "title": "\u2696 Compare / Logic",
+            "title": "⚖ Compare / Logic",
             "pos": [
               913.5491899156318,
               253.1091809561733
@@ -806,7 +806,7 @@
             "id": "3afa9622",
             "class_name": "AIVisionNodeItem",
             "node_type": "ai_vision",
-            "title": "\ud83e\udd16 AI Vision Action",
+            "title": "🤖 AI Vision Action",
             "pos": [
               1173.5491899156318,
               213.10918095617328
@@ -832,7 +832,7 @@
             "id": "b77f14ac",
             "class_name": "ActionNodeItem",
             "node_type": "dblclick",
-            "title": "\ud83d\uddb1 Double Click",
+            "title": "🖱 Double Click",
             "pos": [
               1443.5491899156318,
               213.10918095617328
@@ -849,7 +849,7 @@
             "id": "aa93d6d7",
             "class_name": "ActionNodeItem",
             "node_type": "key_down",
-            "title": "\u2328 Key Down (Hold)",
+            "title": "⌨ Key Down (Hold)",
             "pos": [
               1683.5491899156318,
               213.10918095617328
@@ -867,7 +867,7 @@
             "id": "8f000eec",
             "class_name": "ActionNodeItem",
             "node_type": "delay",
-            "title": "\u23f3 Delay Wait",
+            "title": "⏳ Delay Wait",
             "pos": [
               1923.5491899156318,
               213.10918095617328
@@ -882,7 +882,7 @@
             "id": "8a3ea2fc",
             "class_name": "ActionNodeItem",
             "node_type": "key_up",
-            "title": "\u2328 Key Up (Release)",
+            "title": "⌨ Key Up (Release)",
             "pos": [
               2163.549189915632,
               213.10918095617328
@@ -898,7 +898,7 @@
             "id": "756542df",
             "class_name": "ActionNodeItem",
             "node_type": "key_press",
-            "title": "\u2328 Key Press (Tap)",
+            "title": "⌨ Key Press (Tap)",
             "pos": [
               2403.549189915632,
               213.10918095617328
@@ -914,7 +914,7 @@
             "id": "11d50aed",
             "class_name": "MathNodeItem",
             "node_type": "math_op",
-            "title": "\ud83d\udd22 Math / Variable",
+            "title": "🔢 Math / Variable",
             "pos": [
               2643.549189915632,
               213.10918095617328
@@ -933,7 +933,7 @@
             "id": "4e413c6f",
             "class_name": "VisionNodeItem",
             "node_type": "wait_image",
-            "title": "\u23f1 Wait For Image",
+            "title": "⏱ Wait For Image",
             "pos": [
               2923.1985755947712,
               304.4788767500029
@@ -953,7 +953,7 @@
             "id": "dbdf0bf6",
             "class_name": "StopNodeItem",
             "node_type": "stop_playback",
-            "title": "\u23f9 Stop Playback",
+            "title": "⏹ Stop Playback",
             "pos": [
               3181.995611067047,
               319.84747689168495
@@ -1112,7 +1112,7 @@
             "id": "d1b64dc2",
             "class_name": "StartNodeItem",
             "node_type": "start",
-            "title": "\u25b6 Start",
+            "title": "▶ Start",
             "pos": [
               721.584265247834,
               -514.732030603237
@@ -1124,7 +1124,7 @@
             "id": "b0c51dd2",
             "class_name": "LoopNodeItem",
             "node_type": "loop_count",
-            "title": "\ud83d\udd01 Repeat Zone (Loop)",
+            "title": "🔁 Repeat Zone (Loop)",
             "pos": [
               1182.758104686889,
               -506.6597681374094
@@ -1141,7 +1141,7 @@
             "id": "c5f173bd",
             "class_name": "PixelColorNodeItem",
             "node_type": "pixel_color",
-            "title": "\ud83c\udfa8 Pixel Color Check",
+            "title": "🎨 Pixel Color Check",
             "pos": [
               1269.443433077524,
               -460.8688592398622
@@ -1164,7 +1164,7 @@
             "id": "b6a2189d",
             "class_name": "ActionNodeItem",
             "node_type": "key_down",
-            "title": "\u2328 Key Down (Hold)",
+            "title": "⌨ Key Down (Hold)",
             "pos": [
               1523.9590308120894,
               -449.5029512477857
@@ -1182,7 +1182,7 @@
             "id": "a282aff4",
             "class_name": "ActionNodeItem",
             "node_type": "click",
-            "title": "\ud83d\uddb1 Mouse Click",
+            "title": "🖱 Mouse Click",
             "pos": [
               902.944943667901,
               -509.96965613300273
@@ -1258,7 +1258,7 @@
             "id": "6a1f4a39",
             "class_name": "StartNodeItem",
             "node_type": "start",
-            "title": "\u25b6 Start",
+            "title": "▶ Start",
             "pos": [
               -193.9086033660464,
               -98.69228602362753
@@ -1270,7 +1270,7 @@
             "id": "fb084931",
             "class_name": "LoopNodeItem",
             "node_type": "loop_count",
-            "title": "\ud83d\udd01 Repeat Zone (Loop)",
+            "title": "🔁 Repeat Zone (Loop)",
             "pos": [
               -171.18592822222553,
               65.94824261623441
@@ -1287,7 +1287,7 @@
             "id": "2130804c",
             "class_name": "IfConditionNodeItem",
             "node_type": "if_condition",
-            "title": "\ud83d\udd00 If / Compare",
+            "title": "🔀 If / Compare",
             "pos": [
               196.80819947504955,
               120.21148776950639
@@ -1304,7 +1304,7 @@
             "id": "432647e0",
             "class_name": "ActionNodeItem",
             "node_type": "click",
-            "title": "\ud83d\uddb1 Mouse Click",
+            "title": "🖱 Mouse Click",
             "pos": [
               -47.28044346656009,
               118.5470698429283
@@ -1318,7 +1318,7 @@
             "id": "234fff65",
             "class_name": "ActionNodeItem",
             "node_type": "click",
-            "title": "\ud83d\uddb1 Mouse Click",
+            "title": "🖱 Mouse Click",
             "pos": [
               580.3554003888845,
               136.78349123990597
@@ -1335,7 +1335,7 @@
             "id": "2f3d57a3",
             "class_name": "HotkeyNodeItem",
             "node_type": "hotkey",
-            "title": "\u2328 Key Combination",
+            "title": "⌨ Key Combination",
             "pos": [
               103.27829326745142,
               -156.54814979487372
@@ -1446,7 +1446,7 @@
             "id": "961a3ddc",
             "class_name": "StartNodeItem",
             "node_type": "start",
-            "title": "\u25b6 Start",
+            "title": "▶ Start",
             "pos": [
               50.0,
               150.0
@@ -1458,7 +1458,7 @@
             "id": "8d4f7577",
             "class_name": "MathNodeItem",
             "node_type": "math_op",
-            "title": "\ud83d\udd22 Math / Variable",
+            "title": "🔢 Math / Variable",
             "pos": [
               250.0,
               150.0
@@ -1477,7 +1477,7 @@
             "id": "24d6f483",
             "class_name": "LoopNodeItem",
             "node_type": "loop_count",
-            "title": "\ud83d\udd01 Repeat Zone (Loop)",
+            "title": "🔁 Repeat Zone (Loop)",
             "pos": [
               480.0,
               119.05466395401027
@@ -1494,7 +1494,7 @@
             "id": "61a326b1",
             "class_name": "ActionNodeItem",
             "node_type": "click",
-            "title": "\ud83d\uddb1 Mouse Click",
+            "title": "🖱 Mouse Click",
             "pos": [
               600.0,
               179.05466395401027
@@ -1511,7 +1511,7 @@
             "id": "6e3f913a",
             "class_name": "ActionNodeItem",
             "node_type": "delay",
-            "title": "\u23f3 Delay Wait",
+            "title": "⏳ Delay Wait",
             "pos": [
               840.0,
               179.05466395401027
@@ -1526,7 +1526,7 @@
             "id": "8c24b931",
             "class_name": "MathNodeItem",
             "node_type": "math_op",
-            "title": "\ud83d\udd22 Math / Variable",
+            "title": "🔢 Math / Variable",
             "pos": [
               1080.0,
               179.05466395401027
@@ -1545,7 +1545,7 @@
             "id": "9aec0275",
             "class_name": "StopNodeItem",
             "node_type": "stop_playback",
-            "title": "\u23f9 Stop Playback",
+            "title": "⏹ Stop Playback",
             "pos": [
               1340.0,
               340.0
@@ -1655,7 +1655,7 @@
             "id": "e20e9ce7",
             "class_name": "StartNodeItem",
             "node_type": "start",
-            "title": "\u25b6 Start",
+            "title": "▶ Start",
             "pos": [
               50.0,
               150.0
@@ -1667,7 +1667,7 @@
             "id": "b28b6c1f",
             "class_name": "LoopNodeItem",
             "node_type": "loop_count",
-            "title": "\ud83d\udd01 Repeat Zone (Loop)",
+            "title": "🔁 Repeat Zone (Loop)",
             "pos": [
               496.7813299863119,
               151.0124101389861
@@ -1684,7 +1684,7 @@
             "id": "c5411bd6",
             "class_name": "VisionNodeItem",
             "node_type": "wait_image",
-            "title": "\u23f1 Wait For Image",
+            "title": "⏱ Wait For Image",
             "pos": [
               674.2190655626093,
               223.8906828462799
@@ -1704,7 +1704,7 @@
             "id": "a17c9421",
             "class_name": "ActionNodeItem",
             "node_type": "click",
-            "title": "\ud83d\uddb1 Mouse Click",
+            "title": "🖱 Mouse Click",
             "pos": [
               1107.073831197427,
               258.9535218020277
@@ -1721,7 +1721,7 @@
             "id": "74ed9154",
             "class_name": "ActionNodeItem",
             "node_type": "delay",
-            "title": "\u23f3 Delay Wait",
+            "title": "⏳ Delay Wait",
             "pos": [
               1381.804683059182,
               233.7752136400153
@@ -1736,7 +1736,7 @@
             "id": "482a49d0",
             "class_name": "ActionNodeItem",
             "node_type": "click",
-            "title": "\ud83d\uddb1 Mouse Click",
+            "title": "🖱 Mouse Click",
             "pos": [
               1625.0302844738976,
               240.13662582993254
@@ -1859,7 +1859,7 @@
             "id": "2f3a3952",
             "class_name": "StartNodeItem",
             "node_type": "start",
-            "title": "\u25b6 Start",
+            "title": "▶ Start",
             "pos": [
               50.0,
               150.0
@@ -1871,7 +1871,7 @@
             "id": "ee990667",
             "class_name": "MathNodeItem",
             "node_type": "math_op",
-            "title": "\ud83d\udd22 Math / Variable",
+            "title": "🔢 Math / Variable",
             "pos": [
               250.0,
               150.0
@@ -1892,7 +1892,7 @@
             "id": "d952a1f1",
             "class_name": "LoopNodeItem",
             "node_type": "loop_count",
-            "title": "\ud83d\udd01 Repeat Zone (Loop)",
+            "title": "🔁 Repeat Zone (Loop)",
             "pos": [
               661.7795541681086,
               194.01207233951908
@@ -1909,7 +1909,7 @@
             "id": "c7611a3f",
             "class_name": "ActionNodeItem",
             "node_type": "click",
-            "title": "\ud83d\uddb1 Mouse Click",
+            "title": "🖱 Mouse Click",
             "pos": [
               862.9746012939638,
               262.6442151015734
@@ -1926,7 +1926,7 @@
             "id": "740ab865",
             "class_name": "ActionNodeItem",
             "node_type": "delay",
-            "title": "\u23f3 Delay Wait",
+            "title": "⏳ Delay Wait",
             "pos": [
               1123.0915027024143,
               250.0711517212917
@@ -1941,7 +1941,7 @@
             "id": "cfa39384",
             "class_name": "MathNodeItem",
             "node_type": "math_op",
-            "title": "\ud83d\udd22 Math / Variable",
+            "title": "🔢 Math / Variable",
             "pos": [
               1367.7884398546294,
               245.75793784445807
@@ -1963,7 +1963,7 @@
             "id": "3fe3a5f2",
             "class_name": "LoopNodeItem",
             "node_type": "loop_count",
-            "title": "\ud83d\udd01 Repeat Zone (Loop)",
+            "title": "🔁 Repeat Zone (Loop)",
             "pos": [
               555.3869452062086,
               133.49481515748573
@@ -2065,7 +2065,7 @@
             "id": "85b7c9f2",
             "class_name": "StartNodeItem",
             "node_type": "start",
-            "title": "\u25b6 Start",
+            "title": "▶ Start",
             "pos": [
               50.0,
               150.0
@@ -2077,7 +2077,7 @@
             "id": "ea1af5fe",
             "class_name": "LoopNodeItem",
             "node_type": "loop_count",
-            "title": "\ud83d\udd01 Repeat Zone (Loop)",
+            "title": "🔁 Repeat Zone (Loop)",
             "pos": [
               280.0,
               120.0
@@ -2094,7 +2094,7 @@
             "id": "681f9c4e",
             "class_name": "PixelColorNodeItem",
             "node_type": "pixel_color",
-            "title": "\ud83c\udfa8 Pixel Color Check",
+            "title": "🎨 Pixel Color Check",
             "pos": [
               400.0,
               180.0
@@ -2112,7 +2112,7 @@
             "id": "4d531eda",
             "class_name": "ActionNodeItem",
             "node_type": "delay",
-            "title": "\u23f3 Delay Wait",
+            "title": "⏳ Delay Wait",
             "pos": [
               660.0,
               260.0
@@ -2127,7 +2127,7 @@
             "id": "4f5379f9",
             "class_name": "ActionNodeItem",
             "node_type": "click",
-            "title": "\ud83d\uddb1 Mouse Click",
+            "title": "🖱 Mouse Click",
             "pos": [
               920.0,
               340.0
@@ -2223,7 +2223,7 @@
             "id": "8b4a0f33",
             "class_name": "StartNodeItem",
             "node_type": "start",
-            "title": "\u25b6 Start",
+            "title": "▶ Start",
             "pos": [
               50.0,
               150.0
@@ -2235,7 +2235,7 @@
             "id": "a0e54a99",
             "class_name": "LoopNodeItem",
             "node_type": "loop_count",
-            "title": "\ud83d\udd01 Repeat Zone (Loop)",
+            "title": "🔁 Repeat Zone (Loop)",
             "pos": [
               280.0,
               120.0
@@ -2252,7 +2252,7 @@
             "id": "9aaa6de4",
             "class_name": "PixelColorNodeItem",
             "node_type": "pixel_color",
-            "title": "\ud83c\udfa8 Pixel Color Check",
+            "title": "🎨 Pixel Color Check",
             "pos": [
               394.7688010268496,
               192.50646749244825
@@ -2270,7 +2270,7 @@
             "id": "cceec5ab",
             "class_name": "ActionNodeItem",
             "node_type": "delay",
-            "title": "\u23f3 Delay Wait",
+            "title": "⏳ Delay Wait",
             "pos": [
               761.651376146789,
               198.58562691131505
@@ -2285,7 +2285,7 @@
             "id": "e2ad85b0",
             "class_name": "ActionNodeItem",
             "node_type": "click",
-            "title": "\ud83d\uddb1 Mouse Click",
+            "title": "🖱 Mouse Click",
             "pos": [
               757.3697792460418,
               390.06796565945643
@@ -4963,7 +4963,7 @@
             "id": "7de03788",
             "class_name": "StartNodeItem",
             "node_type": "start",
-            "title": "\u25b6 Start",
+            "title": "▶ Start",
             "pos": [
               60.0,
               200.0
@@ -4975,7 +4975,7 @@
             "id": "c852c11e",
             "class_name": "ActionNodeItem",
             "node_type": "move",
-            "title": "\ud83c\udff9 Mouse Move",
+            "title": "🏹 Mouse Move",
             "pos": [
               240.0,
               200.0
@@ -5110,7 +5110,7 @@
             "id": "8b7e7313",
             "class_name": "ActionNodeItem",
             "node_type": "click",
-            "title": "\ud83d\uddb1 Mouse Click",
+            "title": "🖱 Mouse Click",
             "pos": [
               480.0,
               200.0
@@ -5129,7 +5129,7 @@
             "id": "f909582a",
             "class_name": "ActionNodeItem",
             "node_type": "move",
-            "title": "\ud83c\udff9 Mouse Move",
+            "title": "🏹 Mouse Move",
             "pos": [
               720.0,
               200.0
@@ -5324,7 +5324,7 @@
             "id": "c909d5f1",
             "class_name": "ActionNodeItem",
             "node_type": "click",
-            "title": "\ud83d\uddb1 Mouse Click",
+            "title": "🖱 Mouse Click",
             "pos": [
               960.0,
               200.0
@@ -5343,7 +5343,7 @@
             "id": "de5ef0c7",
             "class_name": "ActionNodeItem",
             "node_type": "move",
-            "title": "\ud83c\udff9 Mouse Move",
+            "title": "🏹 Mouse Move",
             "pos": [
               1200.0,
               200.0
@@ -5394,7 +5394,7 @@
             "id": "ded1c711",
             "class_name": "ActionNodeItem",
             "node_type": "click",
-            "title": "\ud83d\uddb1 Mouse Click",
+            "title": "🖱 Mouse Click",
             "pos": [
               1440.0,
               200.0
@@ -5413,7 +5413,7 @@
             "id": "0068be15",
             "class_name": "ActionNodeItem",
             "node_type": "move",
-            "title": "\ud83c\udff9 Mouse Move",
+            "title": "🏹 Mouse Move",
             "pos": [
               1680.0,
               200.0
@@ -5554,7 +5554,7 @@
             "id": "21f840ac",
             "class_name": "ActionNodeItem",
             "node_type": "click",
-            "title": "\ud83d\uddb1 Mouse Click",
+            "title": "🖱 Mouse Click",
             "pos": [
               1920.0,
               200.0
@@ -5573,7 +5573,7 @@
             "id": "fdaec032",
             "class_name": "ActionNodeItem",
             "node_type": "move",
-            "title": "\ud83c\udff9 Mouse Move",
+            "title": "🏹 Mouse Move",
             "pos": [
               2160.0,
               200.0
@@ -5898,7 +5898,7 @@
             "id": "b0d900a6",
             "class_name": "StartNodeItem",
             "node_type": "start",
-            "title": "\u25b6 Start",
+            "title": "▶ Start",
             "pos": [
               -216.9103562092677,
               110.05621777214623
@@ -5910,7 +5910,7 @@
             "id": "f7894ac8",
             "class_name": "ActionNodeItem",
             "node_type": "click",
-            "title": "\ud83d\uddb1 Mouse Click",
+            "title": "🖱 Mouse Click",
             "pos": [
               299.76421787929456,
               55.245087458432124
@@ -5926,7 +5926,7 @@
             "id": "89f7e858",
             "class_name": "PixelColorNodeItem",
             "node_type": "pixel_color",
-            "title": "\ud83c\udfa8 Pixel Color Check",
+            "title": "🎨 Pixel Color Check",
             "pos": [
               -27.25040049701191,
               52.9879671839907
@@ -6721,7 +6721,7 @@
       ],
       "duration": 7084
     },
-    "\ud83c\udf1f Master Showcase (All Nodes)": {
+    "🌟 Master Showcase (All Nodes)": {
       "steps": [
         {
           "id": "23c32eb9",
@@ -6870,7 +6870,7 @@
             "id": "c8412670",
             "class_name": "StartNodeItem",
             "node_type": "start",
-            "title": "\u25b6 Start",
+            "title": "▶ Start",
             "pos": [
               50.0,
               150.0
@@ -6882,7 +6882,7 @@
             "id": "23c32eb9",
             "class_name": "TimerNodeItem",
             "node_type": "timer",
-            "title": "\u23f1\ufe0f Timer / Cooldown",
+            "title": "⏱️ Timer / Cooldown",
             "pos": [
               270.0,
               150.0
@@ -6901,7 +6901,7 @@
             "id": "79943f0a",
             "class_name": "LoopNodeItem",
             "node_type": "loop_count",
-            "title": "\ud83d\udd01 Repeat Zone (Loop)",
+            "title": "🔁 Repeat Zone (Loop)",
             "pos": [
               520.0,
               100.0
@@ -6918,7 +6918,7 @@
             "id": "25d33154",
             "class_name": "PixelColorNodeItem",
             "node_type": "pixel_color",
-            "title": "\ud83c\udfa8 Pixel Color Check",
+            "title": "🎨 Pixel Color Check",
             "pos": [
               650.0,
               180.0
@@ -6941,7 +6941,7 @@
             "id": "60b9db8f",
             "class_name": "CompareNodeItem",
             "node_type": "compare",
-            "title": "\u2696 Compare / Logic",
+            "title": "⚖ Compare / Logic",
             "pos": [
               920.0,
               180.0
@@ -6963,7 +6963,7 @@
             "id": "08a4702d",
             "class_name": "AIVisionNodeItem",
             "node_type": "ai_vision",
-            "title": "\ud83e\udd16 AI Vision Action",
+            "title": "🤖 AI Vision Action",
             "pos": [
               1180.0,
               140.0
@@ -6989,7 +6989,7 @@
             "id": "7cc44b95",
             "class_name": "ActionNodeItem",
             "node_type": "dblclick",
-            "title": "\ud83d\uddb1 Double Click",
+            "title": "🖱 Double Click",
             "pos": [
               1450.0,
               140.0
@@ -7006,7 +7006,7 @@
             "id": "1a34f51c",
             "class_name": "ActionNodeItem",
             "node_type": "key_down",
-            "title": "\u2328 Key Down (Hold)",
+            "title": "⌨ Key Down (Hold)",
             "pos": [
               1690.0,
               140.0
@@ -7024,7 +7024,7 @@
             "id": "5e0f8fc8",
             "class_name": "ActionNodeItem",
             "node_type": "delay",
-            "title": "\u23f3 Delay Wait",
+            "title": "⏳ Delay Wait",
             "pos": [
               1930.0,
               140.0
@@ -7039,7 +7039,7 @@
             "id": "82e16a78",
             "class_name": "ActionNodeItem",
             "node_type": "key_up",
-            "title": "\u2328 Key Up (Release)",
+            "title": "⌨ Key Up (Release)",
             "pos": [
               2170.0,
               140.0
@@ -7055,7 +7055,7 @@
             "id": "7670e2de",
             "class_name": "ActionNodeItem",
             "node_type": "key_press",
-            "title": "\u2328 Key Press (Tap)",
+            "title": "⌨ Key Press (Tap)",
             "pos": [
               2410.0,
               140.0
@@ -7071,7 +7071,7 @@
             "id": "54933d20",
             "class_name": "MathNodeItem",
             "node_type": "math_op",
-            "title": "\ud83d\udd22 Math / Variable",
+            "title": "🔢 Math / Variable",
             "pos": [
               2650.0,
               140.0
@@ -7090,7 +7090,7 @@
             "id": "cce7d957",
             "class_name": "VisionNodeItem",
             "node_type": "wait_image",
-            "title": "\u23f1 Wait For Image",
+            "title": "⏱ Wait For Image",
             "pos": [
               800.0,
               420.0
@@ -7110,7 +7110,7 @@
             "id": "599f87ed",
             "class_name": "StopNodeItem",
             "node_type": "stop_playback",
-            "title": "\u23f9 Stop Playback",
+            "title": "⏹ Stop Playback",
             "pos": [
               1060.0,
               420.0
@@ -7213,67 +7213,64 @@
           "count": 5,
           "infinite": true,
           "var_name": "i",
-          "body_next": "b587f0c7",
+          "body_next": "f402e859",
           "next": null,
           "dt": 10
         },
         {
-          "id": "b587f0c7",
-          "type": "pixel_color",
-          "x": 1838,
-          "y": 490,
-          "color": "#F26722",
-          "tolerance": 15,
-          "use_region": true,
-          "region_x": 3582,
-          "region_y": 508,
-          "region_w": 100,
-          "region_h": 100,
+          "id": "f402e859",
+          "type": "wait_image",
+          "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261031_173951.png",
+          "confidence": 0.85,
+          "action": "none",
+          "button": "left",
+          "timeout": 5.0,
+          "break_loop_on_found": false,
           "found_next": "4e338ead",
           "miss_next": "009d5694",
-          "dt": 30
+          "dt": 160
         },
         {
           "id": "4e338ead",
           "type": "click",
           "next": "da655a72",
-          "x": 3579,
-          "y": 144,
+          "x": 570,
+          "y": 229,
           "button": "right",
-          "dt": 130
+          "dt": 260
         },
         {
           "id": "da655a72",
           "type": "delay",
           "next": "26f304d6",
           "duration": 1000,
-          "dt": 1130
+          "dt": 1260
         },
         {
           "id": "26f304d6",
           "type": "click",
           "next": "d6b293f2",
-          "x": 507,
-          "y": 306,
+          "x": 2148,
+          "y": 180,
           "button": "right",
-          "dt": 1230
+          "dt": 1360
         },
         {
           "id": "d6b293f2",
           "type": "delay",
           "next": "009d5694",
           "duration": 1000,
-          "dt": 2230
+          "dt": 2360
         }
       ],
-      "duration": 2230,
+      "duration": 2360,
       "graph_data": {
         "nodes": [
           {
             "id": "a5723952",
             "class_name": "StartNodeItem",
             "node_type": "start",
-            "title": "\u25b6 Start",
+            "title": "▶ Start",
             "pos": [
               428.16557346745594,
               -265.5813504995881
@@ -7285,16 +7282,16 @@
             "id": "4e338ead",
             "class_name": "ActionNodeItem",
             "node_type": "click",
-            "title": "\ud83d\uddb1 Mouse Click",
+            "title": "🖱 Mouse Click",
             "pos": [
-              959.1559326742388,
-              -188.48647298028317
+              969.7835649976045,
+              -197.08868199353512
             ],
             "bypassed": false,
             "properties": {
               "type": "click",
-              "x": 3579,
-              "y": 144,
+              "x": 570,
+              "y": 229,
               "button": "right",
               "dt": 1214,
               "action_type": "click"
@@ -7304,16 +7301,16 @@
             "id": "26f304d6",
             "class_name": "ActionNodeItem",
             "node_type": "click",
-            "title": "\ud83d\uddb1 Mouse Click",
+            "title": "🖱 Mouse Click",
             "pos": [
-              1422.4085625705538,
-              -187.31943947981182
+              1449.7835649976046,
+              -197.08868199353512
             ],
             "bypassed": false,
             "properties": {
               "type": "click",
-              "x": 507,
-              "y": 306,
+              "x": 2148,
+              "y": 180,
               "button": "right",
               "dt": 3214,
               "action_type": "click"
@@ -7323,10 +7320,10 @@
             "id": "da655a72",
             "class_name": "ActionNodeItem",
             "node_type": "delay",
-            "title": "\u23f3 Delay Wait",
+            "title": "⏳ Delay Wait",
             "pos": [
-              1192.2134014622134,
-              -187.75671089921735
+              1209.7835649976046,
+              -197.08868199353512
             ],
             "bypassed": false,
             "properties": {
@@ -7338,7 +7335,7 @@
             "id": "009d5694",
             "class_name": "LoopNodeItem",
             "node_type": "loop_count",
-            "title": "\ud83d\udd01 Repeat Zone (Loop)",
+            "title": "🔁 Repeat Zone (Loop)",
             "pos": [
               610.4646275413725,
               -270.3285196122422
@@ -7355,14 +7352,14 @@
             "id": "f402e859",
             "class_name": "VisionNodeItem",
             "node_type": "wait_image",
-            "title": "\u23f1 Wait For Image",
+            "title": "⏱ Wait For Image",
             "pos": [
-              706.8576556701481,
-              -28.848895664789865
+              709.7835649976045,
+              -197.08868199353512
             ],
             "bypassed": false,
             "properties": {
-              "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261031_141752.png",
+              "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261031_173951.png",
               "timeout": 5.0,
               "action_type": "wait_image",
               "confidence": 0.85,
@@ -7375,10 +7372,10 @@
             "id": "d6b293f2",
             "class_name": "ActionNodeItem",
             "node_type": "delay",
-            "title": "\u23f3 Delay Wait",
+            "title": "⏳ Delay Wait",
             "pos": [
-              1664.5137574592823,
-              -173.74780203489755
+              1689.7835649976046,
+              -197.08868199353512
             ],
             "bypassed": false,
             "properties": {
@@ -7387,26 +7384,81 @@
             }
           },
           {
-            "id": "b587f0c7",
-            "class_name": "PixelColorNodeItem",
-            "node_type": "pixel_color",
-            "title": "\ud83c\udfa8 Pixel Color Check",
+            "id": "c7ea9e15",
+            "class_name": "StickyNoteNodeItem",
+            "node_type": "sticky_note",
+            "title": "Sticky Note",
             "pos": [
-              719.1423394025345,
-              -198.69351623421196
+              681.4216051845622,
+              -325.22394792899547
             ],
             "bypassed": false,
             "properties": {
-              "action_type": "pixel_color",
-              "x": 1838,
-              "y": 490,
-              "color": "#F26722",
-              "tolerance": 15,
-              "use_region": true,
-              "region_x": 3582,
-              "region_y": 508,
-              "region_w": 100,
-              "region_h": 100
+              "text": "test check one two three",
+              "collapsed": true,
+              "color": "#E5D875",
+              "width": 220.0,
+              "height": 160.0
+            }
+          },
+          {
+            "id": "f774ca09",
+            "class_name": "VisionNodeItem",
+            "node_type": "wait_image",
+            "title": "⏱ Wait For Image",
+            "pos": [
+              937.0102953808686,
+              -469.48733877573915
+            ],
+            "bypassed": false,
+            "properties": {
+              "break_loop_on_found": true,
+              "action_type": "wait_image",
+              "confidence": 0.85,
+              "action": "none",
+              "button": "left",
+              "timeout": 5.0,
+              "template": ""
+            }
+          },
+          {
+            "id": "493ef723",
+            "class_name": "VisionNodeItem",
+            "node_type": "wait_image",
+            "title": "⏱ Wait For Image",
+            "pos": [
+              948.4655185159222,
+              -613.9795035514317
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "wait_image",
+              "confidence": 0.85,
+              "action": "none",
+              "button": "left",
+              "timeout": 5.0,
+              "template": "",
+              "break_loop_on_found": true
+            }
+          },
+          {
+            "id": "e18ac98d",
+            "class_name": "VisionNodeItem",
+            "node_type": "wait_image",
+            "title": "⏱ Wait For Image",
+            "pos": [
+              1222.080278009335,
+              -490.02107047351376
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "wait_image",
+              "confidence": 0.85,
+              "action": "none",
+              "button": "left",
+              "timeout": 5.0,
+              "template": "",
+              "break_loop_on_found": false
             }
           }
         ],
@@ -7438,17 +7490,17 @@
           {
             "from_node": "009d5694",
             "from_socket_idx": 0,
-            "to_node": "b587f0c7",
+            "to_node": "f402e859",
             "to_socket_idx": 0
           },
           {
-            "from_node": "b587f0c7",
+            "from_node": "f402e859",
             "from_socket_idx": 0,
             "to_node": "4e338ead",
             "to_socket_idx": 0
           },
           {
-            "from_node": "b587f0c7",
+            "from_node": "f402e859",
             "from_socket_idx": 1,
             "to_node": "009d5694",
             "to_socket_idx": 1
@@ -7467,7 +7519,7 @@
             "id": "4a5fcbed",
             "class_name": "StartNodeItem",
             "node_type": "start",
-            "title": "\u25b6 Start",
+            "title": "▶ Start",
             "pos": [
               50.0,
               150.0
@@ -7486,7 +7538,7 @@
             ],
             "bypassed": false,
             "properties": {
-              "text": "\ud83c\udf1f MASTER SHOWCASE: ALL NODES DEMONSTRATION WORKFLOW\n-------------------------------------------------------------\nThis macro exercises all 12 node capabilities in sequence:\n\u2022 \u23f1\ufe0f Timer (Stopwatch/Cooldown): Tracks loop cadence without blocking execution\n\u2022 \ud83d\udd01 Loop (3x Iterations): Drives repeated cycles while exposing  index\n\u2022 \ud83c\udfaf Pixel Color Check (Bounding Box): Samples color within an adjustable region\n\u2022 \u2696\ufe0f Compare Logic Gate: Tests multiple variables ( and timer) with AND/OR branching\n\u2022 \ud83e\udd16 AI Vision Action: Uses multimodal vision reasoning to inspect the screen state\n\u2022 \ud83d\uddb1\ufe0f Actions: Precision clicks, mouse moves, typematic key hold/release, and delays\n\u2022 \ud83e\uddee Math & Variables: Increments counters and sets state\n\u2022 \ud83d\uded1 Safe Stop: Gracefully terminates execution and reports statistics",
+              "text": "🌟 MASTER SHOWCASE: ALL NODES DEMONSTRATION WORKFLOW\n-------------------------------------------------------------\nThis macro exercises all 12 node capabilities in sequence:\n• ⏱️ Timer (Stopwatch/Cooldown): Tracks loop cadence without blocking execution\n• 🔁 Loop (3x Iterations): Drives repeated cycles while exposing  index\n• 🎯 Pixel Color Check (Bounding Box): Samples color within an adjustable region\n• ⚖️ Compare Logic Gate: Tests multiple variables ( and timer) with AND/OR branching\n• 🤖 AI Vision Action: Uses multimodal vision reasoning to inspect the screen state\n• 🖱️ Actions: Precision clicks, mouse moves, typematic key hold/release, and delays\n• 🧮 Math & Variables: Increments counters and sets state\n• 🛑 Safe Stop: Gracefully terminates execution and reports statistics",
               "color": "#E5D875",
               "width": 560.0,
               "height": 210.0,
@@ -7504,7 +7556,7 @@
             ],
             "bypassed": false,
             "properties": {
-              "text": "Tip: Double-click any note to edit text, drag [\u2212] to collapse into this pill strip, or resize from corner!",
+              "text": "Tip: Double-click any note to edit text, drag [−] to collapse into this pill strip, or resize from corner!",
               "color": "#86EFAC",
               "width": 260.0,
               "height": 120.0,
@@ -7515,7 +7567,7 @@
             "id": "9e3b1d3c",
             "class_name": "TimerNodeItem",
             "node_type": "timer",
-            "title": "\u23f1\ufe0f Timer / Cooldown",
+            "title": "⏱️ Timer / Cooldown",
             "pos": [
               270.0,
               150.0
@@ -7534,7 +7586,7 @@
             "id": "c18c1bb5",
             "class_name": "LoopNodeItem",
             "node_type": "loop_count",
-            "title": "\ud83d\udd01 Repeat Zone (Loop)",
+            "title": "🔁 Repeat Zone (Loop)",
             "pos": [
               520.0,
               100.0
@@ -7551,7 +7603,7 @@
             "id": "3e945c9f",
             "class_name": "PixelColorNodeItem",
             "node_type": "pixel_color",
-            "title": "\ud83c\udfa8 Pixel Color Check",
+            "title": "🎨 Pixel Color Check",
             "pos": [
               650.0,
               180.0
@@ -7574,7 +7626,7 @@
             "id": "75e166ff",
             "class_name": "CompareNodeItem",
             "node_type": "compare",
-            "title": "\u2696 Compare / Logic",
+            "title": "⚖ Compare / Logic",
             "pos": [
               920.0,
               180.0
@@ -7596,7 +7648,7 @@
             "id": "fda8ce6a",
             "class_name": "AIVisionNodeItem",
             "node_type": "ai_vision",
-            "title": "\ud83e\udd16 AI Vision Action",
+            "title": "🤖 AI Vision Action",
             "pos": [
               1180.0,
               140.0
@@ -7622,7 +7674,7 @@
             "id": "9ea10e2c",
             "class_name": "ActionNodeItem",
             "node_type": "dblclick",
-            "title": "\ud83d\uddb1 Double Click",
+            "title": "🖱 Double Click",
             "pos": [
               1450.0,
               140.0
@@ -7639,7 +7691,7 @@
             "id": "1c90a97c",
             "class_name": "ActionNodeItem",
             "node_type": "key_down",
-            "title": "\u2328 Key Down (Hold)",
+            "title": "⌨ Key Down (Hold)",
             "pos": [
               1690.0,
               140.0
@@ -7657,7 +7709,7 @@
             "id": "c3fa035b",
             "class_name": "ActionNodeItem",
             "node_type": "delay",
-            "title": "\u23f3 Delay Wait",
+            "title": "⏳ Delay Wait",
             "pos": [
               1930.0,
               140.0
@@ -7672,7 +7724,7 @@
             "id": "b2f7494d",
             "class_name": "ActionNodeItem",
             "node_type": "key_up",
-            "title": "\u2328 Key Up (Release)",
+            "title": "⌨ Key Up (Release)",
             "pos": [
               2170.0,
               140.0
@@ -7688,7 +7740,7 @@
             "id": "e4ad3632",
             "class_name": "ActionNodeItem",
             "node_type": "key_press",
-            "title": "\u2328 Key Press (Tap)",
+            "title": "⌨ Key Press (Tap)",
             "pos": [
               2410.0,
               140.0
@@ -7704,7 +7756,7 @@
             "id": "dfb00fc4",
             "class_name": "MathNodeItem",
             "node_type": "math_op",
-            "title": "\ud83d\udd22 Math / Variable",
+            "title": "🔢 Math / Variable",
             "pos": [
               2650.0,
               140.0
@@ -7723,7 +7775,7 @@
             "id": "4370e470",
             "class_name": "VisionNodeItem",
             "node_type": "wait_image",
-            "title": "\u23f1 Wait For Image",
+            "title": "⏱ Wait For Image",
             "pos": [
               800.0,
               420.0
@@ -7743,7 +7795,7 @@
             "id": "8d13f9b0",
             "class_name": "StopNodeItem",
             "node_type": "stop_playback",
-            "title": "\u23f9 Stop Playback",
+            "title": "⏹ Stop Playback",
             "pos": [
               1080.0,
               420.0
@@ -7859,10 +7911,10 @@
   },
   "instances": {
     "1": {
-      "x": 2663,
-      "y": 208,
+      "x": 1515,
+      "y": 470,
       "minimized": false,
-      "selected_macro": "Macro 9",
+      "selected_macro": "Macro 8",
       "speed": 0.98,
       "repeat": false,
       "width": 399,

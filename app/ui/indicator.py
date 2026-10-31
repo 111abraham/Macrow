@@ -8,8 +8,81 @@ from PyQt6.QtWidgets import QWidget
 from PyQt6.QtCore import Qt, QTimer, QPoint, QRect, pyqtSignal
 from PyQt6.QtGui import QPainter, QColor, QBrush, QPen, QFont, QFontMetrics, QCursor
 import ctypes
-from typing import Tuple
-from app.core.win32_api import user32, GWL_EXSTYLE, WS_EX_LAYERED, WS_EX_NOACTIVATE, WS_EX_TRANSPARENT
+from typing import Tuple, Optional
+from app.core.win32_api import (
+    user32,
+    GWL_EXSTYLE,
+    WS_EX_LAYERED,
+    WS_EX_NOACTIVATE,
+    WS_EX_TRANSPARENT,
+    get_screen_physical_rect,
+)
+
+
+def physical_rect_to_logical(phys_x: int, phys_y: int, phys_w: int, phys_h: int) -> Tuple[QRect, float]:
+    """Converts a global physical rectangle to Qt logical QRect on the corresponding screen."""
+    from PyQt6.QtWidgets import QApplication
+    app = QApplication.instance()
+    screens = app.screens() if app else []
+
+    target_screen = None
+    target_phys_rect = None
+    for s in screens:
+        pr = get_screen_physical_rect(s)
+        if pr[0] <= phys_x < pr[0] + pr[2] and pr[1] <= phys_y < pr[1] + pr[3]:
+            target_screen = s
+            target_phys_rect = pr
+            break
+    if not target_screen and screens:
+        target_screen = screens[0]
+        target_phys_rect = get_screen_physical_rect(target_screen)
+
+    if not target_screen or not target_phys_rect:
+        return QRect(phys_x, phys_y, phys_w, phys_h), 1.0
+
+    dpr = target_screen.devicePixelRatio()
+    local_phys_x = phys_x - target_phys_rect[0]
+    local_phys_y = phys_y - target_phys_rect[1]
+
+    log_x = target_screen.geometry().x() + int(round(local_phys_x / dpr))
+    log_y = target_screen.geometry().y() + int(round(local_phys_y / dpr))
+    log_w = max(10, int(round(phys_w / dpr)))
+    log_h = max(10, int(round(phys_h / dpr)))
+
+    return QRect(log_x, log_y, log_w, log_h), dpr
+
+
+def logical_rect_to_physical(log_rect: QRect) -> Tuple[int, int, int, int]:
+    """Converts a Qt logical QRect back to global physical desktop coordinates."""
+    from PyQt6.QtWidgets import QApplication
+    app = QApplication.instance()
+    screens = app.screens() if app else []
+
+    pt = log_rect.topLeft()
+    target_screen = None
+    target_phys_rect = None
+    for s in screens:
+        if s.geometry().contains(pt):
+            target_screen = s
+            target_phys_rect = get_screen_physical_rect(s)
+            break
+    if not target_screen and screens:
+        target_screen = screens[0]
+        target_phys_rect = get_screen_physical_rect(target_screen)
+
+    if not target_screen or not target_phys_rect:
+        return log_rect.x(), log_rect.y(), log_rect.width(), log_rect.height()
+
+    dpr = target_screen.devicePixelRatio()
+    local_log_x = log_rect.x() - target_screen.geometry().x()
+    local_log_y = log_rect.y() - target_screen.geometry().y()
+
+    phys_x = target_phys_rect[0] + int(round(local_log_x * dpr))
+    phys_y = target_phys_rect[1] + int(round(local_log_y * dpr))
+    phys_w = int(round(log_rect.width() * dpr))
+    phys_h = int(round(log_rect.height() * dpr))
+
+    return phys_x, phys_y, phys_w, phys_h
 
 
 def get_safe_overlay_color(hex_str: str) -> Tuple[QColor, QColor, QColor]:
@@ -148,7 +221,10 @@ class RegionBadgeOverlay(QWidget):
         font = QFont("Segoe UI", 9, QFont.Weight.Bold)
         fm = QFontMetrics(font)
 
-        badge_text = f"✥ {label}: {rw}×{rh} (X:{rx}, Y:{ry})"
+        # Convert logical box coordinates to physical for display readout
+        phys_x, phys_y, phys_w, phys_h = logical_rect_to_physical(QRect(rx, ry, rw, rh))
+
+        badge_text = f"✥ {label}: {phys_w}×{phys_h} (X:{phys_x}, Y:{phys_y})"
         txt_w = fm.horizontalAdvance(badge_text) + self.swatch_sz + self.swatch_gap + 20
         badge_h = fm.height() + 8
 
@@ -156,7 +232,7 @@ class RegionBadgeOverlay(QWidget):
             self.pill_text = badge_text
             pw = txt_w
         else:
-            self.pill_text = f"{rw}×{rh}"
+            self.pill_text = f"{phys_w}×{phys_h}"
             pw = fm.horizontalAdvance(self.pill_text) + self.swatch_sz + self.swatch_gap + 16
 
         # Position strictly OUTSIDE the main bounding box:
@@ -169,11 +245,6 @@ class RegionBadgeOverlay(QWidget):
 
         self.setGeometry(bx, by, pw, badge_h)
         self.show()
-        try:
-            hwnd = int(self.winId())
-            user32.SetWindowPos(hwnd, 0, bx, by, pw, badge_h, 0x0010 | 0x0040)
-        except Exception:
-            pass
         self.update()
 
     def mousePressEvent(self, event):
@@ -197,7 +268,8 @@ class RegionBadgeOverlay(QWidget):
             self.owner.region_rect = QRect(nx, ny, nw, nh)
             self.owner.setGeometry(self.owner.region_rect)
             self.update_badge(nx, ny, nw, nh, self.owner.label_text, self.safe_accent_color, self.target_color)
-            self.owner.region_changed.emit(nx, ny, nw, nh)
+            px, py, pw, ph = logical_rect_to_physical(self.owner.region_rect)
+            self.owner.region_changed.emit(px, py, pw, ph)
             self.owner.update()
             event.accept()
         else:
@@ -207,8 +279,8 @@ class RegionBadgeOverlay(QWidget):
         if event.button() == Qt.MouseButton.LeftButton and self._drag_start_global:
             self._drag_start_global = None
             self._drag_orig_region = None
-            g = self.owner.region_rect
-            self.owner.region_committed.emit(g.x(), g.y(), g.width(), g.height())
+            px, py, pw, ph = logical_rect_to_physical(self.owner.region_rect)
+            self.owner.region_committed.emit(px, py, pw, ph)
             event.accept()
         else:
             super().mouseReleaseEvent(event)
@@ -316,19 +388,18 @@ class RegionHighlightOverlay(QWidget):
             self.hide_overlay()
             return
 
-        self.region_rect = QRect(ix, iy, iw, ih)
+        # Map input physical desktop coordinates to Qt logical screen coordinates
+        log_rect, dpr = physical_rect_to_logical(ix, iy, iw, ih)
+        self.region_rect = log_rect
+        self.target_dpr = dpr
         self.label_text = label
         self.safe_accent_color, self.safe_corner_color, self.target_color = get_safe_overlay_color(color_hex)
 
         self.setGeometry(self.region_rect)
         self.show()
-        try:
-            hwnd = int(self.winId())
-            user32.SetWindowPos(hwnd, 0, ix, iy, iw, ih, 0x0010 | 0x0040)
-        except Exception:
-            pass
         self.badge_overlay.update_badge(
-            ix, iy, iw, ih, label, self.safe_accent_color, self.target_color
+            self.region_rect.x(), self.region_rect.y(), self.region_rect.width(), self.region_rect.height(),
+            label, self.safe_accent_color, self.target_color
         )
         self.update()
 
@@ -428,7 +499,8 @@ class RegionHighlightOverlay(QWidget):
             self.badge_overlay.update_badge(
                 nx, ny, nw, nh, self.label_text, self.safe_accent_color, self.target_color
             )
-            self.region_changed.emit(nx, ny, nw, nh)
+            px, py, pw, ph = logical_rect_to_physical(self.region_rect)
+            self.region_changed.emit(px, py, pw, ph)
             self.update()
             event.accept()
         else:
@@ -444,7 +516,8 @@ class RegionHighlightOverlay(QWidget):
             self.badge_overlay.update_badge(
                 g.x(), g.y(), g.width(), g.height(), self.label_text, self.safe_accent_color, self.target_color
             )
-            self.region_committed.emit(g.x(), g.y(), g.width(), g.height())
+            px, py, pw, ph = logical_rect_to_physical(self.region_rect)
+            self.region_committed.emit(px, py, pw, ph)
             zone = self._get_hit_zone(event.pos())
             self._update_cursor_for_zone(zone)
             event.accept()
