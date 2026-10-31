@@ -27,8 +27,7 @@ from PyQt6.QtGui import (
 from PyQt6.QtWidgets import QDialog, QWidget
 
 from app.ui.assets import get_app_icon
-
-user32 = ctypes.windll.user32
+from app.core.win32_api import user32, get_screen_physical_rect, get_cursor_pos, init_dpi_awareness
 
 
 class SnipperCanvasOverlay(QWidget):
@@ -36,15 +35,21 @@ class SnipperCanvasOverlay(QWidget):
 
     def __init__(self, screen, controller: ScreenSnipper):
         super().__init__()
+        init_dpi_awareness()
         self.screen_obj = screen
         self.controller = controller
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint
             | Qt.WindowType.WindowStaysOnTopHint
+            | Qt.WindowType.Tool
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
         self.setScreen(screen)
-        self.setGeometry(screen.geometry())
+
+        # 1:1 physical screen rectangle across multi-monitor desktop
+        self.phys_rect = get_screen_physical_rect(screen)
+        px, py, pw, ph = self.phys_rect
+        self.setGeometry(px, py, pw, ph)
         self.setCursor(Qt.CursorShape.CrossCursor)
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -58,10 +63,10 @@ class SnipperCanvasOverlay(QWidget):
         self.start_pos: Optional[QPoint] = None
         self.is_selecting = False
 
-        # Pre-seed current_pos from actual cursor position so crosshairs are drawn immediately
-        cur_global = QCursor.pos()
-        if self.screen_geo.contains(cur_global):
-            self.current_pos: Optional[QPoint] = cur_global - self.screen_geo.topLeft()
+        # Pre-seed current_pos from actual physical cursor position
+        cur_px, cur_py = get_cursor_pos()
+        if px <= cur_px < px + pw and py <= cur_py < py + ph:
+            self.current_pos: Optional[QPoint] = QPoint(cur_px - px, cur_py - py)
         else:
             self.current_pos = None
 
@@ -72,15 +77,28 @@ class SnipperCanvasOverlay(QWidget):
         self.setFocus()
         try:
             hwnd = int(self.winId())
+            px, py, pw, ph = self.phys_rect
+            # SWP_NOZORDER = 0x0004, SWP_SHOWWINDOW = 0x0040
+            user32.SetWindowPos(hwnd, 0, px, py, pw, ph, 0x0004 | 0x0040)
             user32.SetForegroundWindow(hwnd)
         except Exception:
             pass
 
-    def update_cursor_at(self, global_pt: QPoint):
-        """Update crosshair and selection rect from global cursor position (called by timer)."""
-        in_screen = self.screen_geo.contains(global_pt)
+    def update_cursor_at(self, phys_gx, phys_gy=None):
+        """Update crosshair and selection rect from physical cursor position (called by timer)."""
+        if phys_gy is None:
+            if hasattr(phys_gx, "x") and hasattr(phys_gx, "y"):
+                phys_gy = int(phys_gx.y())
+                phys_gx = int(phys_gx.x())
+            elif isinstance(phys_gx, (tuple, list)):
+                phys_gx, phys_gy = int(phys_gx[0]), int(phys_gx[1])
+            else:
+                return
+
+        px, py, pw, ph = self.phys_rect
+        in_screen = (px <= phys_gx < px + pw and py <= phys_gy < py + ph)
         if in_screen or self.is_selecting:
-            local_pt = global_pt - self.screen_geo.topLeft()
+            local_pt = QPoint(phys_gx - px, phys_gy - py)
             if self.current_pos != local_pt:
                 self.current_pos = local_pt
                 self.update()
@@ -123,25 +141,26 @@ class SnipperCanvasOverlay(QWidget):
 
         if sel_rect.width() >= 5 and sel_rect.height() >= 5:
             # 1. Native 1:1 hardware pixel crop
-            nx = int(round(sel_rect.x() * self.dpr))
-            ny = int(round(sel_rect.y() * self.dpr))
-            nw = max(1, int(round(sel_rect.width() * self.dpr)))
-            nh = max(1, int(round(sel_rect.height() * self.dpr)))
+            nx = max(0, min(sel_rect.x(), self.image.width() - 1))
+            ny = max(0, min(sel_rect.y(), self.image.height() - 1))
+            nw = min(sel_rect.width(), self.image.width() - nx)
+            nh = min(sel_rect.height(), self.image.height() - ny)
             cropped = self.image.copy(nx, ny, nw, nh)
 
             # 2. Sample target color at center of bounding box
-            c_px = int(round((sel_rect.x() + sel_rect.width() // 2) * self.dpr))
-            c_py = int(round((sel_rect.y() + sel_rect.height() // 2) * self.dpr))
+            c_px = nx + nw // 2
+            c_py = ny + nh // 2
             c_px = max(0, min(c_px, self.image.width() - 1))
             c_py = max(0, min(c_py, self.image.height() - 1))
             c_col = self.image.pixelColor(c_px, c_py)
             self.controller.last_sampled_color = c_col.name().upper()
 
-            # 3. Global desktop coordinates (aligned with Qt virtual desktop)
-            gx = self.screen_geo.x() + sel_rect.x()
-            gy = self.screen_geo.y() + sel_rect.y()
-            gw = sel_rect.width()
-            gh = sel_rect.height()
+            # 3. Global desktop physical coordinates (aligned with Win32 virtual desktop)
+            px, py, _, _ = self.phys_rect
+            gx = px + nx
+            gy = py + ny
+            gw = nw
+            gh = nh
 
             # 4. Save snippet image
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -167,7 +186,6 @@ class SnipperCanvasOverlay(QWidget):
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         # 1. 1:1 hardware screenshot
         painter.drawPixmap(self.rect(), self.pixmap)
@@ -179,14 +197,8 @@ class SnipperCanvasOverlay(QWidget):
         if self.is_selecting and self.start_pos and self.current_pos:
             sel_rect = self._get_selected_rect()
             if not sel_rect.isEmpty():
-                # Reveal selection without dark overlay
-                src_rect = QRect(
-                    int(round(sel_rect.x() * self.dpr)),
-                    int(round(sel_rect.y() * self.dpr)),
-                    int(round(sel_rect.width() * self.dpr)),
-                    int(round(sel_rect.height() * self.dpr)),
-                )
-                painter.drawPixmap(sel_rect, self.pixmap, src_rect)
+                # Reveal selection without dark overlay (1:1 physical source rect)
+                painter.drawPixmap(sel_rect, self.pixmap, sel_rect)
 
                 # Bright border
                 pen = QPen(QColor(56, 189, 248), 2, Qt.PenStyle.SolidLine)
@@ -310,9 +322,9 @@ class ScreenSnipper(QDialog):
                 return
 
             # 3. Global cursor tracking: ensures crosshair tracks everywhere across monitors
-            global_pt = QCursor.pos()
+            cur_px, cur_py = get_cursor_pos()
             for ov in self.overlays:
-                ov.update_cursor_at(global_pt)
+                ov.update_cursor_at(cur_px, cur_py)
 
             # 4. OS-level physical drag tracking (guards against swallowed/blocked Qt mouse events)
             if (time.time() - self._start_time) > 0.120:
@@ -321,10 +333,11 @@ class ScreenSnipper(QDialog):
 
                 if l_down and not any_qt_selecting and not self._drag_active_via_os:
                     for ov in self.overlays:
-                        if ov.screen_geo.contains(global_pt):
+                        px, py, pw, ph = ov.phys_rect
+                        if px <= cur_px < px + pw and py <= cur_py < py + ph:
                             self._drag_active_via_os = True
                             self.active_overlay = ov
-                            ov.start_pos = global_pt - ov.screen_geo.topLeft()
+                            ov.start_pos = QPoint(cur_px - px, cur_py - py)
                             ov.current_pos = ov.start_pos
                             ov.is_selecting = True
                             ov.update()
@@ -333,7 +346,8 @@ class ScreenSnipper(QDialog):
                     self._drag_active_via_os = False
                     for ov in self.overlays:
                         if ov.is_selecting:
-                            ov.finish_selection(global_pt - ov.screen_geo.topLeft())
+                            px, py, _, _ = ov.phys_rect
+                            ov.finish_selection(QPoint(cur_px - px, cur_py - py))
                             break
         except Exception:
             pass
@@ -355,10 +369,11 @@ class ScreenSnipper(QDialog):
         for ov in self.overlays:
             ov.show()
         # Find overlay under cursor and raise/activate it
-        cur_pt = QCursor.pos()
+        cur_px, cur_py = get_cursor_pos()
         target = None
         for ov in self.overlays:
-            if ov.screen_geo.contains(cur_pt):
+            px, py, pw, ph = ov.phys_rect
+            if px <= cur_px < px + pw and py <= cur_py < py + ph:
                 target = ov
                 break
         if not target and self.overlays:

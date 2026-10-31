@@ -48,17 +48,15 @@ class NodeScene(QGraphicsScene):
         self.selectionChanged.connect(self._on_selection_changed)
 
     def _on_selection_changed(self):
-        sel = self.selectedItems()
-        node = None
-        if hasattr(self, "_current_selected_node") and self._current_selected_node in sel:
-            node = self._current_selected_node
+        sel = [item for item in self.selectedItems() if isinstance(item, BaseNodeItem)]
+        if len(sel) == 0:
+            self._current_selected_node = None
+        elif len(sel) == 1:
+            self._current_selected_node = sel[0]
         else:
-            for item in sel:
-                if isinstance(item, BaseNodeItem):
-                    node = item
-                    break
-            self._current_selected_node = node
-        self.node_selected.emit(node)
+            if not getattr(self, "_current_selected_node", None) or self._current_selected_node not in sel:
+                self._current_selected_node = sel[0]
+        self.node_selected.emit(self._current_selected_node)
 
     def register_custom_variable(self, var_name: str):
         """Registers a custom variable so it is remembered macro-wide across all node parameter dropdowns."""

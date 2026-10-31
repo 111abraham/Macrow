@@ -25,26 +25,29 @@ from PyQt6.QtGui import (
 )
 from PyQt6.QtWidgets import QDialog, QWidget
 
-from app.core.win32_api import get_cursor_pos
+from app.core.win32_api import user32, get_cursor_pos, get_screen_physical_rect, init_dpi_awareness
 from app.ui.assets import get_app_icon
 
-user32 = ctypes.windll.user32
 gdi32 = ctypes.windll.gdi32
 
 
 def get_real_cursor_pos() -> Tuple[int, int]:
-    """Get exact cursor coordinate from Qt virtual desktop when available, with Win32 fallback."""
-    try:
-        if QGuiApplication.instance():
-            pos = QCursor.pos()
-            return int(pos.x()), int(pos.y())
-    except Exception:
-        pass
+    """Get exact cursor coordinate in 1:1 physical coordinates across all monitors."""
     return get_cursor_pos()
 
 
 def get_pixel_color_at(x: int, y: int) -> Tuple[QColor, str, Tuple[int, int, int]]:
-    """Sample exact pixel color from desktop at global (x, y) across all monitors safely."""
+    """Sample exact pixel color from desktop at global physical (x, y) across all monitors safely."""
+    from app.core.vision import capture_screen_win32_bgra
+    try:
+        arr, rx, ry, rw, rh = capture_screen_win32_bgra(region=(int(x), int(y), 1, 1))
+        if arr is not None and arr.size >= 3:
+            b, g, r = int(arr[0, 0, 0]), int(arr[0, 0, 1]), int(arr[0, 0, 2])
+            hex_code = f"#{r:02X}{g:02X}{b:02X}"
+            return QColor(r, g, b), hex_code, (r, g, b)
+    except Exception:
+        pass
+
     try:
         app = QGuiApplication.instance()
         if app:
@@ -53,32 +56,15 @@ def get_pixel_color_at(x: int, y: int) -> Tuple[QColor, str, Tuple[int, int, int
             if not screen:
                 screen = QGuiApplication.primaryScreen()
             if screen:
-                geo = screen.geometry()
-                dpr = screen.devicePixelRatio()
-                lx = int(pt.x() - geo.x())
-                ly = int(pt.y() - geo.y())
-                px = max(0, int(round(lx * dpr)))
-                py = max(0, int(round(ly * dpr)))
-                pix = screen.grabWindow(0, px, py, 1, 1)
+                px_left, px_top, _, _ = get_screen_physical_rect(screen)
+                lx = max(0, int(x - px_left))
+                ly = max(0, int(y - px_top))
+                pix = screen.grabWindow(0, lx, ly, 1, 1)
                 img = pix.toImage()
                 if not img.isNull() and img.width() > 0 and img.height() > 0:
                     c = img.pixelColor(0, 0)
                     hex_code = f"#{c.red():02X}{c.green():02X}{c.blue():02X}"
                     return c, hex_code, (c.red(), c.green(), c.blue())
-    except Exception:
-        pass
-
-    try:
-        hdc = user32.GetDC(None)
-        if hdc:
-            col = gdi32.GetPixel(hdc, int(x), int(y))
-            user32.ReleaseDC(None, hdc)
-            if col != 0xFFFFFFFF and col != -1:
-                r = col & 0xFF
-                g = (col >> 8) & 0xFF
-                b = (col >> 16) & 0xFF
-                hex_code = f"#{r:02X}{g:02X}{b:02X}"
-                return QColor(r, g, b), hex_code, (r, g, b)
     except Exception:
         pass
 
@@ -90,6 +76,7 @@ class EyeDropperScreenOverlay(QWidget):
 
     def __init__(self, screen, controller: CoordinateEyeDropper):
         super().__init__()
+        init_dpi_awareness()
         self.screen_obj = screen
         self.controller = controller
         self.setWindowFlags(
@@ -99,7 +86,10 @@ class EyeDropperScreenOverlay(QWidget):
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
         self.setScreen(screen)
-        self.setGeometry(screen.geometry())
+
+        self.phys_rect = get_screen_physical_rect(screen)
+        px, py, pw, ph = self.phys_rect
+        self.setGeometry(px, py, pw, ph)
         self.setCursor(Qt.CursorShape.BlankCursor)
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -120,39 +110,59 @@ class EyeDropperScreenOverlay(QWidget):
         self.global_x = 0
         self.global_y = 0
 
-    def update_cursor_at(self, global_pt: QPoint):
-        """Updates sampling and crosshairs for the given global cursor coordinate."""
-        if not self.screen_geo.contains(global_pt):
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.raise_()
+        self.activateWindow()
+        self.setFocus()
+        try:
+            hwnd = int(self.winId())
+            px, py, pw, ph = self.phys_rect
+            # SWP_NOZORDER = 0x0004, SWP_SHOWWINDOW = 0x0040
+            user32.SetWindowPos(hwnd, 0, px, py, pw, ph, 0x0004 | 0x0040)
+            user32.SetForegroundWindow(hwnd)
+        except Exception:
+            pass
+
+    def update_cursor_at(self, phys_gx, phys_gy=None):
+        """Updates sampling and crosshairs for the given global physical cursor coordinate."""
+        if phys_gy is None:
+            if hasattr(phys_gx, "x") and hasattr(phys_gx, "y"):
+                phys_gy = int(phys_gx.y())
+                phys_gx = int(phys_gx.x())
+            elif isinstance(phys_gx, (tuple, list)):
+                phys_gx, phys_gy = int(phys_gx[0]), int(phys_gx[1])
+            else:
+                return
+
+        px, py, pw, ph = self.phys_rect
+        if not (px <= phys_gx < px + pw and py <= phys_gy < py + ph):
             if self.has_cursor:
                 self.has_cursor = False
                 self.update()
             return
 
         self.has_cursor = True
-        self.local_x = global_pt.x() - self.screen_geo.x()
-        self.local_y = global_pt.y() - self.screen_geo.y()
-        self.global_x = global_pt.x()
-        self.global_y = global_pt.y()
+        self.local_x = phys_gx - px
+        self.local_y = phys_gy - py
+        self.global_x = phys_gx
+        self.global_y = phys_gy
 
-        # Map to 1:1 hardware image pixel
-        px = int(round(self.local_x * self.dpr))
-        py = int(round(self.local_y * self.dpr))
         img_w = self.image.width()
         img_h = self.image.height()
-
-        px = max(0, min(px, img_w - 1))
-        py = max(0, min(py, img_h - 1))
+        lx = max(0, min(self.local_x, img_w - 1))
+        ly = max(0, min(self.local_y, img_h - 1))
 
         if img_w > 0 and img_h > 0:
-            self.cur_color = self.image.pixelColor(px, py)
+            self.cur_color = self.image.pixelColor(lx, ly)
             self.cur_hex = f"#{self.cur_color.red():02X}{self.cur_color.green():02X}{self.cur_color.blue():02X}"
             self.cur_rgb = (self.cur_color.red(), self.cur_color.green(), self.cur_color.blue())
 
             # 7x7 grid around cursor
             grid = []
-            for gy in range(py - 3, py + 4):
+            for gy in range(ly - 3, ly + 4):
                 row = []
-                for gx in range(px - 3, px + 4):
+                for gx in range(lx - 3, lx + 4):
                     if 0 <= gx < img_w and 0 <= gy < img_h:
                         row.append(self.image.pixelColor(gx, gy))
                     else:
@@ -381,12 +391,12 @@ class CoordinateEyeDropper(QDialog):
         except Exception:
             pass
 
-        pos = QCursor.pos()
-        self.on_mouse_moved_global(pos)
+        cur_px, cur_py = get_cursor_pos()
+        self.on_mouse_moved_global(cur_px, cur_py)
 
-    def on_mouse_moved_global(self, global_pt: QPoint):
+    def on_mouse_moved_global(self, phys_gx: int, phys_gy: int):
         for ov in self.overlays:
-            ov.update_cursor_at(global_pt)
+            ov.update_cursor_at(phys_gx, phys_gy)
 
     def commit(self, x: int, y: int, hex_col: str, rgb: Tuple[int, int, int]):
         """Commits the sampled coordinate and color, then closes."""

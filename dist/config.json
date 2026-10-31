@@ -16,156 +16,42 @@
     "Macro 2": {
       "steps": [
         {
-          "id": "e52bdda4",
-          "type": "wait_image",
-          "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261028_094655.png",
-          "confidence": 0.85,
-          "action": "none",
-          "button": "left",
-          "timeout": 2.0,
-          "found_next": "8a97b671",
-          "miss_next": "3ec5d1d9",
-          "dt": 150
-        },
-        {
-          "id": "8a97b671",
-          "type": "wheel",
-          "next": "0c251595",
-          "deltaY": 1200,
-          "deltaX": 0,
-          "x": -2098,
-          "y": 379,
-          "dt": 230
-        },
-        {
-          "id": "3ec5d1d9",
-          "type": "wait_image",
-          "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261028_093456.png",
-          "confidence": 0.85,
-          "action": "none",
-          "button": "left",
-          "timeout": 2.0,
-          "found_next": "e2fed3c1",
-          "miss_next": "d17cd228",
-          "dt": 380
-        },
-        {
-          "id": "0c251595",
-          "type": "wait_image",
-          "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261028_095408.png",
-          "confidence": 0.85,
-          "action": "none",
-          "button": "left",
-          "timeout": 2.0,
-          "found_next": "2d77e0bc",
-          "miss_next": "fd671987",
-          "dt": 530
-        },
-        {
-          "id": "e2fed3c1",
-          "type": "wheel",
-          "next": "0b62a657",
-          "deltaY": 3600,
-          "deltaX": 0,
-          "x": -1889,
-          "y": 296,
-          "dt": 610
-        },
-        {
-          "id": "d17cd228",
-          "type": "click",
-          "next": "8f069c50",
-          "x": -2535,
-          "y": 175,
-          "button": "left",
-          "dt": 710
-        },
-        {
-          "id": "2d77e0bc",
-          "type": "click",
-          "next": "fcdabd1c",
-          "x": -1793,
-          "y": 372,
-          "button": "left",
-          "dt": 810
-        },
-        {
-          "id": "fd671987",
-          "type": "click",
+          "id": "10428247",
+          "type": "loop_count",
+          "count": 5,
+          "infinite": true,
+          "var_name": "i",
+          "body_next": "55c5ee19",
           "next": null,
-          "x": -2299,
-          "y": 364,
-          "button": "left",
-          "dt": 910
+          "dt": 10
         },
         {
-          "id": "0b62a657",
+          "id": "55c5ee19",
           "type": "click",
-          "next": "d9ad9eb4",
-          "x": -1474,
-          "y": 561,
-          "button": "left",
-          "dt": 1010
+          "next": "0f1c5c02",
+          "x": -2063,
+          "y": 398,
+          "button": "right",
+          "dt": 110
         },
         {
-          "id": "8f069c50",
-          "type": "move",
-          "next": "a160afcd",
-          "x": -1903,
-          "y": 137,
-          "button": "left",
-          "direct_jump": true,
-          "dt": 1060
-        },
-        {
-          "id": "fcdabd1c",
+          "id": "0f1c5c02",
           "type": "delay",
-          "next": "f1eefe80",
-          "duration": 500,
-          "dt": 1560
+          "next": "21e9b2f9",
+          "duration": 1000,
+          "dt": 1110
         },
         {
-          "id": "d9ad9eb4",
-          "type": "wait_image",
-          "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261028_094655.png",
-          "confidence": 0.85,
-          "action": "click",
-          "button": "left",
-          "timeout": 2.0,
-          "found_next": "8a97b671",
-          "miss_next": null,
-          "dt": 1710
-        },
-        {
-          "id": "a160afcd",
-          "type": "delay",
-          "next": "c405d74b",
-          "duration": 250,
-          "dt": 1960
-        },
-        {
-          "id": "f1eefe80",
+          "id": "21e9b2f9",
           "type": "click",
-          "next": null,
-          "x": -2310,
-          "y": 368,
-          "button": "left",
-          "dt": 2060
-        },
-        {
-          "id": "c405d74b",
-          "type": "wait_image",
-          "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261028_093456.png",
-          "confidence": 0.85,
-          "action": "none",
-          "button": "left",
-          "timeout": 2.0,
-          "found_next": "e2fed3c1",
-          "miss_next": null,
-          "dt": 2210
+          "next": "10428247",
+          "x": -598,
+          "y": 214,
+          "button": "right",
+          "dt": 1210
         }
       ],
-      "duration": 2210,
+      "duration": 1210,
       "graph_data": {
         "nodes": [
           {
@@ -174,8 +60,8 @@
             "node_type": "start",
             "title": "\u25b6 Start",
             "pos": [
-              -319.53516340645643,
-              13.353462954938479
+              107.72925021716844,
+              -212.36886831745824
             ],
             "bypassed": false,
             "properties": {}
@@ -186,8 +72,8 @@
             "node_type": "wait_image",
             "title": "\u23f1 Wait For Image",
             "pos": [
-              323.99392274342057,
-              202.3963158601604
+              932.4829258340137,
+              368.3397752431748
             ],
             "bypassed": false,
             "properties": {
@@ -201,7 +87,8 @@
               "found_next": "e2fed3c1",
               "miss_next": "d17cd228",
               "dt": 150,
-              "action_type": "wait_image"
+              "action_type": "wait_image",
+              "break_loop_on_found": false
             }
           },
           {
@@ -210,8 +97,8 @@
             "node_type": "wheel",
             "title": "\ud83d\udcdc Mouse Wheel",
             "pos": [
-              1669.5316005539225,
-              178.36122273245473
+              2278.0206036445156,
+              344.30468211546895
             ],
             "bypassed": false,
             "properties": {
@@ -232,8 +119,8 @@
             "node_type": "click",
             "title": "\ud83d\uddb1 Mouse Click",
             "pos": [
-              607.9568893164015,
-              341.8335209520832
+              1216.4458924069945,
+              507.7769803350975
             ],
             "bypassed": false,
             "properties": {
@@ -253,8 +140,8 @@
             "node_type": "click",
             "title": "\ud83d\uddb1 Mouse Click",
             "pos": [
-              1968.2038794178097,
-              183.3843851204638
+              2576.692882508403,
+              349.3278445034781
             ],
             "bypassed": false,
             "properties": {
@@ -269,8 +156,8 @@
             "node_type": "wait_image",
             "title": "\u23f1 Wait For Image",
             "pos": [
-              1387.7089475745988,
-              317.97085208886205
+              1996.197950665192,
+              483.91431147187643
             ],
             "bypassed": false,
             "properties": {
@@ -284,7 +171,8 @@
               "found_next": "e2fed3c1",
               "miss_next": "d17cd228",
               "dt": 150,
-              "action_type": "wait_image"
+              "action_type": "wait_image",
+              "break_loop_on_found": false
             }
           },
           {
@@ -293,8 +181,8 @@
             "node_type": "move",
             "title": "\ud83c\udff9 Mouse Move",
             "pos": [
-              856.2886303132224,
-              340.5154740265246
+              1464.7776334038153,
+              506.458933409539
             ],
             "bypassed": false,
             "properties": {
@@ -310,8 +198,8 @@
             "node_type": "wait_image",
             "title": "\u23f1 Wait For Image",
             "pos": [
-              2244.026034582831,
-              155.5928258069454
+              2852.515037673424,
+              321.5362851899597
             ],
             "bypassed": false,
             "properties": {
@@ -320,7 +208,8 @@
               "action_type": "wait_image",
               "confidence": 0.85,
               "action": "click",
-              "button": "left"
+              "button": "left",
+              "break_loop_on_found": false
             }
           },
           {
@@ -329,8 +218,8 @@
             "node_type": "wheel",
             "title": "\ud83d\udcdc Mouse Wheel",
             "pos": [
-              3090.2333618628513,
-              -142.0405000327161
+              3207.733828068572,
+              229.31653090417288
             ],
             "bypassed": false,
             "properties": {
@@ -351,8 +240,8 @@
             "node_type": "click",
             "title": "\ud83d\uddb1 Mouse Click",
             "pos": [
-              3749.0181753980105,
-              -234.12191837573263
+              3866.518641603732,
+              137.2351125611563
             ],
             "bypassed": false,
             "properties": {
@@ -367,8 +256,8 @@
             "node_type": "wait_image",
             "title": "\u23f1 Wait For Image",
             "pos": [
-              3437.388078086109,
-              -190.46139499220808
+              3554.8885442918304,
+              180.8956359446809
             ],
             "bypassed": false,
             "properties": {
@@ -377,7 +266,8 @@
               "action_type": "wait_image",
               "confidence": 0.85,
               "action": "none",
-              "button": "left"
+              "button": "left",
+              "break_loop_on_found": false
             }
           },
           {
@@ -386,8 +276,8 @@
             "node_type": "click",
             "title": "\ud83d\uddb1 Mouse Click",
             "pos": [
-              3746.7544323855213,
-              -36.8410465193949
+              3964.456640812646,
+              329.5058973064239
             ],
             "bypassed": false,
             "properties": {
@@ -402,8 +292,8 @@
             "node_type": "click",
             "title": "\ud83d\uddb1 Mouse Click",
             "pos": [
-              4249.0180603034205,
-              -224.2002472841966
+              4366.51852650914,
+              147.15678365269235
             ],
             "bypassed": false,
             "properties": {
@@ -418,8 +308,8 @@
             "node_type": "delay",
             "title": "\u23f3 Delay Wait",
             "pos": [
-              4010.7986467718,
-              -245.20650798802328
+              4128.299112977519,
+              126.15052294886567
             ],
             "bypassed": false,
             "properties": {
@@ -432,8 +322,8 @@
             "node_type": "delay",
             "title": "\u23f3 Delay Wait",
             "pos": [
-              1108.4928542723699,
-              340.22924678798915
+              1716.9818573629632,
+              506.1727061710035
             ],
             "bypassed": false,
             "properties": {
@@ -447,8 +337,8 @@
             "node_type": "wait_image",
             "title": "\u23f1 Wait For Image",
             "pos": [
-              3.8192434662237673,
-              -7.879827450414481
+              698.2507638308575,
+              192.6858911325243
             ],
             "bypassed": false,
             "properties": {
@@ -457,7 +347,94 @@
               "action_type": "wait_image",
               "confidence": 0.85,
               "action": "none",
-              "button": "left"
+              "button": "left",
+              "break_loop_on_found": false
+            }
+          },
+          {
+            "id": "10428247",
+            "class_name": "LoopNodeItem",
+            "node_type": "loop_count",
+            "title": "\ud83d\udd01 Repeat Zone (Loop)",
+            "pos": [
+              293.6417222679663,
+              -214.48036170896341
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "loop_count",
+              "infinite": true,
+              "count": 5,
+              "var_name": "i"
+            }
+          },
+          {
+            "id": "0f1c5c02",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "\u23f3 Delay Wait",
+            "pos": [
+              606.8226514572214,
+              -162.67232185922762
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 1000
+            }
+          },
+          {
+            "id": "4a19574f",
+            "class_name": "VisionNodeItem",
+            "node_type": "wait_image",
+            "title": "\u23f1 Wait For Image",
+            "pos": [
+              480.07446829675854,
+              -424.56700874952014
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "wait_image",
+              "confidence": 0.85,
+              "action": "none",
+              "button": "left",
+              "timeout": 5.0,
+              "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261031_120530.png",
+              "break_loop_on_found": false
+            }
+          },
+          {
+            "id": "21e9b2f9",
+            "class_name": "ActionNodeItem",
+            "node_type": "click",
+            "title": "\ud83d\uddb1 Mouse Click",
+            "pos": [
+              829.2684227621444,
+              -162.74858012553452
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "click",
+              "button": "right",
+              "x": -598,
+              "y": 214
+            }
+          },
+          {
+            "id": "55c5ee19",
+            "class_name": "ActionNodeItem",
+            "node_type": "click",
+            "title": "\ud83d\uddb1 Mouse Click",
+            "pos": [
+              375.5530780028521,
+              -164.25283259693
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "click",
+              "button": "right",
+              "x": -2063,
+              "y": 398
             }
           }
         ],
@@ -547,12 +524,6 @@
             "to_socket_idx": 0
           },
           {
-            "from_node": "100a32d5",
-            "from_socket_idx": 0,
-            "to_node": "e52bdda4",
-            "to_socket_idx": 0
-          },
-          {
             "from_node": "3ec5d1d9",
             "from_socket_idx": 0,
             "to_node": "e2fed3c1",
@@ -563,243 +534,395 @@
             "from_socket_idx": 0,
             "to_node": "0b62a657",
             "to_socket_idx": 0
+          },
+          {
+            "from_node": "100a32d5",
+            "from_socket_idx": 0,
+            "to_node": "10428247",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "10428247",
+            "from_socket_idx": 0,
+            "to_node": "55c5ee19",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "55c5ee19",
+            "from_socket_idx": 0,
+            "to_node": "0f1c5c02",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "0f1c5c02",
+            "from_socket_idx": 0,
+            "to_node": "21e9b2f9",
+            "to_socket_idx": 0
           }
         ],
-        "groups": []
+        "groups": [],
+        "custom_variables": []
       }
     },
     "loop test": {
       "steps": [
         {
-          "id": "95eff203",
-          "type": "loop_count",
-          "count": 5,
-          "infinite": true,
-          "var_name": "i",
-          "body_next": "72504530",
-          "next": null,
+          "id": "16b2002f",
+          "type": "timer",
+          "timer_name": "potion_cd",
+          "mode": "check",
+          "threshold_ms": 5000,
+          "auto_reset": true,
+          "var_name": "elapsed_ms",
+          "found_next": null,
+          "miss_next": "58860093",
           "dt": 10
         },
         {
-          "id": "72504530",
+          "id": "58860093",
+          "type": "loop_count",
+          "count": 3,
+          "infinite": false,
+          "var_name": "wave",
+          "body_next": "a1b08202",
+          "next": "4e413c6f",
+          "dt": 20
+        },
+        {
+          "id": "a1b08202",
           "type": "pixel_color",
-          "x": 500,
-          "y": "",
-          "color": "#AD8F79",
-          "tolerance": 15,
+          "x": 400,
+          "y": 200,
+          "color": "#E11D48",
+          "tolerance": 20,
           "use_region": true,
-          "region_x": 372,
-          "region_y": 490,
-          "region_w": 100,
-          "region_h": 100,
-          "found_next": "e1c5ce32",
-          "miss_next": "324ca1f2",
-          "dt": 30
+          "region_x": -2472,
+          "region_y": 1392,
+          "region_w": 180,
+          "region_h": 40,
+          "found_next": "33f8b94d",
+          "miss_next": null,
+          "dt": 40
         },
         {
-          "id": "152f6b22",
-          "type": "pixel_color",
-          "x": 500,
-          "y": "$obs2",
-          "color": "#B87F4F",
-          "tolerance": 15,
-          "use_region": true,
-          "region_x": 1105,
-          "region_y": 454,
-          "region_w": 85,
-          "region_h": 109,
-          "found_next": "f4794ace",
-          "miss_next": "06873449",
-          "dt": 50
+          "id": "4e413c6f",
+          "type": "wait_image",
+          "template": "",
+          "confidence": 0.85,
+          "action": "none",
+          "button": "left",
+          "timeout": 3.0,
+          "break_loop_on_found": false,
+          "found_next": "dbdf0bf6",
+          "miss_next": null,
+          "dt": 190
         },
         {
-          "id": "e1c5ce32",
-          "type": "math_op",
-          "var_name": "obs1",
-          "operation": "set",
-          "value": "1",
-          "min_val": 100,
-          "max_val": 1000,
-          "next": "af3b3c96",
-          "dt": 60
-        },
-        {
-          "id": "324ca1f2",
-          "type": "math_op",
-          "var_name": "obs1",
-          "operation": "set",
-          "value": "0",
-          "min_val": 100,
-          "max_val": 1000,
-          "next": "af3b3c96",
-          "dt": 70
-        },
-        {
-          "id": "f4794ace",
-          "type": "math_op",
-          "var_name": "obs2",
-          "operation": "set",
-          "value": "1",
-          "min_val": 100,
-          "max_val": 1000,
-          "next": "af3b3c96",
-          "dt": 80
-        },
-        {
-          "id": "06873449",
-          "type": "math_op",
-          "var_name": "obs2",
-          "operation": "set",
-          "value": "0",
-          "min_val": 100,
-          "max_val": 1000,
-          "next": "af3b3c96",
-          "dt": 90
-        },
-        {
-          "id": "af3b3c96",
+          "id": "33f8b94d",
           "type": "compare",
-          "var_a": "$obs1",
+          "var_a": "$pixel_match",
           "op_a": "==",
           "val_a": "1",
           "logic_gate": "OR",
           "enable_cond_b": true,
-          "var_b": "$obs2",
-          "op_b": "==",
-          "val_b": "1",
-          "found_next": "17dbe95d",
-          "miss_next": "95eff203",
-          "dt": 100
+          "var_b": "$potion_cd_elapsed_ms",
+          "op_b": ">=",
+          "val_b": "5000",
+          "found_next": "3afa9622",
+          "miss_next": null,
+          "dt": 200
         },
         {
-          "id": "17dbe95d",
+          "id": "dbdf0bf6",
+          "type": "stop_playback",
+          "dt": 210
+        },
+        {
+          "id": "3afa9622",
+          "type": "ai_vision",
+          "prompt": "Locate enemy boss weak point, click target, and clear popup",
+          "mode": "multi_step",
+          "server_url": "http://localhost:11434/v1",
+          "model_name": "ui-tars-7b",
+          "max_steps": 3,
+          "step_delay_ms": 300,
+          "region_mode": "fullscreen",
+          "mock_fallback": true,
+          "found_next": "b77f14ac",
+          "miss_next": null,
+          "dt": 310
+        },
+        {
+          "id": "b77f14ac",
+          "type": "dblclick",
+          "next": "aa93d6d7",
+          "x": 960,
+          "y": 540,
+          "button": "left",
+          "dt": 410
+        },
+        {
+          "id": "aa93d6d7",
+          "type": "key_down",
+          "next": "8f000eec",
+          "key": "Space",
+          "vk": 32,
+          "hold_duration": 0,
+          "auto_repeat": true,
+          "dt": 460
+        },
+        {
+          "id": "8f000eec",
           "type": "delay",
-          "next": "f2603bdc",
-          "duration": 1000,
-          "dt": 1100
+          "next": "8a3ea2fc",
+          "duration": 300,
+          "dt": 760
         },
         {
-          "id": "f2603bdc",
+          "id": "8a3ea2fc",
+          "type": "key_up",
+          "next": "756542df",
+          "key": "Space",
+          "vk": 32,
+          "dt": 810
+        },
+        {
+          "id": "756542df",
           "type": "key_press",
-          "next": "95eff203",
-          "key": "Windows Key",
-          "vk": 91,
-          "dt": 1150
+          "next": "11d50aed",
+          "key": "E",
+          "vk": 69,
+          "dt": 860
+        },
+        {
+          "id": "11d50aed",
+          "type": "math_op",
+          "var_name": "boss_hits",
+          "operation": "increment",
+          "value": "1",
+          "min_val": 100,
+          "max_val": 1000,
+          "next": "58860093",
+          "dt": 870
         }
       ],
-      "duration": 1150,
+      "duration": 870,
       "graph_data": {
         "nodes": [
           {
-            "id": "bcd9d198",
+            "id": "1c192dba",
             "class_name": "StartNodeItem",
             "node_type": "start",
             "title": "\u25b6 Start",
             "pos": [
-              -87.32437534353761,
-              -827.9025693652025
+              96.48105359094905,
+              166.73317929274165
             ],
             "bypassed": false,
             "properties": {}
           },
           {
-            "id": "71c96ad4",
-            "class_name": "MathNodeItem",
-            "node_type": "math_op",
-            "title": "\ud83d\udd22 Math / Variable",
+            "id": "16b2002f",
+            "class_name": "TimerNodeItem",
+            "node_type": "timer",
+            "title": "\u23f1\ufe0f Timer / Cooldown",
             "pos": [
-              250.0,
+              270.0,
               150.0
             ],
             "bypassed": false,
             "properties": {
-              "var_name": "row",
-              "operation": "set",
-              "value": "1",
-              "action_type": "math_op",
-              "min_val": 100,
-              "max_val": 1000
+              "timer_name": "potion_cd",
+              "mode": "check",
+              "threshold_ms": 5000,
+              "auto_reset": true,
+              "action_type": "timer",
+              "var_name": "elapsed_ms"
             }
           },
           {
-            "id": "121025a1",
+            "id": "58860093",
             "class_name": "LoopNodeItem",
             "node_type": "loop_count",
             "title": "\ud83d\udd01 Repeat Zone (Loop)",
             "pos": [
-              490.0,
-              120.0
+              513.5491899156318,
+              173.10918095617328
             ],
             "bypassed": false,
             "properties": {
               "count": 3,
               "infinite": false,
-              "var_name": "r",
+              "var_name": "wave",
               "action_type": "loop_count"
             }
           },
           {
-            "id": "93c4f0e4",
-            "class_name": "LoopNodeItem",
-            "node_type": "loop_count",
-            "title": "\ud83d\udd01 Repeat Zone (Loop)",
+            "id": "a1b08202",
+            "class_name": "PixelColorNodeItem",
+            "node_type": "pixel_color",
+            "title": "\ud83c\udfa8 Pixel Color Check",
             "pos": [
-              610.0,
-              180.0
+              643.5491899156318,
+              253.1091809561733
             ],
             "bypassed": false,
             "properties": {
-              "count": 3,
-              "infinite": false,
-              "var_name": "c",
-              "action_type": "loop_count"
+              "x": 400,
+              "y": 200,
+              "color": "#E11D48",
+              "tolerance": 20,
+              "use_region": true,
+              "region_x": -2472,
+              "region_y": 1392,
+              "region_w": 180,
+              "region_h": 40,
+              "action_type": "pixel_color"
             }
           },
           {
-            "id": "4cdb33c8",
+            "id": "33f8b94d",
+            "class_name": "CompareNodeItem",
+            "node_type": "compare",
+            "title": "\u2696 Compare / Logic",
+            "pos": [
+              913.5491899156318,
+              253.1091809561733
+            ],
+            "bypassed": false,
+            "properties": {
+              "var_a": "$pixel_match",
+              "op_a": "==",
+              "val_a": "1",
+              "logic_gate": "OR",
+              "var_b": "$potion_cd_elapsed_ms",
+              "op_b": ">=",
+              "val_b": "5000",
+              "action_type": "compare",
+              "enable_cond_b": true
+            }
+          },
+          {
+            "id": "3afa9622",
+            "class_name": "AIVisionNodeItem",
+            "node_type": "ai_vision",
+            "title": "\ud83e\udd16 AI Vision Action",
+            "pos": [
+              1173.5491899156318,
+              213.10918095617328
+            ],
+            "bypassed": false,
+            "properties": {
+              "prompt": "Locate enemy boss weak point, click target, and clear popup",
+              "mode": "multi_step",
+              "max_steps": 3,
+              "action_type": "ai_vision",
+              "server_url": "http://localhost:11434/v1",
+              "model_name": "ui-tars-7b",
+              "step_delay_ms": 300,
+              "region_mode": "fullscreen",
+              "region_x": 0,
+              "region_y": 0,
+              "region_w": 800,
+              "region_h": 600,
+              "mock_fallback": true
+            }
+          },
+          {
+            "id": "b77f14ac",
             "class_name": "ActionNodeItem",
-            "node_type": "click",
-            "title": "\ud83d\uddb1 Mouse Click",
+            "node_type": "dblclick",
+            "title": "\ud83d\uddb1 Double Click",
             "pos": [
-              730.0,
-              240.0
+              1443.5491899156318,
+              213.10918095617328
             ],
             "bypassed": false,
             "properties": {
-              "x": 625,
-              "y": 222,
-              "button": "right",
-              "action_type": "click"
+              "x": 960,
+              "y": 540,
+              "button": "left",
+              "action_type": "dblclick"
             }
           },
           {
-            "id": "8e3c9b50",
+            "id": "aa93d6d7",
+            "class_name": "ActionNodeItem",
+            "node_type": "key_down",
+            "title": "\u2328 Key Down (Hold)",
+            "pos": [
+              1683.5491899156318,
+              213.10918095617328
+            ],
+            "bypassed": false,
+            "properties": {
+              "key": "Space",
+              "vk": 32,
+              "action_type": "key_down",
+              "auto_repeat": true,
+              "hold_duration": 0
+            }
+          },
+          {
+            "id": "8f000eec",
             "class_name": "ActionNodeItem",
             "node_type": "delay",
             "title": "\u23f3 Delay Wait",
             "pos": [
-              970.0,
-              240.0
+              1923.5491899156318,
+              213.10918095617328
             ],
             "bypassed": false,
             "properties": {
-              "duration": 100,
+              "duration": 300,
               "action_type": "delay"
             }
           },
           {
-            "id": "1aa57feb",
+            "id": "8a3ea2fc",
+            "class_name": "ActionNodeItem",
+            "node_type": "key_up",
+            "title": "\u2328 Key Up (Release)",
+            "pos": [
+              2163.549189915632,
+              213.10918095617328
+            ],
+            "bypassed": false,
+            "properties": {
+              "key": "Space",
+              "vk": 32,
+              "action_type": "key_up"
+            }
+          },
+          {
+            "id": "756542df",
+            "class_name": "ActionNodeItem",
+            "node_type": "key_press",
+            "title": "\u2328 Key Press (Tap)",
+            "pos": [
+              2403.549189915632,
+              213.10918095617328
+            ],
+            "bypassed": false,
+            "properties": {
+              "key": "E",
+              "vk": 69,
+              "action_type": "key_press"
+            }
+          },
+          {
+            "id": "11d50aed",
             "class_name": "MathNodeItem",
             "node_type": "math_op",
             "title": "\ud83d\udd22 Math / Variable",
             "pos": [
-              1250.0,
-              320.0
+              2643.549189915632,
+              213.10918095617328
             ],
             "bypassed": false,
             "properties": {
-              "var_name": "row",
-              "operation": "add",
+              "var_name": "boss_hits",
+              "operation": "increment",
               "value": "1",
               "action_type": "math_op",
               "min_val": 100,
@@ -807,439 +930,130 @@
             }
           },
           {
-            "id": "2bfdb6e5",
+            "id": "4e413c6f",
+            "class_name": "VisionNodeItem",
+            "node_type": "wait_image",
+            "title": "\u23f1 Wait For Image",
+            "pos": [
+              2923.1985755947712,
+              304.4788767500029
+            ],
+            "bypassed": false,
+            "properties": {
+              "timeout": 3.0,
+              "action": "none",
+              "action_type": "wait_image",
+              "confidence": 0.85,
+              "button": "left",
+              "template": "",
+              "break_loop_on_found": false
+            }
+          },
+          {
+            "id": "dbdf0bf6",
             "class_name": "StopNodeItem",
             "node_type": "stop_playback",
             "title": "\u23f9 Stop Playback",
             "pos": [
-              1510.0,
-              420.0
+              3181.995611067047,
+              319.84747689168495
             ],
             "bypassed": false,
             "properties": {
               "action_type": "stop_playback"
             }
-          },
-          {
-            "id": "1269aa03",
-            "class_name": "ActionNodeItem",
-            "node_type": "timer",
-            "title": "\u2699 Action",
-            "pos": [
-              916.1744340348608,
-              -190.64053616021872
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "timer",
-              "timer_name": "timer_1",
-              "mode": "check",
-              "threshold_ms": 3000,
-              "auto_reset": true,
-              "var_name": "elapsed_ms"
-            }
-          },
-          {
-            "id": "90e205c4",
-            "class_name": "LoopNodeItem",
-            "node_type": "loop_count",
-            "title": "\ud83d\udd01 Repeat Zone (Loop)",
-            "pos": [
-              582.4020918926487,
-              -257.28305153681856
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "loop_count",
-              "infinite": true,
-              "count": 5,
-              "var_name": "i"
-            }
-          },
-          {
-            "id": "05369f32",
-            "class_name": "PixelColorNodeItem",
-            "node_type": "pixel_color",
-            "title": "\ud83c\udfa8 Pixel Color Check",
-            "pos": [
-              669.1026423204767,
-              -175.50255462324006
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "pixel_color",
-              "x": 500,
-              "y": 300,
-              "color": "#38BDF8",
-              "tolerance": 15,
-              "use_region": false,
-              "region_x": 500,
-              "region_y": 300,
-              "region_w": 100,
-              "region_h": 100
-            }
-          },
-          {
-            "id": "f85439e2",
-            "class_name": "ActionNodeItem",
-            "node_type": "click",
-            "title": "\ud83d\uddb1 Mouse Click",
-            "pos": [
-              1216.5295774319916,
-              -163.84440131442796
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "click"
-            }
-          },
-          {
-            "id": "72504530",
-            "class_name": "PixelColorNodeItem",
-            "node_type": "pixel_color",
-            "title": "\ud83c\udfa8 Pixel Color Check",
-            "pos": [
-              385.130667789446,
-              -773.3678524371096
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "pixel_color",
-              "x": 500,
-              "y": "",
-              "color": "#AD8F79",
-              "tolerance": 15,
-              "use_region": true,
-              "region_x": 372,
-              "region_y": 490,
-              "region_w": 100,
-              "region_h": 100
-            }
-          },
-          {
-            "id": "152f6b22",
-            "class_name": "PixelColorNodeItem",
-            "node_type": "pixel_color",
-            "title": "\ud83c\udfa8 Pixel Color Check",
-            "pos": [
-              391.4632612132541,
-              -596.9283895032788
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "pixel_color",
-              "x": 500,
-              "y": "$obs2",
-              "color": "#B87F4F",
-              "tolerance": 15,
-              "use_region": true,
-              "region_x": 1105,
-              "region_y": 454,
-              "region_w": 85,
-              "region_h": 109
-            }
-          },
-          {
-            "id": "e1c5ce32",
-            "class_name": "MathNodeItem",
-            "node_type": "math_op",
-            "title": "\ud83d\udd22 Math / Variable",
-            "pos": [
-              677.1452843197351,
-              -835.6323629553256
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "math_op",
-              "var_name": "obs1",
-              "operation": "set",
-              "value": "1",
-              "min_val": 100,
-              "max_val": 1000
-            }
-          },
-          {
-            "id": "324ca1f2",
-            "class_name": "MathNodeItem",
-            "node_type": "math_op",
-            "title": "\ud83d\udd22 Math / Variable",
-            "pos": [
-              681.2871468458743,
-              -715.9777088057499
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "math_op",
-              "var_name": "obs1",
-              "operation": "set",
-              "value": "0",
-              "min_val": 100,
-              "max_val": 1000
-            }
-          },
-          {
-            "id": "06873449",
-            "class_name": "MathNodeItem",
-            "node_type": "math_op",
-            "title": "\ud83d\udd22 Math / Variable",
-            "pos": [
-              693.0209705651786,
-              -499.15748441490973
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "math_op",
-              "var_name": "obs2",
-              "operation": "set",
-              "value": "0",
-              "min_val": 100,
-              "max_val": 1000
-            }
-          },
-          {
-            "id": "f4794ace",
-            "class_name": "MathNodeItem",
-            "node_type": "math_op",
-            "title": "\ud83d\udd22 Math / Variable",
-            "pos": [
-              679.7626732570405,
-              -604.5233125373893
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "math_op",
-              "var_name": "obs2",
-              "operation": "set",
-              "value": "1",
-              "min_val": 100,
-              "max_val": 1000
-            }
-          },
-          {
-            "id": "af3b3c96",
-            "class_name": "CompareNodeItem",
-            "node_type": "compare",
-            "title": "\u2696 Compare / Logic",
-            "pos": [
-              1023.6770280667063,
-              -696.9017803671858
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "compare",
-              "var_a": "$obs1",
-              "op_a": "==",
-              "val_a": "1",
-              "logic_gate": "OR",
-              "enable_cond_b": true,
-              "var_b": "$obs2",
-              "op_b": "==",
-              "val_b": "1"
-            }
-          },
-          {
-            "id": "95eff203",
-            "class_name": "LoopNodeItem",
-            "node_type": "loop_count",
-            "title": "\ud83d\udd01 Repeat Zone (Loop)",
-            "pos": [
-              244.86852414737177,
-              -953.9964466782002
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "loop_count",
-              "infinite": true,
-              "count": 5,
-              "var_name": "i"
-            }
-          },
-          {
-            "id": "17dbe95d",
-            "class_name": "ActionNodeItem",
-            "node_type": "delay",
-            "title": "\u23f3 Delay Wait",
-            "pos": [
-              1348.2000365708648,
-              -691.2322771857794
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "delay",
-              "duration": 1000
-            }
-          },
-          {
-            "id": "f2603bdc",
-            "class_name": "ActionNodeItem",
-            "node_type": "key_press",
-            "title": "\u2328 Key Press (Tap)",
-            "pos": [
-              1622.5274156664466,
-              -687.7399409676815
-            ],
-            "bypassed": false,
-            "properties": {
-              "key": "Windows Key",
-              "vk": 91,
-              "action_type": "key_press"
-            }
           }
         ],
         "connections": [
           {
-            "from_node": "71c96ad4",
+            "from_node": "1c192dba",
             "from_socket_idx": 0,
-            "to_node": "121025a1",
+            "to_node": "16b2002f",
             "to_socket_idx": 0
           },
           {
-            "from_node": "121025a1",
-            "from_socket_idx": 0,
-            "to_node": "93c4f0e4",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "93c4f0e4",
-            "from_socket_idx": 0,
-            "to_node": "4cdb33c8",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "4cdb33c8",
-            "from_socket_idx": 0,
-            "to_node": "8e3c9b50",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "93c4f0e4",
+            "from_node": "16b2002f",
             "from_socket_idx": 1,
-            "to_node": "1aa57feb",
+            "to_node": "58860093",
             "to_socket_idx": 0
           },
           {
-            "from_node": "121025a1",
+            "from_node": "58860093",
+            "from_socket_idx": 0,
+            "to_node": "a1b08202",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "a1b08202",
+            "from_socket_idx": 0,
+            "to_node": "33f8b94d",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "33f8b94d",
+            "from_socket_idx": 0,
+            "to_node": "3afa9622",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "3afa9622",
+            "from_socket_idx": 0,
+            "to_node": "b77f14ac",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "b77f14ac",
+            "from_socket_idx": 0,
+            "to_node": "aa93d6d7",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "aa93d6d7",
+            "from_socket_idx": 0,
+            "to_node": "8f000eec",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "8f000eec",
+            "from_socket_idx": 0,
+            "to_node": "8a3ea2fc",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "8a3ea2fc",
+            "from_socket_idx": 0,
+            "to_node": "756542df",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "756542df",
+            "from_socket_idx": 0,
+            "to_node": "11d50aed",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "58860093",
             "from_socket_idx": 1,
-            "to_node": "2bfdb6e5",
+            "to_node": "4e413c6f",
             "to_socket_idx": 0
           },
           {
-            "from_node": "90e205c4",
+            "from_node": "4e413c6f",
             "from_socket_idx": 0,
-            "to_node": "05369f32",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "1269aa03",
-            "from_socket_idx": 0,
-            "to_node": "f85439e2",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "f85439e2",
-            "from_socket_idx": 0,
-            "to_node": "90e205c4",
-            "to_socket_idx": 1
-          },
-          {
-            "from_node": "05369f32",
-            "from_socket_idx": 0,
-            "to_node": "1269aa03",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "72504530",
-            "from_socket_idx": 0,
-            "to_node": "e1c5ce32",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "72504530",
-            "from_socket_idx": 1,
-            "to_node": "324ca1f2",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "152f6b22",
-            "from_socket_idx": 0,
-            "to_node": "f4794ace",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "152f6b22",
-            "from_socket_idx": 1,
-            "to_node": "06873449",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "95eff203",
-            "from_socket_idx": 0,
-            "to_node": "72504530",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "95eff203",
-            "from_socket_idx": 0,
-            "to_node": "152f6b22",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "e1c5ce32",
-            "from_socket_idx": 0,
-            "to_node": "af3b3c96",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "324ca1f2",
-            "from_socket_idx": 0,
-            "to_node": "af3b3c96",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "f4794ace",
-            "from_socket_idx": 0,
-            "to_node": "af3b3c96",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "06873449",
-            "from_socket_idx": 0,
-            "to_node": "af3b3c96",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "af3b3c96",
-            "from_socket_idx": 1,
-            "to_node": "95eff203",
-            "to_socket_idx": 1
-          },
-          {
-            "from_node": "bcd9d198",
-            "from_socket_idx": 0,
-            "to_node": "95eff203",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "af3b3c96",
-            "from_socket_idx": 0,
-            "to_node": "17dbe95d",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "17dbe95d",
-            "from_socket_idx": 0,
-            "to_node": "f2603bdc",
+            "to_node": "dbdf0bf6",
             "to_socket_idx": 0
           }
         ],
         "groups": [],
         "custom_variables": [
-          "$obs1",
-          "$obs",
           "$val1",
-          "$i",
+          "$pixel_match",
+          "$potion_cd_elapsed_ms",
+          "$obs1",
+          "$val2",
           "$obs2",
-          "$val2"
+          "$i",
+          "$obs"
         ]
       }
     },
@@ -7390,18 +7204,669 @@
         "groups": [],
         "custom_variables": []
       }
+    },
+    "Macro 9": {
+      "steps": [
+        {
+          "id": "009d5694",
+          "type": "loop_count",
+          "count": 5,
+          "infinite": true,
+          "var_name": "i",
+          "body_next": "b587f0c7",
+          "next": null,
+          "dt": 10
+        },
+        {
+          "id": "b587f0c7",
+          "type": "pixel_color",
+          "x": 1838,
+          "y": 490,
+          "color": "#F26722",
+          "tolerance": 15,
+          "use_region": true,
+          "region_x": 3582,
+          "region_y": 508,
+          "region_w": 100,
+          "region_h": 100,
+          "found_next": "4e338ead",
+          "miss_next": "009d5694",
+          "dt": 30
+        },
+        {
+          "id": "4e338ead",
+          "type": "click",
+          "next": "da655a72",
+          "x": 3579,
+          "y": 144,
+          "button": "right",
+          "dt": 130
+        },
+        {
+          "id": "da655a72",
+          "type": "delay",
+          "next": "26f304d6",
+          "duration": 1000,
+          "dt": 1130
+        },
+        {
+          "id": "26f304d6",
+          "type": "click",
+          "next": "d6b293f2",
+          "x": 507,
+          "y": 306,
+          "button": "right",
+          "dt": 1230
+        },
+        {
+          "id": "d6b293f2",
+          "type": "delay",
+          "next": "009d5694",
+          "duration": 1000,
+          "dt": 2230
+        }
+      ],
+      "duration": 2230,
+      "graph_data": {
+        "nodes": [
+          {
+            "id": "a5723952",
+            "class_name": "StartNodeItem",
+            "node_type": "start",
+            "title": "\u25b6 Start",
+            "pos": [
+              428.16557346745594,
+              -265.5813504995881
+            ],
+            "bypassed": false,
+            "properties": {}
+          },
+          {
+            "id": "4e338ead",
+            "class_name": "ActionNodeItem",
+            "node_type": "click",
+            "title": "\ud83d\uddb1 Mouse Click",
+            "pos": [
+              959.1559326742388,
+              -188.48647298028317
+            ],
+            "bypassed": false,
+            "properties": {
+              "type": "click",
+              "x": 3579,
+              "y": 144,
+              "button": "right",
+              "dt": 1214,
+              "action_type": "click"
+            }
+          },
+          {
+            "id": "26f304d6",
+            "class_name": "ActionNodeItem",
+            "node_type": "click",
+            "title": "\ud83d\uddb1 Mouse Click",
+            "pos": [
+              1422.4085625705538,
+              -187.31943947981182
+            ],
+            "bypassed": false,
+            "properties": {
+              "type": "click",
+              "x": 507,
+              "y": 306,
+              "button": "right",
+              "dt": 3214,
+              "action_type": "click"
+            }
+          },
+          {
+            "id": "da655a72",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "\u23f3 Delay Wait",
+            "pos": [
+              1192.2134014622134,
+              -187.75671089921735
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 1000
+            }
+          },
+          {
+            "id": "009d5694",
+            "class_name": "LoopNodeItem",
+            "node_type": "loop_count",
+            "title": "\ud83d\udd01 Repeat Zone (Loop)",
+            "pos": [
+              610.4646275413725,
+              -270.3285196122422
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "loop_count",
+              "infinite": true,
+              "count": 5,
+              "var_name": "i"
+            }
+          },
+          {
+            "id": "f402e859",
+            "class_name": "VisionNodeItem",
+            "node_type": "wait_image",
+            "title": "\u23f1 Wait For Image",
+            "pos": [
+              706.8576556701481,
+              -28.848895664789865
+            ],
+            "bypassed": false,
+            "properties": {
+              "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261031_141752.png",
+              "timeout": 5.0,
+              "action_type": "wait_image",
+              "confidence": 0.85,
+              "action": "none",
+              "button": "left",
+              "break_loop_on_found": false
+            }
+          },
+          {
+            "id": "d6b293f2",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "\u23f3 Delay Wait",
+            "pos": [
+              1664.5137574592823,
+              -173.74780203489755
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 1000
+            }
+          },
+          {
+            "id": "b587f0c7",
+            "class_name": "PixelColorNodeItem",
+            "node_type": "pixel_color",
+            "title": "\ud83c\udfa8 Pixel Color Check",
+            "pos": [
+              719.1423394025345,
+              -198.69351623421196
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "pixel_color",
+              "x": 1838,
+              "y": 490,
+              "color": "#F26722",
+              "tolerance": 15,
+              "use_region": true,
+              "region_x": 3582,
+              "region_y": 508,
+              "region_w": 100,
+              "region_h": 100
+            }
+          }
+        ],
+        "connections": [
+          {
+            "from_node": "4e338ead",
+            "from_socket_idx": 0,
+            "to_node": "da655a72",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "da655a72",
+            "from_socket_idx": 0,
+            "to_node": "26f304d6",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "a5723952",
+            "from_socket_idx": 0,
+            "to_node": "009d5694",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "26f304d6",
+            "from_socket_idx": 0,
+            "to_node": "d6b293f2",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "009d5694",
+            "from_socket_idx": 0,
+            "to_node": "b587f0c7",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "b587f0c7",
+            "from_socket_idx": 0,
+            "to_node": "4e338ead",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "b587f0c7",
+            "from_socket_idx": 1,
+            "to_node": "009d5694",
+            "to_socket_idx": 1
+          }
+        ],
+        "groups": [],
+        "custom_variables": []
+      }
+    },
+    "Master Showcase (All Nodes)": {
+      "steps": [],
+      "duration": 0,
+      "graph_data": {
+        "nodes": [
+          {
+            "id": "4a5fcbed",
+            "class_name": "StartNodeItem",
+            "node_type": "start",
+            "title": "\u25b6 Start",
+            "pos": [
+              50.0,
+              150.0
+            ],
+            "bypassed": false,
+            "properties": {}
+          },
+          {
+            "id": "90c5b99e",
+            "class_name": "StickyNoteNodeItem",
+            "node_type": "sticky_note",
+            "title": "Sticky Note",
+            "pos": [
+              270.0,
+              -110.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "text": "\ud83c\udf1f MASTER SHOWCASE: ALL NODES DEMONSTRATION WORKFLOW\n-------------------------------------------------------------\nThis macro exercises all 12 node capabilities in sequence:\n\u2022 \u23f1\ufe0f Timer (Stopwatch/Cooldown): Tracks loop cadence without blocking execution\n\u2022 \ud83d\udd01 Loop (3x Iterations): Drives repeated cycles while exposing  index\n\u2022 \ud83c\udfaf Pixel Color Check (Bounding Box): Samples color within an adjustable region\n\u2022 \u2696\ufe0f Compare Logic Gate: Tests multiple variables ( and timer) with AND/OR branching\n\u2022 \ud83e\udd16 AI Vision Action: Uses multimodal vision reasoning to inspect the screen state\n\u2022 \ud83d\uddb1\ufe0f Actions: Precision clicks, mouse moves, typematic key hold/release, and delays\n\u2022 \ud83e\uddee Math & Variables: Increments counters and sets state\n\u2022 \ud83d\uded1 Safe Stop: Gracefully terminates execution and reports statistics",
+              "color": "#E5D875",
+              "width": 560.0,
+              "height": 210.0,
+              "collapsed": false
+            }
+          },
+          {
+            "id": "2fb70646",
+            "class_name": "StickyNoteNodeItem",
+            "node_type": "sticky_note",
+            "title": "Sticky Note",
+            "pos": [
+              860.0,
+              -80.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "text": "Tip: Double-click any note to edit text, drag [\u2212] to collapse into this pill strip, or resize from corner!",
+              "color": "#86EFAC",
+              "width": 260.0,
+              "height": 120.0,
+              "collapsed": true
+            }
+          },
+          {
+            "id": "9e3b1d3c",
+            "class_name": "TimerNodeItem",
+            "node_type": "timer",
+            "title": "\u23f1\ufe0f Timer / Cooldown",
+            "pos": [
+              270.0,
+              150.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "timer_name": "cadence_cd",
+              "mode": "check",
+              "threshold_ms": 3000,
+              "auto_reset": true,
+              "action_type": "timer",
+              "var_name": "elapsed_ms"
+            }
+          },
+          {
+            "id": "c18c1bb5",
+            "class_name": "LoopNodeItem",
+            "node_type": "loop_count",
+            "title": "\ud83d\udd01 Repeat Zone (Loop)",
+            "pos": [
+              520.0,
+              100.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "count": 3,
+              "infinite": false,
+              "var_name": "cycle",
+              "action_type": "loop_count"
+            }
+          },
+          {
+            "id": "3e945c9f",
+            "class_name": "PixelColorNodeItem",
+            "node_type": "pixel_color",
+            "title": "\ud83c\udfa8 Pixel Color Check",
+            "pos": [
+              650.0,
+              180.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "x": 500,
+              "y": 300,
+              "color": "#06B6D4",
+              "tolerance": 25,
+              "use_region": true,
+              "region_x": 450,
+              "region_y": 250,
+              "region_w": 140,
+              "region_h": 60,
+              "action_type": "pixel_color"
+            }
+          },
+          {
+            "id": "75e166ff",
+            "class_name": "CompareNodeItem",
+            "node_type": "compare",
+            "title": "\u2696 Compare / Logic",
+            "pos": [
+              920.0,
+              180.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "var_a": "",
+              "op_a": ">=",
+              "val_a": "1",
+              "logic_gate": "OR",
+              "var_b": "",
+              "op_b": ">=",
+              "val_b": "0",
+              "action_type": "compare",
+              "enable_cond_b": true
+            }
+          },
+          {
+            "id": "fda8ce6a",
+            "class_name": "AIVisionNodeItem",
+            "node_type": "ai_vision",
+            "title": "\ud83e\udd16 AI Vision Action",
+            "pos": [
+              1180.0,
+              140.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "prompt": "Inspect current screen state, verify active window, and proceed",
+              "mode": "multi_step",
+              "max_steps": 2,
+              "mock_fallback": true,
+              "action_type": "ai_vision",
+              "server_url": "http://localhost:11434/v1",
+              "model_name": "ui-tars-7b",
+              "step_delay_ms": 300,
+              "region_mode": "fullscreen",
+              "region_x": 0,
+              "region_y": 0,
+              "region_w": 800,
+              "region_h": 600
+            }
+          },
+          {
+            "id": "9ea10e2c",
+            "class_name": "ActionNodeItem",
+            "node_type": "dblclick",
+            "title": "\ud83d\uddb1 Double Click",
+            "pos": [
+              1450.0,
+              140.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "x": 960,
+              "y": 540,
+              "button": "left",
+              "action_type": "dblclick"
+            }
+          },
+          {
+            "id": "1c90a97c",
+            "class_name": "ActionNodeItem",
+            "node_type": "key_down",
+            "title": "\u2328 Key Down (Hold)",
+            "pos": [
+              1690.0,
+              140.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "key": "Space",
+              "vk": 32,
+              "action_type": "key_down",
+              "auto_repeat": true,
+              "hold_duration": 0
+            }
+          },
+          {
+            "id": "c3fa035b",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "\u23f3 Delay Wait",
+            "pos": [
+              1930.0,
+              140.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "duration": 150,
+              "action_type": "delay"
+            }
+          },
+          {
+            "id": "b2f7494d",
+            "class_name": "ActionNodeItem",
+            "node_type": "key_up",
+            "title": "\u2328 Key Up (Release)",
+            "pos": [
+              2170.0,
+              140.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "key": "Space",
+              "vk": 32,
+              "action_type": "key_up"
+            }
+          },
+          {
+            "id": "e4ad3632",
+            "class_name": "ActionNodeItem",
+            "node_type": "key_press",
+            "title": "\u2328 Key Press (Tap)",
+            "pos": [
+              2410.0,
+              140.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "key": "E",
+              "vk": 69,
+              "action_type": "key_press"
+            }
+          },
+          {
+            "id": "dfb00fc4",
+            "class_name": "MathNodeItem",
+            "node_type": "math_op",
+            "title": "\ud83d\udd22 Math / Variable",
+            "pos": [
+              2650.0,
+              140.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "var_name": "completed_cycles",
+              "operation": "increment",
+              "value": "1",
+              "action_type": "math_op",
+              "min_val": 100,
+              "max_val": 1000
+            }
+          },
+          {
+            "id": "4370e470",
+            "class_name": "VisionNodeItem",
+            "node_type": "wait_image",
+            "title": "\u23f1 Wait For Image",
+            "pos": [
+              800.0,
+              420.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "timeout": 0.5,
+              "action": "none",
+              "action_type": "wait_image",
+              "confidence": 0.85,
+              "button": "left",
+              "template": "",
+              "break_loop_on_found": false
+            }
+          },
+          {
+            "id": "8d13f9b0",
+            "class_name": "StopNodeItem",
+            "node_type": "stop_playback",
+            "title": "\u23f9 Stop Playback",
+            "pos": [
+              1080.0,
+              420.0
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "stop_playback"
+            }
+          }
+        ],
+        "connections": [
+          {
+            "from_node": "4a5fcbed",
+            "from_socket_idx": 0,
+            "to_node": "9e3b1d3c",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "9e3b1d3c",
+            "from_socket_idx": 1,
+            "to_node": "c18c1bb5",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "c18c1bb5",
+            "from_socket_idx": 0,
+            "to_node": "3e945c9f",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "3e945c9f",
+            "from_socket_idx": 0,
+            "to_node": "75e166ff",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "75e166ff",
+            "from_socket_idx": 0,
+            "to_node": "fda8ce6a",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "75e166ff",
+            "from_socket_idx": 1,
+            "to_node": "fda8ce6a",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "fda8ce6a",
+            "from_socket_idx": 0,
+            "to_node": "9ea10e2c",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "fda8ce6a",
+            "from_socket_idx": 1,
+            "to_node": "9ea10e2c",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "9ea10e2c",
+            "from_socket_idx": 0,
+            "to_node": "1c90a97c",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "1c90a97c",
+            "from_socket_idx": 0,
+            "to_node": "c3fa035b",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "c3fa035b",
+            "from_socket_idx": 0,
+            "to_node": "b2f7494d",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "b2f7494d",
+            "from_socket_idx": 0,
+            "to_node": "e4ad3632",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "e4ad3632",
+            "from_socket_idx": 0,
+            "to_node": "dfb00fc4",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "c18c1bb5",
+            "from_socket_idx": 1,
+            "to_node": "4370e470",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "4370e470",
+            "from_socket_idx": 0,
+            "to_node": "8d13f9b0",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "4370e470",
+            "from_socket_idx": 1,
+            "to_node": "8d13f9b0",
+            "to_socket_idx": 0
+          }
+        ],
+        "groups": [],
+        "custom_variables": []
+      }
     }
   },
   "instances": {
     "1": {
-      "x": 3336,
-      "y": 405,
+      "x": 2663,
+      "y": 208,
       "minimized": false,
-      "selected_macro": "loop test",
+      "selected_macro": "Macro 9",
       "speed": 0.98,
       "repeat": false,
-      "width": 381,
-      "height": 574
+      "width": 399,
+      "height": 470
     }
   },
   "hotkeys": {

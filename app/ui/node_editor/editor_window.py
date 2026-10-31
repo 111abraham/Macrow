@@ -42,6 +42,7 @@ from app.ui.node_editor.node_items import (
     LoopNodeItem,
     StopNodeItem,
     AIVisionNodeItem,
+    StickyNoteNodeItem,
 )
 from app.ui.snippet_tool import ScreenSnipper
 from app.ui.node_editor.undo_manager import UndoManager, serialize_scene, deserialize_scene
@@ -193,6 +194,11 @@ class MacroNodeEditorWindow(QMainWindow):
 
         # Control Flow
         add_menu.addAction("⏹ Stop Playback", lambda: self._add_custom_node(StopNodeItem()))
+        add_menu.addSeparator()
+
+        # Canvas Documentation & Notes
+        add_menu.addSection("DOCUMENTATION & NOTES")
+        add_menu.addAction("📝 Sticky Note", lambda: self._add_custom_node(StickyNoteNodeItem()))
 
         self.add_node_btn.setMenu(add_menu)
         toolbar.addWidget(self.add_node_btn)
@@ -531,21 +537,39 @@ class MacroNodeEditorWindow(QMainWindow):
         self.scene.add_node(start, QPointF(50, 150))
 
         if preset_key in ("master_showcase_all_nodes", "showcase_all"):
-            # Master Showcase: ALL Node Types Connected
-            # Timer -> Loop -> Pixel Color -> Compare Gate -> AI Vision -> DblClick -> Key Down -> Delay -> Key Up -> Key Press -> Math -> Vision -> Stop
-            timer = TimerNodeItem(properties={"timer_name": "potion_cd", "mode": "check", "threshold_ms": 5000, "auto_reset": True})
+            # Master Showcase: ALL Node Types Connected with Interactive Documentation
+            # Sticky Note -> Timer -> Loop -> Pixel Color -> Compare Gate -> AI Vision -> DblClick -> Key Down -> Delay -> Key Up -> Key Press -> Math -> Vision -> Stop
+            note_top = StickyNoteNodeItem(properties={
+                "text": "🌟 MASTER SHOWCASE: ALL NODES DEMONSTRATION WORKFLOW\n-------------------------------------------------------------\nThis macro exercises all 12 node capabilities in sequence:\n• ⏱️ Timer (Stopwatch/Cooldown): Tracks loop cadence without blocking execution\n• 🔁 Loop (3x Iterations): Drives repeated cycles while exposing $cycle index\n• 🎯 Pixel Color Check (Bounding Box): Samples color within an adjustable region\n• ⚖️ Compare Logic Gate: Tests multiple variables ($cycle and timer) with AND/OR branching\n• 🤖 AI Vision Action: Uses multimodal vision reasoning to inspect the screen state\n• 🖱️ Actions: Precision clicks, mouse moves, typematic key hold/release, and delays\n• 🧮 Math & Variables: Increments counters and sets state\n• 🛑 Safe Stop: Gracefully terminates execution and reports statistics",
+                "color": "#E5D875",
+                "width": 560.0,
+                "height": 210.0,
+                "collapsed": False,
+            })
+            self.scene.add_node(note_top, QPointF(270, -110))
+
+            note_pill = StickyNoteNodeItem(properties={
+                "text": "Tip: Double-click any note to edit text, drag [−] to collapse into this pill strip, or resize from corner!",
+                "color": "#86EFAC",
+                "width": 260.0,
+                "height": 120.0,
+                "collapsed": True,
+            })
+            self.scene.add_node(note_pill, QPointF(860, -80))
+
+            timer = TimerNodeItem(properties={"timer_name": "cadence_cd", "mode": "check", "threshold_ms": 3000, "auto_reset": True})
             self.scene.add_node(timer, QPointF(270, 150))
 
-            loop = LoopNodeItem(properties={"count": 3, "infinite": False, "var_name": "wave"})
+            loop = LoopNodeItem(properties={"count": 3, "infinite": False, "var_name": "cycle"})
             self.scene.add_node(loop, QPointF(520, 100))
 
-            pix = PixelColorNodeItem(properties={"x": 400, "y": 200, "color": "#E11D48", "tolerance": 20, "use_region": True, "region_x": 350, "region_y": 150, "region_w": 180, "region_h": 40})
+            pix = PixelColorNodeItem(properties={"x": 500, "y": 300, "color": "#06B6D4", "tolerance": 25, "use_region": True, "region_x": 450, "region_y": 250, "region_w": 140, "region_h": 60})
             self.scene.add_node(pix, QPointF(650, 180))
 
-            comp = CompareNodeItem(properties={"var_a": "$pixel_match", "op_a": "==", "val_a": "1", "logic_gate": "OR", "var_b": "$potion_cd_elapsed_ms", "op_b": ">=", "val_b": "5000"})
+            comp = CompareNodeItem(properties={"var_a": "$cycle", "op_a": ">=", "val_a": "1", "logic_gate": "OR", "var_b": "$cadence_cd_elapsed_ms", "op_b": ">=", "val_b": "0"})
             self.scene.add_node(comp, QPointF(920, 180))
 
-            ai = AIVisionNodeItem(properties={"prompt": "Locate enemy boss weak point, click target, and clear popup", "mode": "multi_step", "max_steps": 3})
+            ai = AIVisionNodeItem(properties={"prompt": "Inspect current screen state, verify active window, and proceed", "mode": "multi_step", "max_steps": 2, "mock_fallback": True})
             self.scene.add_node(ai, QPointF(1180, 140))
 
             dbl = ActionNodeItem("dblclick", {"x": 960, "y": 540, "button": "left"})
@@ -554,7 +578,7 @@ class MacroNodeEditorWindow(QMainWindow):
             kdown = ActionNodeItem("key_down", {"key": "Space", "vk": 32})
             self.scene.add_node(kdown, QPointF(1690, 140))
 
-            delay = ActionNodeItem("delay", {"duration": 300})
+            delay = ActionNodeItem("delay", {"duration": 150})
             self.scene.add_node(delay, QPointF(1930, 140))
 
             kup = ActionNodeItem("key_up", {"key": "Space", "vk": 32})
@@ -563,14 +587,14 @@ class MacroNodeEditorWindow(QMainWindow):
             kpress = ActionNodeItem("key_press", {"key": "E", "vk": 69})
             self.scene.add_node(kpress, QPointF(2410, 140))
 
-            math_node = MathNodeItem(properties={"var_name": "boss_hits", "operation": "increment", "value": "1"})
+            math_node = MathNodeItem(properties={"var_name": "completed_cycles", "operation": "increment", "value": "1"})
             self.scene.add_node(math_node, QPointF(2650, 140))
 
-            vis = VisionNodeItem(properties={"timeout": 3.0, "action": "none"})
+            vis = VisionNodeItem(properties={"timeout": 0.5, "action": "none"})
             self.scene.add_node(vis, QPointF(800, 420))
 
             stop = StopNodeItem()
-            self.scene.add_node(stop, QPointF(1060, 420))
+            self.scene.add_node(stop, QPointF(1080, 420))
 
             # Connections:
             self.scene.add_connection(start.output_sockets[0], timer.input_sockets[0])
@@ -578,7 +602,9 @@ class MacroNodeEditorWindow(QMainWindow):
             self.scene.add_connection(loop.socket_body, pix.input_sockets[0])
             self.scene.add_connection(pix.output_sockets[0], comp.input_sockets[0])
             self.scene.add_connection(comp.socket_true, ai.input_sockets[0])
+            self.scene.add_connection(comp.socket_false, ai.input_sockets[0])
             self.scene.add_connection(ai.socket_success, dbl.input_sockets[0])
+            self.scene.add_connection(ai.socket_fail, dbl.input_sockets[0])
             self.scene.add_connection(dbl.output_sockets[0], kdown.input_sockets[0])
             self.scene.add_connection(kdown.output_sockets[0], delay.input_sockets[0])
             self.scene.add_connection(delay.output_sockets[0], kup.input_sockets[0])
@@ -586,6 +612,7 @@ class MacroNodeEditorWindow(QMainWindow):
             self.scene.add_connection(kpress.output_sockets[0], math_node.input_sockets[0])
             self.scene.add_connection(loop.socket_done, vis.input_sockets[0])
             self.scene.add_connection(vis.socket_found, stop.input_sockets[0])
+            self.scene.add_connection(vis.socket_miss, stop.input_sockets[0])
 
         elif preset_key == "form_filler":
             # Preset 1: Automated Form Filler & Report Exporter

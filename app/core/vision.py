@@ -86,14 +86,15 @@ gdi32.GetDIBits.argtypes = [
 def capture_desktop_composite_qimage(
     region: Optional[Tuple[int, int, int, int]] = None
 ) -> Tuple[Optional[QImage], int, int, int, int]:
-    """Captures desktop screen across all connected monitors using Qt.
-    Handles virtual multi-monitor desktop with negative coordinate offsets.
+    """Captures desktop screen across all connected monitors using Qt (1:1 native hardware resolution).
+    Handles virtual multi-monitor desktop without downscaling or blurring.
     Returns (composite_qimage, offset_x, offset_y, width, height).
     """
     try:
         from PyQt6.QtWidgets import QApplication
         from PyQt6.QtGui import QGuiApplication, QPainter, QImage
         from PyQt6.QtCore import Qt, QPoint, QRect
+        from app.core.win32_api import get_screen_physical_rect
 
         app = QApplication.instance()
         screens = QGuiApplication.screens() if app else []
@@ -106,20 +107,22 @@ def capture_desktop_composite_qimage(
                 if not screen:
                     screen = QGuiApplication.primaryScreen()
                 if screen and rw > 0 and rh > 0:
-                    geo = screen.geometry()
-                    lx = int(rx - geo.x())
-                    ly = int(ry - geo.y())
+                    px_left, px_top, px_w, px_h = get_screen_physical_rect(screen)
+                    lx = max(0, int(rx - px_left))
+                    ly = max(0, int(ry - px_top))
                     pix = screen.grabWindow(0, lx, ly, rw, rh)
                     if not pix.isNull() and pix.width() > 0 and pix.height() > 0:
-                        qimg = pix.toImage().scaled(
-                            rw, rh, Qt.AspectRatioMode.IgnoreAspectRatio, Qt.TransformationMode.SmoothTransformation
-                        ).convertToFormat(QImage.Format.Format_ARGB32)
+                        qimg = pix.toImage().convertToFormat(QImage.Format.Format_ARGB32)
+                        if qimg.width() != rw or qimg.height() != rh:
+                            qimg = qimg.scaled(rw, rh, Qt.AspectRatioMode.IgnoreAspectRatio, Qt.TransformationMode.SmoothTransformation)
                         return qimg, rx, ry, rw, rh
 
-            min_x = min(s.geometry().x() for s in screens)
-            min_y = min(s.geometry().y() for s in screens)
-            max_x = max(s.geometry().x() + s.geometry().width() for s in screens)
-            max_y = max(s.geometry().y() + s.geometry().height() for s in screens)
+            # Compute physical virtual screen bounding box across all monitors
+            screen_rects = [get_screen_physical_rect(s) for s in screens]
+            min_x = min(r[0] for r in screen_rects)
+            min_y = min(r[1] for r in screen_rects)
+            max_x = max(r[0] + r[2] for r in screen_rects)
+            max_y = max(r[1] + r[3] for r in screen_rects)
             vw = max_x - min_x
             vh = max_y - min_y
 
@@ -127,16 +130,9 @@ def capture_desktop_composite_qimage(
                 comp = QImage(vw, vh, QImage.Format.Format_ARGB32)
                 comp.fill(0)
                 p = QPainter(comp)
-                for s in screens:
-                    geo = s.geometry()
+                for s, (sx, sy, sw, sh) in zip(screens, screen_rects):
                     pix = s.grabWindow(0)
-                    p.drawImage(
-                        geo.x() - min_x,
-                        geo.y() - min_y,
-                        pix.toImage().scaled(
-                            geo.width(), geo.height(), Qt.AspectRatioMode.IgnoreAspectRatio, Qt.TransformationMode.SmoothTransformation
-                        ),
-                    )
+                    p.drawImage(sx - min_x, sy - min_y, pix.toImage())
                 p.end()
                 if region is not None:
                     rx, ry, rw, rh = region
@@ -154,27 +150,20 @@ def capture_desktop_composite_qimage(
 def capture_screen_win32_bgra(
     region: Optional[Tuple[int, int, int, int]] = None
 ) -> Tuple[Optional[np.ndarray], int, int, int, int]:
-    """Captures desktop screen across all connected monitors.
+    """Captures desktop screen across all connected monitors at 1:1 physical hardware pixels.
+    Thread-safe Win32 GDI screen capture is used as primary to avoid Qt GUI thread violations
+    and prevent DPI downscaling distortion.
     Returns (bgra_numpy_array, offset_x, offset_y, width, height).
     """
-    # 1. Try Qt multi-screen capture
-    qimg, qx, qy, qw, qh = capture_desktop_composite_qimage(region)
-    if qimg is not None and not qimg.isNull() and qw > 0 and qh > 0:
-        try:
-            qimg_argb = qimg.convertToFormat(QImage.Format.Format_ARGB32)
-            w, h = qimg_argb.width(), qimg_argb.height()
-            ptr = qimg_argb.constBits()
-            ptr.setsize(qimg_argb.sizeInBytes())
-            bpl = qimg_argb.bytesPerLine()
-            arr = np.frombuffer(ptr, dtype=np.uint8).reshape((h, bpl))[:, :w * 4].reshape((h, w, 4)).copy()
-            return arr, qx, qy, w, h
-        except Exception:
-            pass
+    from app.core.win32_api import init_dpi_awareness
+    init_dpi_awareness()
 
-    # 2. Win32 GDI Fallback
+    # 1. Primary: Direct 1:1 Win32 GDI hardware framebuffer capture
     try:
         if region is not None:
-            rx, ry, rw, rh = region
+            rx, ry, rw, rh = [int(v) for v in region]
+            if rw <= 0 or rh <= 0:
+                return None, 0, 0, 0, 0
         else:
             rx = int(user32.GetSystemMetrics(76))  # SM_XVIRTUALSCREEN
             ry = int(user32.GetSystemMetrics(77))  # SM_YVIRTUALSCREEN
@@ -184,37 +173,51 @@ def capture_screen_win32_bgra(
                 rx, ry, rw, rh = 0, 0, 1920, 1080
 
         hdc_screen = user32.GetDC(None)
-        if not hdc_screen:
-            return None, rx, ry, 0, 0
+        if hdc_screen:
+            hdc_mem = gdi32.CreateCompatibleDC(hdc_screen)
+            hbmp = gdi32.CreateCompatibleBitmap(hdc_screen, rw, rh)
+            old_bmp = gdi32.SelectObject(hdc_mem, hbmp)
 
-        hdc_mem = gdi32.CreateCompatibleDC(hdc_screen)
-        hbmp = gdi32.CreateCompatibleBitmap(hdc_screen, rw, rh)
-        old_bmp = gdi32.SelectObject(hdc_mem, hbmp)
+            # SRCCOPY = 0x00CC0020
+            gdi32.BitBlt(hdc_mem, 0, 0, rw, rh, hdc_screen, rx, ry, 0x00CC0020)
 
-        # SRCCOPY = 0x00CC0020
-        gdi32.BitBlt(hdc_mem, 0, 0, rw, rh, hdc_screen, rx, ry, 0x00CC0020)
+            bmi = BITMAPINFOHEADER()
+            bmi.biSize = ctypes.sizeof(BITMAPINFOHEADER)
+            bmi.biWidth = rw
+            bmi.biHeight = -rh  # Top-down DIB
+            bmi.biPlanes = 1
+            bmi.biBitCount = 32
+            bmi.biCompression = 0  # BI_RGB
 
-        bmi = BITMAPINFOHEADER()
-        bmi.biSize = ctypes.sizeof(BITMAPINFOHEADER)
-        bmi.biWidth = rw
-        bmi.biHeight = -rh  # Top-down DIB
-        bmi.biPlanes = 1
-        bmi.biBitCount = 32
-        bmi.biCompression = 0  # BI_RGB
+            buf = (ctypes.c_uint8 * (rw * rh * 4))()
+            gdi32.GetDIBits(hdc_mem, hbmp, 0, rh, ctypes.byref(buf), ctypes.byref(bmi), 0)
 
-        buf = (ctypes.c_uint8 * (rw * rh * 4))()
-        gdi32.GetDIBits(hdc_mem, hbmp, 0, rh, ctypes.byref(buf), ctypes.byref(bmi), 0)
+            # Clean up GDI handles immediately
+            gdi32.SelectObject(hdc_mem, old_bmp)
+            gdi32.DeleteObject(hbmp)
+            gdi32.DeleteDC(hdc_mem)
+            user32.ReleaseDC(None, hdc_screen)
 
-        # Clean up GDI handles immediately
-        gdi32.SelectObject(hdc_mem, old_bmp)
-        gdi32.DeleteObject(hbmp)
-        gdi32.DeleteDC(hdc_mem)
-        user32.ReleaseDC(None, hdc_screen)
-
-        arr = np.frombuffer(buf, dtype=np.uint8).reshape((rh, rw, 4))
-        return arr, rx, ry, rw, rh
+            arr = np.frombuffer(buf, dtype=np.uint8).reshape((rh, rw, 4))
+            return arr, rx, ry, rw, rh
     except Exception:
-        return None, 0, 0, 0, 0
+        pass
+
+    # 2. Fallback: Qt multi-screen capture
+    try:
+        qimg, qx, qy, qw, qh = capture_desktop_composite_qimage(region)
+        if qimg is not None and not qimg.isNull() and qw > 0 and qh > 0:
+            qimg_argb = qimg.convertToFormat(QImage.Format.Format_ARGB32)
+            w, h = qimg_argb.width(), qimg_argb.height()
+            ptr = qimg_argb.constBits()
+            ptr.setsize(qimg_argb.sizeInBytes())
+            bpl = qimg_argb.bytesPerLine()
+            arr = np.frombuffer(ptr, dtype=np.uint8).reshape((h, bpl))[:, :w * 4].reshape((h, w, 4)).copy()
+            return arr, qx, qy, w, h
+    except Exception:
+        pass
+
+    return None, 0, 0, 0, 0
 
 
 def capture_screen(region: Optional[Tuple[int, int, int, int]] = None) -> QImage:

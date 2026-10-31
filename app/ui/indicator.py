@@ -169,6 +169,11 @@ class RegionBadgeOverlay(QWidget):
 
         self.setGeometry(bx, by, pw, badge_h)
         self.show()
+        try:
+            hwnd = int(self.winId())
+            user32.SetWindowPos(hwnd, 0, bx, by, pw, badge_h, 0x0010 | 0x0040)
+        except Exception:
+            pass
         self.update()
 
     def mousePressEvent(self, event):
@@ -317,6 +322,11 @@ class RegionHighlightOverlay(QWidget):
 
         self.setGeometry(self.region_rect)
         self.show()
+        try:
+            hwnd = int(self.winId())
+            user32.SetWindowPos(hwnd, 0, ix, iy, iw, ih, 0x0010 | 0x0040)
+        except Exception:
+            pass
         self.badge_overlay.update_badge(
             ix, iy, iw, ih, label, self.safe_accent_color, self.target_color
         )

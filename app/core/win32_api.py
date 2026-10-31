@@ -275,15 +275,50 @@ def init_dpi_awareness():
     return False
 
 
+class MONITORINFOEXW(ctypes.Structure):
+    _fields_ = [
+        ("cbSize", wintypes.DWORD),
+        ("rcMonitor", RECT),
+        ("rcWork", RECT),
+        ("dwFlags", wintypes.DWORD),
+        ("szDevice", wintypes.WCHAR * 32),
+    ]
+
+
+def get_screen_physical_rect(screen) -> tuple:
+    """Returns (left, top, width, height) in 1:1 Win32 physical desktop coordinates for a QScreen."""
+    try:
+        init_dpi_awareness()
+        center = screen.geometry().center()
+        pt = POINT(int(center.x()), int(center.y()))
+        hMon = user32.MonitorFromPoint(pt, 2)  # MONITOR_DEFAULTTONEAREST = 2
+        if hMon:
+            info = MONITORINFOEXW()
+            info.cbSize = ctypes.sizeof(MONITORINFOEXW)
+            if user32.GetMonitorInfoW(hMon, ctypes.byref(info)):
+                r = info.rcMonitor
+                return int(r.left), int(r.top), int(r.right - r.left), int(r.bottom - r.top)
+    except Exception:
+        pass
+    geo = screen.geometry()
+    dpr = screen.devicePixelRatio()
+    return int(geo.x()), int(geo.y()), int(round(geo.width() * dpr)), int(round(geo.height() * dpr))
+
+
 def get_cursor_pos():
-    """Return current cursor position (x, y) as tuple of ints."""
+    """Return current cursor position (x, y) as tuple of ints in 1:1 physical coordinates."""
     pt = POINT()
     user32.GetCursorPos(ctypes.byref(pt))
     return int(pt.x), int(pt.y)
 
 
 def set_cursor_pos(x, y):
-    """Set cursor position using Qt multi-monitor aware mapper when available, with Win32 fallback."""
+    """Set hardware cursor position at screen physical coordinate (x, y) across all monitors."""
+    try:
+        if bool(user32.SetCursorPos(int(x), int(y))):
+            return True
+    except Exception:
+        pass
     try:
         from PyQt6.QtWidgets import QApplication
         from PyQt6.QtGui import QCursor
@@ -293,7 +328,7 @@ def set_cursor_pos(x, y):
             return True
     except Exception:
         pass
-    return bool(user32.SetCursorPos(int(x), int(y)))
+    return False
 
 
 def is_point_in_own_process(x, y, own_pid=None):

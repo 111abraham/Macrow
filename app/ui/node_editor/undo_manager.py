@@ -13,11 +13,15 @@ from app.ui.node_editor.node_items import (
     ActionNodeItem,
     VisionNodeItem,
     IfConditionNodeItem,
+    CompareNodeItem,
+    TimerNodeItem,
     MathNodeItem,
     PixelColorNodeItem,
     HotkeyNodeItem,
     LoopNodeItem,
     StopNodeItem,
+    AIVisionNodeItem,
+    StickyNoteNodeItem,
 )
 
 
@@ -26,11 +30,15 @@ NODE_CLASS_MAP = {
     "ActionNodeItem": ActionNodeItem,
     "VisionNodeItem": VisionNodeItem,
     "IfConditionNodeItem": IfConditionNodeItem,
+    "CompareNodeItem": CompareNodeItem,
+    "TimerNodeItem": TimerNodeItem,
     "MathNodeItem": MathNodeItem,
     "PixelColorNodeItem": PixelColorNodeItem,
     "HotkeyNodeItem": HotkeyNodeItem,
     "LoopNodeItem": LoopNodeItem,
     "StopNodeItem": StopNodeItem,
+    "AIVisionNodeItem": AIVisionNodeItem,
+    "StickyNoteNodeItem": StickyNoteNodeItem,
 }
 
 

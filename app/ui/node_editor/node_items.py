@@ -1276,3 +1276,241 @@ class AIVisionNodeItem(BaseNodeItem):
     def clone(self) -> "AIVisionNodeItem":
         return AIVisionNodeItem(properties=dict(self.properties))
 
+
+class StickyNoteNodeItem(BaseNodeItem):
+    """Collapsible and resizable sticky note / comment node for graph documentation."""
+
+    def __init__(
+        self,
+        node_type: str = "sticky_note",
+        properties: Optional[Dict[str, Any]] = None,
+        parent=None,
+    ):
+        super().__init__(
+            title="Sticky Note",
+            node_type="sticky_note",
+            color=QColor(229, 216, 117),  # Pastel yellow #E5D875
+            parent=parent,
+        )
+        self.properties = dict(properties) if properties else {}
+        self.properties.setdefault("text", "this are the social media automation nodes")
+        self.properties.setdefault("collapsed", False)
+        self.properties.setdefault("color", "#E5D875")
+        self.properties.setdefault("width", 220.0)
+        self.properties.setdefault("height", 160.0)
+
+        self.width = float(self.properties.get("width", 220.0))
+        self.height = float(self.properties.get("height", 160.0))
+        self.collapsed = bool(self.properties.get("collapsed", False))
+
+        # No input/output execution sockets for comment/sticky note
+        self.input_sockets = []
+        self.output_sockets = []
+
+        self._is_resizing = False
+        self._resize_start_scene = None
+        self._resize_start_size = None
+
+    def boundingRect(self) -> QRectF:
+        h = 28.0 if self.collapsed else self.height
+        return QRectF(-4, -4, self.width + 8, h + 8)
+
+    def get_collapse_btn_rect(self) -> QRectF:
+        if self.collapsed:
+            return QRectF(4, 3, 22, 22)
+        return QRectF(4, 3, 20, 16)
+
+    def get_resize_grip_rect(self) -> QRectF:
+        if self.collapsed:
+            return QRectF()
+        return QRectF(self.width - 16, self.height - 16, 16, 16)
+
+    def toggle_collapse(self):
+        self.prepareGeometryChange()
+        self.collapsed = not self.collapsed
+        self.properties["collapsed"] = self.collapsed
+        self.update()
+        if self.scene() and hasattr(self.scene(), "scene_modified"):
+            self.scene().scene_modified.emit()
+
+    def set_size(self, w: float, h: float):
+        self.prepareGeometryChange()
+        self.width = max(140.0, float(w))
+        self.height = max(70.0, float(h))
+        self.properties["width"] = self.width
+        self.properties["height"] = self.height
+        self.update()
+
+    def set_text(self, text: str):
+        self.properties["text"] = str(text)
+        self.update()
+
+    def set_note_color(self, hex_color: str):
+        self.properties["color"] = str(hex_color)
+        self.accent_color = QColor(hex_color)
+        self.update()
+
+    def mousePressEvent(self, event):
+        btn_rect = self.get_collapse_btn_rect()
+        if btn_rect.contains(event.pos()):
+            self.toggle_collapse()
+            event.accept()
+            return
+
+        if not self.collapsed:
+            grip_rect = self.get_resize_grip_rect()
+            if grip_rect.contains(event.pos()):
+                self._is_resizing = True
+                self._resize_start_scene = event.scenePos()
+                self._resize_start_size = (self.width, self.height)
+                event.accept()
+                return
+
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if self._is_resizing and self._resize_start_scene and self._resize_start_size:
+            delta = event.scenePos() - self._resize_start_scene
+            new_w = max(140.0, self._resize_start_size[0] + delta.x())
+            new_h = max(70.0, self._resize_start_size[1] + delta.y())
+            self.set_size(new_w, new_h)
+            event.accept()
+            return
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        if self._is_resizing:
+            self._is_resizing = False
+            self._resize_start_scene = None
+            self._resize_start_size = None
+            if self.scene() and hasattr(self.scene(), "scene_modified"):
+                self.scene().scene_modified.emit()
+            event.accept()
+            return
+        super().mouseReleaseEvent(event)
+
+    def mouseDoubleClickEvent(self, event):
+        from PyQt6.QtWidgets import QInputDialog
+        cur_text = self.properties.get("text", "")
+        text, ok = QInputDialog.getMultiLineText(
+            None, "Edit Sticky Note", "Note Content:", cur_text
+        )
+        if ok and text is not None:
+            self.set_text(text)
+            if self.scene() and hasattr(self.scene(), "scene_modified"):
+                self.scene().scene_modified.emit()
+        event.accept()
+
+    def paint(self, painter: QPainter, option, widget=None):
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        base_hex = self.properties.get("color", "#E5D875")
+        bg_col = QColor(base_hex)
+        if not bg_col.isValid():
+            bg_col = QColor("#E5D875")
+
+        is_sel = self.isSelected()
+        text_content = str(self.properties.get("text", ""))
+
+        if self.collapsed:
+            # 1. Collapsed state: Sleek rounded pill / capsule strip (height 28.0)
+            pill_h = 28.0
+            pill_rect = QRectF(0, 0, self.width, pill_h)
+            radius = pill_h / 2.0
+
+            # Background capsule
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(QBrush(bg_col))
+            painter.drawRoundedRect(pill_rect, radius, radius)
+
+            # Border
+            if is_sel:
+                painter.setPen(QPen(QColor(251, 146, 60), 2.2))
+            else:
+                painter.setPen(QPen(bg_col.darker(120), 1.0))
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawRoundedRect(pill_rect, radius, radius)
+
+            # Left [+] Expand button
+            btn_r = self.get_collapse_btn_rect()
+            painter.setPen(QColor(15, 23, 42))
+            painter.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
+            painter.drawText(btn_r, Qt.AlignmentFlag.AlignCenter, "+")
+
+            # Subtle vertical separator after [+] button
+            painter.setPen(QPen(bg_col.darker(115), 1.0))
+            painter.drawLine(int(btn_r.right() + 3), 5, int(btn_r.right() + 3), int(pill_h - 5))
+
+            # Truncated single-line text with ellipsis
+            text_rect = QRectF(btn_r.right() + 8, 0, self.width - btn_r.right() - 16, pill_h)
+            painter.setFont(QFont("Segoe UI", 9, QFont.Weight.Normal))
+            painter.setPen(QColor(15, 23, 42))
+            metrics = painter.fontMetrics()
+            first_line = text_content.strip().split("\n")[0] if text_content else "Sticky Note"
+            elided = metrics.elidedText(first_line, Qt.TextElideMode.ElideRight, int(text_rect.width()))
+            painter.drawText(text_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, elided)
+
+        else:
+            # 2. Expanded state: Pastel card with header, multi-line text & resize grip
+            card_rect = QRectF(0, 0, self.width, self.height)
+            card_radius = 8.0
+
+            # Background card
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(QBrush(bg_col))
+            painter.drawRoundedRect(card_rect, card_radius, card_radius)
+
+            # Header bar (slightly darker/tinted pastel)
+            hdr_h = 22.0
+            hdr_col = bg_col.darker(106)
+            painter.setBrush(QBrush(hdr_col))
+            hdr_path = QPainterPath()
+            hdr_path.moveTo(0, card_radius)
+            hdr_path.quadTo(0, 0, card_radius, 0)
+            hdr_path.lineTo(self.width - card_radius, 0)
+            hdr_path.quadTo(self.width, 0, self.width, card_radius)
+            hdr_path.lineTo(self.width, hdr_h)
+            hdr_path.lineTo(0, hdr_h)
+            hdr_path.closeSubpath()
+            painter.drawPath(hdr_path)
+
+            # Border
+            if is_sel:
+                painter.setPen(QPen(QColor(251, 146, 60), 2.2))
+            else:
+                painter.setPen(QPen(bg_col.darker(120), 1.0))
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawRoundedRect(card_rect, card_radius, card_radius)
+
+            # Top-left [-] Collapse button
+            btn_r = self.get_collapse_btn_rect()
+            painter.setPen(QColor(15, 23, 42))
+            painter.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
+            painter.drawText(btn_r, Qt.AlignmentFlag.AlignCenter, "−")
+
+            # Subtle vertical separator after [-] button
+            painter.setPen(QPen(bg_col.darker(118), 1.0))
+            painter.drawLine(int(btn_r.right() + 3), 3, int(btn_r.right() + 3), int(hdr_h - 3))
+
+            # Multi-line word-wrapped body text
+            body_rect = QRectF(10, hdr_h + 6, self.width - 20, self.height - hdr_h - 18)
+            painter.setFont(QFont("Segoe UI", 10, QFont.Weight.Normal))
+            painter.setPen(QColor(15, 23, 42))
+            painter.drawText(
+                body_rect,
+                Qt.TextFlag.TextWordWrap | Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft,
+                text_content,
+            )
+
+            # Bottom-right resize grip handle (3 diagonal corner lines)
+            grip_pen = QPen(bg_col.darker(135), 1.5)
+            painter.setPen(grip_pen)
+            gw = self.width
+            gh = self.height
+            painter.drawLine(int(gw - 12), int(gh - 4), int(gw - 4), int(gh - 12))
+            painter.drawLine(int(gw - 8), int(gh - 4), int(gw - 4), int(gh - 8))
+            painter.drawLine(int(gw - 4), int(gh - 4), int(gw - 4), int(gh - 4))
+
+    def clone(self) -> "StickyNoteNodeItem":
+        return StickyNoteNodeItem(properties=dict(self.properties))
+

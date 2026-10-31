@@ -40,6 +40,7 @@ from app.ui.node_editor.node_items import (
     LoopNodeItem,
     StopNodeItem,
     AIVisionNodeItem,
+    StickyNoteNodeItem,
 )
 from app.ui.node_editor.node_connection import NodeConnection
 
@@ -223,6 +224,10 @@ class NodeView(QGraphicsView):
         menu.addAction("⏱ Wait For Image (AI Screen)", lambda: add_node_item(VisionNodeItem()))
         menu.addAction("🎯 Loop Until Image Found", lambda: add_node_item(VisionNodeItem(properties={"break_loop_on_found": True})))
         menu.addAction("⏹ Stop Playback", lambda: add_node_item(StopNodeItem()))
+
+        menu.addSeparator()
+        menu.addSection("DOCUMENTATION & ANNOTATION")
+        menu.addAction("📝 Sticky Note (Canvas Note)", lambda: add_node_item(StickyNoteNodeItem()))
 
         menu.exec(global_pos)
 

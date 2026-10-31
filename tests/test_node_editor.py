@@ -1944,6 +1944,125 @@ class TestNodeEditor(unittest.TestCase):
             self.assertIn("graph_data", macro_obj)
             self.assertEqual(len(macro_obj["graph_data"]["nodes"]), 1)
 
+    def test_sticky_note_item_properties_and_collapse(self):
+        from app.ui.node_editor.node_items import StickyNoteNodeItem
+        note = StickyNoteNodeItem(properties={
+            "text": "test note content",
+            "color": "#E5D875",
+            "width": 240.0,
+            "height": 180.0,
+            "collapsed": False,
+        })
+        self.assertEqual(note.width, 240.0)
+        self.assertEqual(note.height, 180.0)
+        self.assertFalse(note.collapsed)
+        self.assertEqual(note.properties["text"], "test note content")
+
+        # Test collapse toggle
+        note.toggle_collapse()
+        self.assertTrue(note.collapsed)
+        self.assertTrue(note.properties["collapsed"])
+        b_rect = note.boundingRect()
+        self.assertEqual(b_rect.height(), 36.0)  # 28 + 8
+
+        # Test re-expand toggle
+        note.toggle_collapse()
+        self.assertFalse(note.collapsed)
+        self.assertFalse(note.properties["collapsed"])
+
+        # Test resize
+        note.set_size(300.0, 220.0)
+        self.assertEqual(note.width, 300.0)
+        self.assertEqual(note.height, 220.0)
+
+        # Test text update
+        note.set_text("updated note")
+        self.assertEqual(note.properties["text"], "updated note")
+
+    def test_sticky_note_serialization_and_deserialization(self):
+        from app.ui.node_editor.node_items import StickyNoteNodeItem
+        from app.ui.node_editor.undo_manager import serialize_scene, deserialize_scene
+
+        note = StickyNoteNodeItem(properties={
+            "text": "Workflow explanation",
+            "color": "#7DD3FC",
+            "width": 250.0,
+            "height": 190.0,
+            "collapsed": True,
+        })
+        self.scene.add_node(note, QPointF(100, 100))
+        data = serialize_scene(self.scene)
+
+        # Deserialize into new scene
+        new_scene = NodeScene()
+        deserialize_scene(new_scene, data)
+        self.assertEqual(len(new_scene.nodes), 1)
+        restored = new_scene.nodes[0]
+        self.assertIsInstance(restored, StickyNoteNodeItem)
+        self.assertEqual(restored.properties["text"], "Workflow explanation")
+        self.assertEqual(restored.properties["color"], "#7DD3FC")
+        self.assertEqual(restored.width, 250.0)
+        self.assertEqual(restored.height, 190.0)
+        self.assertTrue(restored.collapsed)
+
+    def test_sticky_note_ignored_in_graph_compilation(self):
+        from app.ui.node_editor.node_items import StickyNoteNodeItem
+        start = StartNodeItem()
+        act = ActionNodeItem("click", {"x": 500, "y": 500})
+        note = StickyNoteNodeItem(properties={"text": "Documentation only"})
+
+        self.scene.add_node(start, QPointF(50, 100))
+        self.scene.add_node(act, QPointF(250, 100))
+        self.scene.add_node(note, QPointF(150, 300))
+
+        self.scene.add_connection(start.output_sockets[0], act.input_sockets[0])
+        compiled = graph_to_macro(self.scene)
+
+        # Sticky note has no sockets, so compiled sequence contains only Start -> Action (1 macro step)
+        self.assertEqual(len(compiled), 1)
+        self.assertEqual(compiled[0]["type"], "click")
+
+    def test_selection_changed_single_node_emission(self):
+        from app.ui.node_editor.node_items import ActionNodeItem
+        n1 = ActionNodeItem("click", {"x": 100, "y": 100})
+        n2 = ActionNodeItem("move", {"x": 200, "y": 200})
+        self.scene.add_node(n1, QPointF(100, 100))
+        self.scene.add_node(n2, QPointF(300, 100))
+
+        emitted = []
+        self.scene.node_selected.connect(lambda n: emitted.append(n))
+
+        # Select n1
+        self.scene.clearSelection()
+        n1.setSelected(True)
+        self.assertEqual(self.scene._current_selected_node, n1)
+
+        # Select n2
+        self.scene.clearSelection()
+        n2.setSelected(True)
+        self.assertEqual(self.scene._current_selected_node, n2)
+
+    def test_win32_physical_coordinates_and_gdi_capture(self):
+        from app.core.win32_api import get_screen_physical_rect, set_cursor_pos, get_cursor_pos
+        from app.core.vision import capture_screen_win32_bgra
+        from PyQt6.QtGui import QGuiApplication
+
+        screens = QGuiApplication.screens()
+        self.assertGreater(len(screens), 0)
+
+        for s in screens:
+            rect = get_screen_physical_rect(s)
+            self.assertEqual(len(rect), 4)
+            self.assertGreater(rect[2], 0)  # width > 0
+            self.assertGreater(rect[3], 0)  # height > 0
+
+        # Test small GDI capture region
+        bgra, rx, ry, rw, rh = capture_screen_win32_bgra(region=(0, 0, 50, 50))
+        self.assertIsNotNone(bgra)
+        self.assertEqual(bgra.shape, (50, 50, 4))
+        self.assertEqual(rw, 50)
+        self.assertEqual(rh, 50)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -40,6 +40,7 @@ from app.ui.node_editor.node_items import (
     LoopNodeItem,
     StopNodeItem,
     AIVisionNodeItem,
+    StickyNoteNodeItem,
 )
 from app.core.key_catalog import KEY_CATALOG_GROUPS, get_name_for_vk, get_vk_for_key
 from app.ui.snippet_tool import ScreenSnipper
@@ -296,9 +297,9 @@ class PropertyInspector(QWidget):
         badge.setStyleSheet("color: #f1f5f9; background: #1e293b; padding: 6px; border-radius: 4px;")
         self.content_layout.addWidget(badge)
 
-        # Bypass Checkbox (for any node other than Start)
+        # Bypass Checkbox (for executable nodes other than Start / Sticky Note)
         from app.ui.node_editor.node_items import StartNodeItem
-        if not isinstance(node, StartNodeItem):
+        if not isinstance(node, (StartNodeItem, StickyNoteNodeItem)):
             chk_bypass = QCheckBox("🚫 Bypass Node (Skip during playback) [B]")
             chk_bypass.setObjectName("BypassCheckbox")
             chk_bypass.setChecked(getattr(node, "bypassed", False))
@@ -340,6 +341,8 @@ class PropertyInspector(QWidget):
             self._build_stop_controls(node)
         elif isinstance(node, AIVisionNodeItem):
             self._build_ai_vision_controls(node)
+        elif isinstance(node, StickyNoteNodeItem):
+            self._build_sticky_note_controls(node)
         elif isinstance(node, ActionNodeItem):
             self._build_action_controls(node)
         else:
@@ -2377,6 +2380,159 @@ class PropertyInspector(QWidget):
         l_var.setStyleSheet("color: #94a3b8; font-size: 10px; font-style: italic;")
         lay_out.addWidget(l_var)
         layout.addWidget(out_card)
+
+        self.content_layout.addWidget(box)
+
+    def _build_sticky_note_controls(self, node: StickyNoteNodeItem):
+        box = QFrame()
+        box.setStyleSheet("background: #1e293b; border-radius: 6px; padding: 10px;")
+        layout = QVBoxLayout(box)
+        layout.setSpacing(10)
+
+        lbl = QLabel("📝 Sticky Note (Canvas Annotation)")
+        lbl.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+        lbl.setStyleSheet("color: #facc15;")
+        layout.addWidget(lbl)
+
+        # 1. Note Text Editor
+        layout.addWidget(QLabel("Note Content (supports multi-line with word wrap):"))
+        txt_edit = QPlainTextEdit()
+        txt_edit.setStyleSheet("""
+            QPlainTextEdit {
+                background: #0f172a;
+                color: #f1f5f9;
+                border: 1px solid #334155;
+                border-radius: 4px;
+                padding: 6px;
+                font-family: 'Segoe UI', sans-serif;
+                font-size: 11px;
+            }
+        """)
+        txt_edit.setPlainText(str(node.properties.get("text", "")))
+        txt_edit.setPlaceholderText("Type your notes, reminders, or documentation...")
+        txt_edit.setFixedHeight(120)
+
+        def on_text_changed():
+            node.set_text(txt_edit.toPlainText())
+            self.property_changed.emit()
+
+        txt_edit.textChanged.connect(on_text_changed)
+        layout.addWidget(txt_edit)
+
+        # 2. Collapsed State Toggle Checkbox
+        chk_col = QCheckBox("⊟ Collapsed into compact pill strip")
+        chk_col.setChecked(bool(node.collapsed))
+        chk_col.setStyleSheet("color: #f1f5f9; font-weight: bold; font-size: 11px;")
+
+        def on_collapse_toggle(checked):
+            node.prepareGeometryChange()
+            node.collapsed = bool(checked)
+            node.properties["collapsed"] = bool(checked)
+            node.update()
+            if self.node_scene:
+                self.node_scene.scene_modified.emit()
+            self.property_changed.emit()
+
+        chk_col.toggled.connect(on_collapse_toggle)
+        layout.addWidget(chk_col)
+
+        # 3. Pastel Color Presets & Custom Picker
+        layout.addWidget(QLabel("Note Background Color:"))
+        h_colors = QHBoxLayout()
+        h_colors.setSpacing(6)
+
+        color_presets = [
+            ("Yellow", "#E5D875"),
+            ("Cyan", "#7DD3FC"),
+            ("Mint", "#86EFAC"),
+            ("Rose", "#FDA4AF"),
+            ("Purple", "#D8B4FE"),
+            ("Amber", "#FDBA74"),
+            ("Slate", "#475569"),
+        ]
+
+        def make_col_cb(hex_c):
+            def apply_col():
+                node.set_note_color(hex_c)
+                self.property_changed.emit()
+            return apply_col
+
+        for c_name, c_hex in color_presets:
+            btn_c = QPushButton()
+            btn_c.setFixedSize(24, 24)
+            btn_c.setToolTip(f"{c_name} ({c_hex})")
+            btn_c.setStyleSheet(f"""
+                QPushButton {{
+                    background: {c_hex};
+                    border: 1px solid rgba(255, 255, 255, 0.4);
+                    border-radius: 4px;
+                }}
+                QPushButton:hover {{
+                    border: 2px solid white;
+                }}
+            """)
+            btn_c.clicked.connect(make_col_cb(c_hex))
+            h_colors.addWidget(btn_c)
+
+        btn_cust_col = QPushButton("🎨 Custom...")
+        btn_cust_col.setStyleSheet("""
+            QPushButton {
+                background: #334155;
+                color: #e2e8f0;
+                border-radius: 4px;
+                padding: 4px 8px;
+                font-size: 10px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background: #475569;
+            }
+        """)
+
+        def on_pick_custom_color():
+            initial = QColor(node.properties.get("color", "#E5D875"))
+            picked = QColorDialog.getColor(initial, self, "Pick Sticky Note Color")
+            if picked.isValid():
+                node.set_note_color(picked.name().upper())
+                self.property_changed.emit()
+
+        btn_cust_col.clicked.connect(on_pick_custom_color)
+        h_colors.addWidget(btn_cust_col)
+        h_colors.addStretch()
+        layout.addLayout(h_colors)
+
+        # 4. Dimensions (Width & Height)
+        h_dims = QHBoxLayout()
+        h_dims.addWidget(QLabel("Width:"))
+        spn_w = QSpinBox()
+        spn_w.setRange(140, 1600)
+        spn_w.setSingleStep(10)
+        spn_w.setValue(int(node.width))
+        spn_w.setStyleSheet("background: #0f172a; color: #f1f5f9; padding: 3px;")
+
+        h_dims.addWidget(spn_w)
+        h_dims.addWidget(QLabel("Height:"))
+        spn_h = QSpinBox()
+        spn_h.setRange(70, 1200)
+        spn_h.setSingleStep(10)
+        spn_h.setValue(int(node.height))
+        spn_h.setStyleSheet("background: #0f172a; color: #f1f5f9; padding: 3px;")
+        h_dims.addWidget(spn_h)
+
+        def on_dim_changed():
+            node.set_size(float(spn_w.value()), float(spn_h.value()))
+            if self.node_scene:
+                self.node_scene.scene_modified.emit()
+            self.property_changed.emit()
+
+        spn_w.valueChanged.connect(lambda _: on_dim_changed())
+        spn_h.valueChanged.connect(lambda _: on_dim_changed())
+        layout.addLayout(h_dims)
+
+        hint = QLabel("💡 Tip: Double-click the note on canvas to quickly edit text, click '−' to collapse to a sleek pill strip, or drag the bottom-right corner to resize!")
+        hint.setStyleSheet("color: #94a3b8; font-size: 10px; font-style: italic;")
+        hint.setWordWrap(True)
+        layout.addWidget(hint)
 
         self.content_layout.addWidget(box)
 
