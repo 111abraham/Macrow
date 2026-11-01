@@ -2107,6 +2107,110 @@ class TestNodeEditor(unittest.TestCase):
         self.assertEqual(rw, 50)
         self.assertEqual(rh, 50)
 
+    def test_resolve_coord_arithmetic_expressions(self):
+        from app.core.player import MacroPlayer
+        player = MacroPlayer()
+        player.variables = {
+            "found_x": 400,
+            "$found_x": 400,
+            "found_y": 600,
+            "$found_y": 600,
+            "offset": 50,
+            "$offset": 50,
+        }
+
+        # Literal integers & numbers
+        self.assertEqual(player._resolve_coord(122), 122)
+        self.assertEqual(player._resolve_coord("642"), 642)
+        self.assertEqual(player._resolve_coord(None, default=99), 99)
+
+        # Direct variable lookup
+        self.assertEqual(player._resolve_coord("$found_x"), 400)
+        self.assertEqual(player._resolve_coord("found_y"), 600)
+
+        # Arithmetic offsets
+        self.assertEqual(player._resolve_coord("$found_x + 50"), 450)
+        self.assertEqual(player._resolve_coord("$found_y - 25"), 575)
+        self.assertEqual(player._resolve_coord("$found_x + $offset"), 450)
+        self.assertEqual(player._resolve_coord("$found_x * 2 + 10"), 810)
+        self.assertEqual(player._resolve_coord("($found_x + 100) / 2"), 250)
+
+    def test_vision_node_variable_recording_and_compilation(self):
+        from unittest.mock import patch
+        from app.core.player import MacroPlayer
+        from app.ui.node_editor.node_items import StartNodeItem, VisionNodeItem
+        from app.ui.node_editor.graph_compiler import graph_to_macro
+
+        self.scene.clear()
+        start = StartNodeItem()
+        self.scene.add_node(start)
+
+        vnode = VisionNodeItem(properties={
+            "save_coords": True,
+            "var_x": "target_x",
+            "var_y": "target_y",
+        })
+        self.scene.add_node(vnode)
+        self.scene.add_connection(start.output_sockets[0], vnode.input_sockets[0])
+
+        steps = graph_to_macro(self.scene)
+        vstep = next(s for s in steps if s.get("type") == "wait_image")
+        self.assertTrue(vstep.get("save_coords"))
+        self.assertEqual(vstep.get("var_x"), "target_x")
+        self.assertEqual(vstep.get("var_y"), "target_y")
+
+        # Player execution with mocked template detection
+        player = MacroPlayer()
+        mock_detection = (350, 420, 50, 50, 0.95)
+        with patch("app.core.player.wait_for_template_on_screen", return_value=mock_detection):
+            ret = player._execute_step(vstep)
+            self.assertTrue(ret)
+            # Custom variables
+            self.assertEqual(player.variables.get("target_x"), 350)
+            self.assertEqual(player.variables.get("target_y"), 420)
+            # Standard convenience variables
+            self.assertEqual(player.variables.get("$found_x"), 350)
+            self.assertEqual(player.variables.get("$found_y"), 420)
+            self.assertEqual(player.variables.get("$image_found"), 1)
+
+    def test_action_node_modifier_and_input_simulator(self):
+        from app.ui.node_editor.node_items import StartNodeItem, ActionNodeItem
+        from app.ui.node_editor.graph_compiler import graph_to_macro
+        from app.core.input_simulator import InputSimulator
+
+        self.scene.clear()
+        start = StartNodeItem()
+        self.scene.add_node(start)
+
+        click_node = ActionNodeItem(action_type="click", properties={
+            "x": 122,
+            "y": 642,
+            "button": "left",
+            "modifier": "shift",
+        })
+        self.scene.add_node(click_node)
+        self.scene.add_connection(start.output_sockets[0], click_node.input_sockets[0])
+
+        summary = click_node.get_summary_text()
+        self.assertIn("Shift+Click", summary)
+
+        steps = graph_to_macro(self.scene)
+        step = next(s for s in steps if s.get("type") == "click")
+        self.assertEqual(step.get("modifier"), "shift")
+        self.assertEqual(step.get("x"), 122)
+        self.assertEqual(step.get("y"), 642)
+
+        # Test InputSimulator Shift key handling
+        sim = InputSimulator()
+        sim.key_down(16)  # VK_SHIFT
+        self.assertIn(16, sim.keys_held)
+
+        # Calling key_up on Shift must cleanly remove 16 and not leave stuck keys
+        sim.key_up(16)
+        self.assertNotIn(16, sim.keys_held)
+        self.assertNotIn(160, sim.keys_held)
+        self.assertNotIn(161, sim.keys_held)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -4,15 +4,13 @@ Replays recorded mouse moves, clicks, drags, wheels, and keystrokes with accurat
 timing, pause/resume time tracking, speed scaling, loop repetition, and safety resets.
 """
 
+import re
 import time
 import threading
 from typing import Dict, Any, Optional, Tuple, List
-from app.core.input_simulator import InputSimulator
+from app.core.input_simulator import InputSimulator, MODIFIER_VKS
 from app.core.vision import find_template_on_screen, wait_for_template_on_screen, capture_screen_win32_bgra
 from app.core.key_catalog import get_vk_for_key
-
-
-MODIFIER_VKS = {16, 17, 18, 91, 92, 160, 161, 162, 163, 164, 165}  # Shift, Ctrl, Alt, Win keys
 
 
 class MacroPlayer:
@@ -382,17 +380,42 @@ class MacroPlayer:
         if isinstance(val, (int, float)):
             return int(val)
         val_str = str(val).strip()
-        if val_str.startswith("$"):
-            k = val_str.lstrip("$")
-            res = self.variables.get(k, self.variables.get(val_str, default))
-            try:
-                return int(float(res))
-            except (ValueError, TypeError):
-                return default
-        try:
-            return int(float(val_str))
-        except (ValueError, TypeError):
+        if not val_str:
             return default
+
+        # 1. Substitute any $variable tokens with their resolved values
+        def _replace_var(m):
+            vname = m.group(1)
+            res = self.variables.get(vname, self.variables.get(f"${vname}", 0))
+            try:
+                return str(int(float(res)))
+            except (ValueError, TypeError):
+                return "0"
+
+        substituted = re.sub(r"\$([a-zA-Z_][a-zA-Z0-9_]*)", _replace_var, val_str)
+
+        # 2. Check if the string matches a variable name without $ (e.g. "found_x")
+        if substituted in self.variables:
+            try:
+                return int(float(self.variables[substituted]))
+            except (ValueError, TypeError):
+                pass
+
+        # 3. Direct numeric parse
+        try:
+            return int(float(substituted))
+        except (ValueError, TypeError):
+            pass
+
+        # 4. Safe arithmetic expression evaluation (e.g. "450 + 50", "300 - 20", "200 + 10 * 2")
+        if re.fullmatch(r"[\d\s\+\-\*\/\(\)\%]+", substituted):
+            try:
+                res_calc = eval(substituted, {"__builtins__": None}, {})
+                return int(round(float(res_calc)))
+            except Exception:
+                return default
+
+        return default
 
     def _resolve_val(self, val, default=0):
         if val is None:
@@ -454,11 +477,41 @@ class MacroPlayer:
             return True
 
         elif st_type == "click":
-            self.simulator.click(x, y, btn)
+            modifier = str(step.get("modifier", "none")).lower()
+            if modifier and modifier != "none":
+                vk_mod = {"shift": 16, "ctrl": 17, "alt": 18, "win": 91}.get(modifier)
+                if vk_mod:
+                    if x is not None and y is not None:
+                        self.simulator.move_to(x, y)
+                        time.sleep(0.015)
+                    self.simulator.key_down(vk_mod)
+                    time.sleep(0.015)
+                    self.simulator.click(x=None, y=None, button=btn)
+                    time.sleep(0.015)
+                    self.simulator.key_up(vk_mod)
+                else:
+                    self.simulator.click(x, y, btn)
+            else:
+                self.simulator.click(x, y, btn)
             return True
 
         elif st_type == "dblclick":
-            self.simulator.double_click(x, y, btn)
+            modifier = str(step.get("modifier", "none")).lower()
+            if modifier and modifier != "none":
+                vk_mod = {"shift": 16, "ctrl": 17, "alt": 18, "win": 91}.get(modifier)
+                if vk_mod:
+                    if x is not None and y is not None:
+                        self.simulator.move_to(x, y)
+                        time.sleep(0.015)
+                    self.simulator.key_down(vk_mod)
+                    time.sleep(0.015)
+                    self.simulator.double_click(x=None, y=None, button=btn)
+                    time.sleep(0.015)
+                    self.simulator.key_up(vk_mod)
+                else:
+                    self.simulator.double_click(x, y, btn)
+            else:
+                self.simulator.double_click(x, y, btn)
             return True
 
         elif st_type == "wheel":
@@ -566,6 +619,29 @@ class MacroPlayer:
 
                 if res is not None:
                     cx, cy, _, _, _ = res
+
+                    # Record found coordinates to variables for downstream nodes
+                    if step.get("save_coords", True):
+                        var_x = str(step.get("var_x", "found_x")).strip().lstrip("$") or "found_x"
+                        var_y = str(step.get("var_y", "found_y")).strip().lstrip("$") or "found_y"
+
+                        self.variables[var_x] = int(cx)
+                        self.variables[f"${var_x}"] = int(cx)
+                        self.variables[var_y] = int(cy)
+                        self.variables[f"${var_y}"] = int(cy)
+
+                        # Standard variables for convenience and downstream math
+                        self.variables["found_x"] = int(cx)
+                        self.variables["$found_x"] = int(cx)
+                        self.variables["found_y"] = int(cy)
+                        self.variables["$found_y"] = int(cy)
+                        self.variables["image_found"] = 1
+                        self.variables["$image_found"] = 1
+                        self.variables["last_x"] = int(cx)
+                        self.variables["$last_x"] = int(cx)
+                        self.variables["last_y"] = int(cy)
+                        self.variables["$last_y"] = int(cy)
+
                     if self.on_cursor_action:
                         self.on_cursor_action(cx, cy, "vision_found")
                     if action in ("click",):
@@ -578,6 +654,8 @@ class MacroPlayer:
                         pass
                     return True
                 else:
+                    self.variables["image_found"] = 0
+                    self.variables["$image_found"] = 0
                     return False
             except Exception:
                 return False

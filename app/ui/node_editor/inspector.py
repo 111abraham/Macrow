@@ -353,7 +353,7 @@ class PropertyInspector(QWidget):
         self.content_layout.addStretch()
 
     def _get_known_variables(self) -> List[str]:
-        vars_set = {"$i", "$x", "$y", "$pixel_match", "$last_condition"}
+        vars_set = {"$i", "$x", "$y", "$found_x", "$found_y", "$image_found", "$pixel_match", "$last_condition"}
         sc = getattr(self, "node_scene", None) or getattr(self, "scene", None)
         if sc:
             if hasattr(sc, "custom_variables") and sc.custom_variables:
@@ -370,6 +370,13 @@ class PropertyInspector(QWidget):
                         vn = str(n.properties.get("var_name", "")).strip()
                         if vn:
                             vars_set.add(f"${vn.lstrip('$')}")
+                    elif isinstance(n, VisionNodeItem):
+                        vx = str(n.properties.get("var_x", "found_x")).strip()
+                        vy = str(n.properties.get("var_y", "found_y")).strip()
+                        if vx:
+                            vars_set.add(f"${vx.lstrip('$')}")
+                        if vy:
+                            vars_set.add(f"${vy.lstrip('$')}")
                     # Also scan every property value in any node for variables ($var)
                     if hasattr(n, "properties") and isinstance(n.properties, dict):
                         for val in n.properties.values():
@@ -765,6 +772,25 @@ class PropertyInspector(QWidget):
                 combo_btn.currentTextChanged.connect(on_btn_changed)
                 row_btn.addWidget(combo_btn)
                 cb_layout.addLayout(row_btn)
+
+                # Click Modifier (None, Shift, Ctrl, Alt, Win)
+                row_mod = QHBoxLayout()
+                row_mod.addWidget(QLabel("Modifier:"))
+                combo_mod = QComboBox()
+                combo_mod.addItems(["None", "Shift", "Ctrl", "Alt", "Win"])
+                curr_mod = str(node.properties.get("modifier", "None")).capitalize()
+                idx_mod = combo_mod.findText(curr_mod)
+                if idx_mod >= 0:
+                    combo_mod.setCurrentIndex(idx_mod)
+
+                def on_mod_changed(txt):
+                    node.properties["modifier"] = txt.lower()
+                    node.update()
+                    self.property_changed.emit()
+
+                combo_mod.currentTextChanged.connect(on_mod_changed)
+                row_mod.addWidget(combo_mod)
+                cb_layout.addLayout(row_mod)
 
             # Move node options: Direct Jump vs. in-between trajectory
             elif at == "move":
@@ -2799,5 +2825,59 @@ class PropertyInspector(QWidget):
         desc_break.setStyleSheet("color: #94a3b8; font-size: 10px;")
         desc_break.setWordWrap(True)
         layout.addWidget(desc_break)
+
+        # Variable Coordinate Recording section
+        var_box = QFrame()
+        var_box.setStyleSheet("background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 8px;")
+        vb_layout = QVBoxLayout(var_box)
+        vb_layout.setSpacing(6)
+
+        chk_save_vars = QCheckBox("💾 Record Coordinates to Variables")
+        chk_save_vars.setChecked(bool(node.properties.get("save_coords", True)))
+        chk_save_vars.setStyleSheet("color: #38bdf8; font-weight: bold; font-size: 11px;")
+
+        def on_save_vars_toggle(state):
+            checked = (state == Qt.CheckState.Checked.value or state is True)
+            node.properties["save_coords"] = checked
+            node.update()
+            self.property_changed.emit()
+
+        chk_save_vars.stateChanged.connect(on_save_vars_toggle)
+        vb_layout.addWidget(chk_save_vars)
+
+        row_vars = QHBoxLayout()
+        row_vars.addWidget(QLabel("Var X:"))
+        edit_vx = QLineEdit(str(node.properties.get("var_x", "found_x")))
+        edit_vx.setPlaceholderText("found_x")
+        edit_vx.setToolTip("Variable name to store center X coordinate upon detection")
+
+        def on_vx_change(txt):
+            clean_name = txt.strip().lstrip("$")
+            node.properties["var_x"] = clean_name
+            self.property_changed.emit()
+
+        edit_vx.textChanged.connect(on_vx_change)
+        row_vars.addWidget(edit_vx)
+
+        row_vars.addWidget(QLabel("Var Y:"))
+        edit_vy = QLineEdit(str(node.properties.get("var_y", "found_y")))
+        edit_vy.setPlaceholderText("found_y")
+        edit_vy.setToolTip("Variable name to store center Y coordinate upon detection")
+
+        def on_vy_change(txt):
+            clean_name = txt.strip().lstrip("$")
+            node.properties["var_y"] = clean_name
+            self.property_changed.emit()
+
+        edit_vy.textChanged.connect(on_vy_change)
+        row_vars.addWidget(edit_vy)
+        vb_layout.addLayout(row_vars)
+
+        desc_vars = QLabel("💡 Downstream nodes can use $found_x and $found_y, or arithmetic offsets like $found_x + 50 to click near the detected image.")
+        desc_vars.setStyleSheet("color: #94a3b8; font-size: 10px;")
+        desc_vars.setWordWrap(True)
+        vb_layout.addWidget(desc_vars)
+
+        layout.addWidget(var_box)
 
         self.content_layout.addWidget(vbox)

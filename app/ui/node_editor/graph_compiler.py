@@ -295,6 +295,9 @@ def graph_to_macro(scene: NodeScene) -> List[Dict[str, Any]]:
             step["timeout"] = float(props.get("timeout", 5.0))
             is_break = bool(props.get("break_loop_on_found", False))
             step["break_loop_on_found"] = is_break
+            step["save_coords"] = bool(props.get("save_coords", True))
+            step["var_x"] = props.get("var_x", "found_x")
+            step["var_y"] = props.get("var_y", "found_y")
             f_next = get_target_id(0)
             m_next = get_target_id(1)
 
@@ -386,6 +389,7 @@ def graph_to_macro(scene: NodeScene) -> List[Dict[str, Any]]:
                 except (ValueError, TypeError):
                     step["y"] = str(raw_y)
                 step["button"] = props.get("button", "left")
+                step["modifier"] = props.get("modifier", "none")
                 current_dt += 100
                 step["dt"] = current_dt
 

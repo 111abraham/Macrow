@@ -16,42 +16,127 @@
     "Macro 2": {
       "steps": [
         {
-          "id": "10428247",
+          "id": "1fb65ed0",
           "type": "loop_count",
           "count": 5,
           "infinite": true,
           "var_name": "i",
-          "body_next": "55c5ee19",
+          "body_next": "a59e5c63",
           "next": null,
           "dt": 10
         },
         {
-          "id": "55c5ee19",
-          "type": "click",
-          "next": "0f1c5c02",
-          "x": -2063,
-          "y": 398,
-          "button": "right",
-          "dt": 110
+          "id": "a59e5c63",
+          "type": "wait_image",
+          "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261101_213615.png",
+          "confidence": 0.85,
+          "action": "none",
+          "button": "left",
+          "timeout": 2.0,
+          "break_loop_on_found": false,
+          "found_next": "11c14e5f",
+          "miss_next": "79029bea",
+          "dt": 160
         },
         {
-          "id": "0f1c5c02",
+          "id": "11c14e5f",
+          "type": "wheel",
+          "next": "ac0a4baf",
+          "deltaY": 720,
+          "deltaX": 0,
+          "dt": 240
+        },
+        {
+          "id": "79029bea",
+          "type": "wait_image",
+          "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261101_213416.png",
+          "confidence": 0.85,
+          "action": "none",
+          "button": "left",
+          "timeout": 2.0,
+          "break_loop_on_found": false,
+          "found_next": "731e4065",
+          "miss_next": "32de6aa2",
+          "dt": 390
+        },
+        {
+          "id": "ac0a4baf",
+          "type": "wait_image",
+          "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261101_214525.png",
+          "confidence": 0.85,
+          "action": "none",
+          "button": "left",
+          "timeout": 2.0,
+          "break_loop_on_found": false,
+          "found_next": "3ddf5c41",
+          "miss_next": "40f82c15",
+          "dt": 540
+        },
+        {
+          "id": "731e4065",
+          "type": "click",
+          "next": "5e2dac37",
+          "x": 38,
+          "y": 30,
+          "button": "left",
+          "dt": 640
+        },
+        {
+          "id": "32de6aa2",
+          "type": "wait_image",
+          "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261101_215443.png",
+          "confidence": 0.85,
+          "action": "click",
+          "button": "left",
+          "timeout": 2.0,
+          "break_loop_on_found": false,
+          "found_next": "db8cd3ed",
+          "miss_next": null,
+          "dt": 790
+        },
+        {
+          "id": "3ddf5c41",
+          "type": "click",
+          "next": "1fb65ed0",
+          "x": 36,
+          "y": 178,
+          "button": "left",
+          "dt": 890
+        },
+        {
+          "id": "40f82c15",
+          "type": "click",
+          "next": null,
+          "x": 32,
+          "y": 221,
+          "button": "left",
+          "dt": 990
+        },
+        {
+          "id": "5e2dac37",
           "type": "delay",
-          "next": "21e9b2f9",
-          "duration": 1000,
-          "dt": 1110
+          "next": null,
+          "duration": 250,
+          "dt": 1240
         },
         {
-          "id": "21e9b2f9",
+          "id": "db8cd3ed",
           "type": "click",
-          "next": "10428247",
-          "x": -598,
-          "y": 214,
+          "next": "0bcac29f",
+          "x": 52,
+          "y": 1018,
           "button": "right",
-          "dt": 1210
+          "dt": 1340
+        },
+        {
+          "id": "0bcac29f",
+          "type": "delay",
+          "next": null,
+          "duration": 1000,
+          "dt": 2340
         }
       ],
-      "duration": 1210,
+      "duration": 2340,
       "graph_data": {
         "nodes": [
           {
@@ -60,8 +145,8 @@
             "node_type": "start",
             "title": "▶ Start",
             "pos": [
-              107.72925021716844,
-              -212.36886831745824
+              152.37645834234567,
+              -562.4855085808811
             ],
             "bypassed": false,
             "properties": {}
@@ -357,8 +442,8 @@
             "node_type": "loop_count",
             "title": "🔁 Repeat Zone (Loop)",
             "pos": [
-              293.6417222679663,
-              -214.48036170896341
+              352.59807230245826,
+              -806.3134083288874
             ],
             "bypassed": false,
             "properties": {
@@ -374,8 +459,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              606.8226514572214,
-              -162.67232185922762
+              665.7790014917133,
+              -754.5053684791516
             ],
             "bypassed": false,
             "properties": {
@@ -384,33 +469,13 @@
             }
           },
           {
-            "id": "4a19574f",
-            "class_name": "VisionNodeItem",
-            "node_type": "wait_image",
-            "title": "⏱ Wait For Image",
-            "pos": [
-              480.07446829675854,
-              -424.56700874952014
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "wait_image",
-              "confidence": 0.85,
-              "action": "none",
-              "button": "left",
-              "timeout": 5.0,
-              "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261031_120530.png",
-              "break_loop_on_found": false
-            }
-          },
-          {
             "id": "21e9b2f9",
             "class_name": "ActionNodeItem",
             "node_type": "click",
             "title": "🖱 Mouse Click",
             "pos": [
-              829.2684227621444,
-              -162.74858012553452
+              888.2247727966363,
+              -754.5816267454585
             ],
             "bypassed": false,
             "properties": {
@@ -426,8 +491,8 @@
             "node_type": "click",
             "title": "🖱 Mouse Click",
             "pos": [
-              375.5530780028521,
-              -164.25283259693
+              434.50942803734404,
+              -756.085879216854
             ],
             "bypassed": false,
             "properties": {
@@ -435,6 +500,213 @@
               "button": "right",
               "x": -2063,
               "y": 398
+            }
+          },
+          {
+            "id": "79029bea",
+            "class_name": "VisionNodeItem",
+            "node_type": "wait_image",
+            "title": "⏱ Wait For Image",
+            "pos": [
+              1127.0934546993271,
+              -215.0552567674407
+            ],
+            "bypassed": false,
+            "properties": {
+              "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261101_213416.png",
+              "timeout": 2.0,
+              "action_type": "wait_image",
+              "confidence": 0.85,
+              "action": "none",
+              "button": "left",
+              "break_loop_on_found": false
+            }
+          },
+          {
+            "id": "a59e5c63",
+            "class_name": "VisionNodeItem",
+            "node_type": "wait_image",
+            "title": "⏱ Wait For Image",
+            "pos": [
+              592.9184109123119,
+              -394.0020157610978
+            ],
+            "bypassed": false,
+            "properties": {
+              "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261101_213615.png",
+              "timeout": 2.0,
+              "action_type": "wait_image",
+              "confidence": 0.85,
+              "action": "none",
+              "button": "left",
+              "break_loop_on_found": false
+            }
+          },
+          {
+            "id": "3ddf5c41",
+            "class_name": "ActionNodeItem",
+            "node_type": "click",
+            "title": "🖱 Mouse Click",
+            "pos": [
+              1724.9310776569073,
+              -450.4786593129204
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "click",
+              "x": 36,
+              "y": 178
+            }
+          },
+          {
+            "id": "11c14e5f",
+            "class_name": "ActionNodeItem",
+            "node_type": "wheel",
+            "title": "📜 Mouse Wheel",
+            "pos": [
+              1136.7955326751494,
+              -389.9022389602293
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "wheel",
+              "deltaY": 720
+            }
+          },
+          {
+            "id": "731e4065",
+            "class_name": "ActionNodeItem",
+            "node_type": "click",
+            "title": "🖱 Mouse Click",
+            "pos": [
+              1446.520100805907,
+              -208.14805326127316
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "click",
+              "x": 38,
+              "y": 30
+            }
+          },
+          {
+            "id": "5e2dac37",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              1737.371196658115,
+              -214.65489354213753
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 250
+            }
+          },
+          {
+            "id": "ac0a4baf",
+            "class_name": "VisionNodeItem",
+            "node_type": "wait_image",
+            "title": "⏱ Wait For Image",
+            "pos": [
+              1380.2373812879164,
+              -417.47833556998864
+            ],
+            "bypassed": false,
+            "properties": {
+              "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261101_214525.png",
+              "timeout": 2.0,
+              "action_type": "wait_image",
+              "confidence": 0.85,
+              "action": "none",
+              "button": "left",
+              "break_loop_on_found": false
+            }
+          },
+          {
+            "id": "40f82c15",
+            "class_name": "ActionNodeItem",
+            "node_type": "click",
+            "title": "🖱 Mouse Click",
+            "pos": [
+              1728.291616925112,
+              -342.1012679133215
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "click",
+              "x": 32,
+              "y": 221
+            }
+          },
+          {
+            "id": "32de6aa2",
+            "class_name": "VisionNodeItem",
+            "node_type": "wait_image",
+            "title": "⏱ Wait For Image",
+            "pos": [
+              1450.7138664436243,
+              -98.53560470165479
+            ],
+            "bypassed": false,
+            "properties": {
+              "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261101_215443.png",
+              "timeout": 2.0,
+              "action_type": "wait_image",
+              "confidence": 0.85,
+              "action": "click",
+              "button": "left",
+              "break_loop_on_found": false
+            }
+          },
+          {
+            "id": "1fb65ed0",
+            "class_name": "LoopNodeItem",
+            "node_type": "loop_count",
+            "title": "🔁 Repeat Zone (Loop)",
+            "pos": [
+              382.6797229330862,
+              -513.2973158671815
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "loop_count",
+              "infinite": true,
+              "count": 5,
+              "var_name": "i"
+            }
+          },
+          {
+            "id": "db8cd3ed",
+            "class_name": "ActionNodeItem",
+            "node_type": "click",
+            "title": "🖱 Mouse Click",
+            "pos": [
+              1795.9376852269838,
+              -89.01029319666301
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "click",
+              "button": "right",
+              "x": 52,
+              "y": 1018
+            }
+          },
+          {
+            "id": "0bcac29f",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              2069.8053528809196,
+              -87.74658097946019
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 1000
             }
           }
         ],
@@ -536,12 +808,6 @@
             "to_socket_idx": 0
           },
           {
-            "from_node": "100a32d5",
-            "from_socket_idx": 0,
-            "to_node": "10428247",
-            "to_socket_idx": 0
-          },
-          {
             "from_node": "10428247",
             "from_socket_idx": 0,
             "to_node": "55c5ee19",
@@ -557,6 +823,78 @@
             "from_node": "0f1c5c02",
             "from_socket_idx": 0,
             "to_node": "21e9b2f9",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "a59e5c63",
+            "from_socket_idx": 0,
+            "to_node": "11c14e5f",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "79029bea",
+            "from_socket_idx": 0,
+            "to_node": "731e4065",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "731e4065",
+            "from_socket_idx": 0,
+            "to_node": "5e2dac37",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "11c14e5f",
+            "from_socket_idx": 0,
+            "to_node": "ac0a4baf",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "ac0a4baf",
+            "from_socket_idx": 0,
+            "to_node": "3ddf5c41",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "ac0a4baf",
+            "from_socket_idx": 1,
+            "to_node": "40f82c15",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "a59e5c63",
+            "from_socket_idx": 1,
+            "to_node": "79029bea",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "79029bea",
+            "from_socket_idx": 1,
+            "to_node": "32de6aa2",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "1fb65ed0",
+            "from_socket_idx": 0,
+            "to_node": "a59e5c63",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "100a32d5",
+            "from_socket_idx": 0,
+            "to_node": "1fb65ed0",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "32de6aa2",
+            "from_socket_idx": 0,
+            "to_node": "db8cd3ed",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "db8cd3ed",
+            "from_socket_idx": 0,
+            "to_node": "0bcac29f",
             "to_socket_idx": 0
           }
         ],
@@ -2034,7 +2372,7 @@
           "key": "Shift",
           "vk": 16,
           "hold_duration": 0,
-          "auto_repeat": true,
+          "auto_repeat": false,
           "dt": 550
         },
         {
@@ -2083,7 +2421,7 @@
             "properties": {
               "key": "Shift",
               "action_type": "key_down",
-              "auto_repeat": true,
+              "auto_repeat": false,
               "hold_duration": 0,
               "vk": 16
             }
@@ -2221,6 +2559,26 @@
               "button": "left",
               "timeout": 5.0,
               "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261101_203911.png",
+              "break_loop_on_found": false
+            }
+          },
+          {
+            "id": "cbb5ae87",
+            "class_name": "VisionNodeItem",
+            "node_type": "wait_image",
+            "title": "⏱ Wait For Image",
+            "pos": [
+              561.7729468993987,
+              498.025662144857
+            ],
+            "bypassed": false,
+            "properties": {
+              "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261101_210747.png",
+              "timeout": 5.0,
+              "action_type": "wait_image",
+              "confidence": 0.85,
+              "action": "none",
+              "button": "left",
               "break_loop_on_found": false
             }
           }
@@ -8453,14 +8811,14 @@
   },
   "instances": {
     "1": {
-      "x": 1188,
-      "y": 657,
+      "x": 1418,
+      "y": 698,
       "minimized": false,
-      "selected_macro": "Example 4 - Pixel Color Polling",
+      "selected_macro": "Macro 2",
       "speed": 0.98,
       "repeat": false,
-      "width": 497,
-      "height": 440
+      "width": 474,
+      "height": 450
     }
   },
   "hotkeys": {

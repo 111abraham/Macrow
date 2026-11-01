@@ -55,8 +55,10 @@ EXTENDED_KEYS = {
     0x2C,  # VK_SNAPSHOT (PrintScreen)
     0x90,  # VK_NUMLOCK
     0x6F,  # VK_DIVIDE (Numpad /)
-    0x6F,  # VK_DIVIDE (Numpad /)
 }
+
+# Virtual-Key codes for all modifier key variants (generic, left, right)
+MODIFIER_VKS = {16, 17, 18, 91, 92, 160, 161, 162, 163, 164, 165}
 
 
 class InputSimulator:
@@ -85,11 +87,52 @@ class InputSimulator:
         )
         user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(INPUT))
 
+    def _raw_key_down(self, vk):
+        """Send low-level Win32 keydown event without altering keys_held set."""
+        scan = user32.MapVirtualKeyW(vk, 0)
+        flags = KEYEVENTF_EXTENDEDKEY if vk in EXTENDED_KEYS else 0
+        inp = INPUT()
+        inp.type = INPUT_KEYBOARD
+        inp.u.ki = KEYBDINPUT(
+            wVk=vk,
+            wScan=scan,
+            dwFlags=flags,
+            time=0,
+            dwExtraInfo=SYNTHETIC_EXTRA_INFO,
+        )
+        user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(INPUT))
+
+    def _raw_key_up(self, vk):
+        """Send low-level Win32 keyup event without altering keys_held set."""
+        scan = user32.MapVirtualKeyW(vk, 0)
+        flags = KEYEVENTF_KEYUP | (KEYEVENTF_EXTENDEDKEY if vk in EXTENDED_KEYS else 0)
+        inp = INPUT()
+        inp.type = INPUT_KEYBOARD
+        inp.u.ki = KEYBDINPUT(
+            wVk=vk,
+            wScan=scan,
+            dwFlags=flags,
+            time=0,
+            dwExtraInfo=SYNTHETIC_EXTRA_INFO,
+        )
+        user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(INPUT))
+
     def mouse_down(self, button="left", x=None, y=None):
         """Press down a mouse button at optional coordinate (x, y)."""
         if x is not None and y is not None:
+            # Temporarily release any held modifiers during mouse travel
+            # to avoid dragging selections or expanding ranges across screen
+            held_mods = [k for k in self.keys_held if k in MODIFIER_VKS]
+            for mod in held_mods:
+                self._raw_key_up(mod)
+
             self.move_to(x, y)
             time.sleep(0.015)  # Allow Windows hit-test queue to settle beneath the new position
+
+            for mod in held_mods:
+                self._raw_key_down(mod)
+            if held_mods:
+                time.sleep(0.010)
 
         button = button.lower()
         if button == "left":
@@ -122,8 +165,20 @@ class InputSimulator:
     def click(self, x=None, y=None, button="left", delay=0.015):
         """Perform a single click (down -> delay -> up)."""
         if x is not None and y is not None:
+            # Temporarily release any held modifiers during mouse travel
+            # to avoid dragging selections or expanding ranges across screen
+            held_mods = [k for k in self.keys_held if k in MODIFIER_VKS]
+            for mod in held_mods:
+                self._raw_key_up(mod)
+
             self.move_to(x, y)
             time.sleep(0.015)  # Settle time so click hits the target coordinate cleanly
+
+            for mod in held_mods:
+                self._raw_key_down(mod)
+            if held_mods:
+                time.sleep(0.010)
+
         self.mouse_down(button)
         if delay > 0:
             time.sleep(delay)
@@ -133,7 +188,7 @@ class InputSimulator:
         """Perform a double click with proper spacing."""
         self.click(x, y, button)
         time.sleep(interval)
-        self.click(x, y, button)
+        self.click(x=None, y=None, button=button)
 
     def mouse_wheel(self, delta_y=0, delta_x=0, x=None, y=None):
         """
@@ -170,36 +225,31 @@ class InputSimulator:
     def key_down(self, vk_code):
         """Press down a virtual key code with hardware scan code mapping."""
         vk = int(vk_code)
-        scan = user32.MapVirtualKeyW(vk, 0)
-        flags = KEYEVENTF_EXTENDEDKEY if vk in EXTENDED_KEYS else 0
-        inp = INPUT()
-        inp.type = INPUT_KEYBOARD
-        inp.u.ki = KEYBDINPUT(
-            wVk=vk,
-            wScan=scan,
-            dwFlags=flags,
-            time=0,
-            dwExtraInfo=SYNTHETIC_EXTRA_INFO,
-        )
-        user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(INPUT))
+        self._raw_key_down(vk)
         self.keys_held.add(vk)
 
     def key_up(self, vk_code):
         """Release a virtual key code with hardware scan code mapping."""
         vk = int(vk_code)
-        scan = user32.MapVirtualKeyW(vk, 0)
-        flags = KEYEVENTF_KEYUP | (KEYEVENTF_EXTENDEDKEY if vk in EXTENDED_KEYS else 0)
-        inp = INPUT()
-        inp.type = INPUT_KEYBOARD
-        inp.u.ki = KEYBDINPUT(
-            wVk=vk,
-            wScan=scan,
-            dwFlags=flags,
-            time=0,
-            dwExtraInfo=SYNTHETIC_EXTRA_INFO,
-        )
-        user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(INPUT))
+        self._raw_key_up(vk)
         self.keys_held.discard(vk)
+
+        # Ensure all hardware modifier variants (generic, left, right) are released cleanly
+        if vk in (16, 160, 161):
+            for extra in (16, 160, 161):
+                if extra != vk:
+                    self._raw_key_up(extra)
+                    self.keys_held.discard(extra)
+        elif vk in (17, 162, 163):
+            for extra in (17, 162, 163):
+                if extra != vk:
+                    self._raw_key_up(extra)
+                    self.keys_held.discard(extra)
+        elif vk in (18, 164, 165):
+            for extra in (18, 164, 165):
+                if extra != vk:
+                    self._raw_key_up(extra)
+                    self.keys_held.discard(extra)
 
     def key_press(self, vk_code, delay=0.015):
         """Tap a key: key_down -> small delay -> key_up."""

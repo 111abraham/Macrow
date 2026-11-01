@@ -296,7 +296,9 @@ class ActionNodeItem(BaseNodeItem):
             y = self.properties.get("y", 0)
             btn = self.properties.get("button", "left").capitalize()
             desc = "Click" if at == "click" else ("Double Click" if at == "dblclick" else ("Down" if at == "down" else "Up"))
-            return f"{btn} {desc}\nX: {x},  Y: {y}"
+            mod = str(self.properties.get("modifier", "none")).lower()
+            mod_str = f" [{mod.capitalize()}+{desc}]" if mod and mod != "none" else f" {desc}"
+            return f"{btn}{mod_str}\nX: {x},  Y: {y}"
         elif at == "move":
             x = self.properties.get("x", 0)
             y = self.properties.get("y", 0)
@@ -376,6 +378,9 @@ class VisionNodeItem(BaseNodeItem):
         self.properties.setdefault("timeout", 5.0)
         self.properties.setdefault("template", "")
         self.properties.setdefault("break_loop_on_found", False)
+        self.properties.setdefault("save_coords", True)
+        self.properties.setdefault("var_x", "found_x")
+        self.properties.setdefault("var_y", "found_y")
         if "bypassed" in self.properties:
             self.bypassed = bool(self.properties["bypassed"])
 
