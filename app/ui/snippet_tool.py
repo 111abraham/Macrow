@@ -23,6 +23,7 @@ from PyQt6.QtGui import (
     QFont,
     QCursor,
     QGuiApplication,
+    QRegion,
 )
 from PyQt6.QtWidgets import QDialog, QWidget
 
@@ -196,40 +197,45 @@ class SnipperCanvasOverlay(QWidget):
         # 1. 1:1 hardware screenshot
         painter.drawPixmap(self.rect(), self.pixmap)
 
-        # 2. Dark overlay
-        painter.fillRect(self.rect(), QColor(0, 0, 0, 140))
+        # 2. Dark overlay with cutout for active selection box
+        sel_rect = (
+            self._get_selected_rect()
+            if (self.is_selecting and self.start_pos and self.current_pos)
+            else QRect()
+        )
+        if not sel_rect.isEmpty():
+            # Cut out sel_rect from the dark overlay so the pristine, un-dimmed screenshot underneath is revealed directly
+            dark_region = QRegion(self.rect()).subtracted(QRegion(sel_rect))
+            painter.setClipRegion(dark_region)
+            painter.fillRect(self.rect(), QColor(0, 0, 0, 140))
+            painter.setClipping(False)
 
-        # 3. Selection box
-        if self.is_selecting and self.start_pos and self.current_pos:
-            sel_rect = self._get_selected_rect()
-            if not sel_rect.isEmpty():
-                # Reveal selection without dark overlay (1:1 physical source rect)
-                painter.drawPixmap(sel_rect, self.pixmap, sel_rect)
+            # Bright border around revealed selection
+            pen = QPen(QColor(56, 189, 248), 2, Qt.PenStyle.SolidLine)
+            painter.setPen(pen)
+            painter.drawRect(sel_rect)
 
-                # Bright border
-                pen = QPen(QColor(56, 189, 248), 2, Qt.PenStyle.SolidLine)
-                painter.setPen(pen)
-                painter.drawRect(sel_rect)
-
-                # Dimension badge (shows physical pixels!)
-                pw = int(round(sel_rect.width() * self.dpr))
-                ph = int(round(sel_rect.height() * self.dpr))
-                badge_text = f" {pw} × {ph} px "
-                painter.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
-                fm = painter.fontMetrics()
-                bw = fm.horizontalAdvance(badge_text) + 8
-                bh = fm.height() + 4
-                bx = sel_rect.left()
-                by = sel_rect.top() - bh - 6
-                if by < 10:
-                    by = sel_rect.bottom() + 6
-                badge_rect = QRect(bx, by, bw, bh)
-                painter.fillRect(badge_rect, QColor(15, 23, 42, 220))
-                painter.setPen(QPen(QColor(56, 189, 248), 1))
-                painter.drawRect(badge_rect)
-                painter.setPen(QColor(255, 255, 255))
-                painter.drawText(badge_rect, Qt.AlignmentFlag.AlignCenter, badge_text)
+            # Dimension badge (shows physical pixels!)
+            pw = int(round(sel_rect.width() * self.dpr))
+            ph = int(round(sel_rect.height() * self.dpr))
+            badge_text = f" {pw} × {ph} px "
+            painter.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+            fm = painter.fontMetrics()
+            bw = fm.horizontalAdvance(badge_text) + 8
+            bh = fm.height() + 4
+            bx = sel_rect.left()
+            by = sel_rect.top() - bh - 6
+            if by < 10:
+                by = sel_rect.bottom() + 6
+            badge_rect = QRect(bx, by, bw, bh)
+            painter.fillRect(badge_rect, QColor(15, 23, 42, 220))
+            painter.setPen(QPen(QColor(56, 189, 248), 1))
+            painter.drawRect(badge_rect)
+            painter.setPen(QColor(255, 255, 255))
+            painter.drawText(badge_rect, Qt.AlignmentFlag.AlignCenter, badge_text)
         else:
+            painter.fillRect(self.rect(), QColor(0, 0, 0, 140))
+
             # Help banner
             help_text = "Drag to snip a screen element  •  Esc or Right-click to cancel"
             painter.setFont(QFont("Segoe UI", 12, QFont.Weight.DemiBold))

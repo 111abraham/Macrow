@@ -2300,7 +2300,14 @@ class PropertyInspector(QWidget):
         layout.addWidget(QLabel("Target Vision Model:"))
         combo_model = QComboBox()
         combo_model.setEditable(True)
-        common_models = ["ui-tars-7b", "qwen2-vl-7b", "showui-2b", "llama3.2-vision", "molmo-7b"]
+        common_models = [
+            "qwen2.5-vl-7b",
+            "ui-tars-7b",
+            "qwen2-vl-7b",
+            "showui-2b",
+            "llama3.2-vision",
+            "molmo-7b",
+        ]
         for m in common_models:
             combo_model.addItem(m)
         curr_m = node.properties.get("model_name", "ui-tars-7b")

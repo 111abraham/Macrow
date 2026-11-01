@@ -89,6 +89,7 @@ class InputSimulator:
         """Press down a mouse button at optional coordinate (x, y)."""
         if x is not None and y is not None:
             self.move_to(x, y)
+            time.sleep(0.015)  # Allow Windows hit-test queue to settle beneath the new position
 
         button = button.lower()
         if button == "left":
@@ -105,6 +106,7 @@ class InputSimulator:
         """Release a mouse button at optional coordinate (x, y)."""
         if x is not None and y is not None:
             self.move_to(x, y)
+            time.sleep(0.015)
 
         button = button.lower()
         if button == "left":
@@ -121,6 +123,7 @@ class InputSimulator:
         """Perform a single click (down -> delay -> up)."""
         if x is not None and y is not None:
             self.move_to(x, y)
+            time.sleep(0.015)  # Settle time so click hits the target coordinate cleanly
         self.mouse_down(button)
         if delay > 0:
             time.sleep(delay)

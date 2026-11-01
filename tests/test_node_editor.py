@@ -1673,7 +1673,15 @@ class TestNodeEditor(unittest.TestCase):
 
         # Test finish_selection
         ov.start_pos = QPoint(10, 10)
+        ov.current_pos = QPoint(60, 60)
         ov.is_selecting = True
+
+        # Test paintEvent with active selection cutout (QRegion clipping)
+        from PyQt6.QtGui import QPaintEvent
+        from PyQt6.QtCore import QRect
+        pe = QPaintEvent(QRect(0, 0, ov.width(), ov.height()))
+        ov.paintEvent(pe)
+
         captured_data = []
         snipper.region_captured.connect(lambda x, y, w, h: captured_data.append((x, y, w, h)))
         ov.finish_selection(QPoint(60, 60))

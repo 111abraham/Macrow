@@ -12,6 +12,9 @@ from app.core.vision import find_template_on_screen, wait_for_template_on_screen
 from app.core.key_catalog import get_vk_for_key
 
 
+MODIFIER_VKS = {16, 17, 18, 91, 92, 160, 161, 162, 163, 164, 165}  # Shift, Ctrl, Alt, Win keys
+
+
 class MacroPlayer:
     """Executes a sequence of macro steps with precise timing control."""
 
@@ -484,6 +487,11 @@ class MacroPlayer:
                 self.simulator.key_down(vk)
                 hold_dur = self._resolve_coord(step.get("hold_duration", 0), default=0)
                 auto_repeat = bool(step.get("auto_repeat", True))
+                # Modifier keys (Shift, Ctrl, Alt, Win) must never typematically pulse!
+                # Pulsing Shift triggers Windows Sticky Keys and floods the OS with repeated keydowns during clicks
+                if vk in MODIFIER_VKS:
+                    auto_repeat = False
+
                 if hold_dur > 0:
                     wait_sec = (hold_dur / 1000.0) / self.speed
                     start_t = time.perf_counter()
@@ -922,12 +930,79 @@ class MacroPlayer:
                 data=body,
                 headers={"Content-Type": "application/json", "User-Agent": "Macrow-Player"},
             )
-            with urllib.request.urlopen(req, timeout=4.0) as resp:
+            with urllib.request.urlopen(req, timeout=10.0) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
                 content = data["choices"][0]["message"]["content"]
-                content = re.sub(r"^```(?:json)?\s*", "", content.strip(), flags=re.MULTILINE)
-                content = re.sub(r"```$", "", content.strip(), flags=re.MULTILINE).strip()
-                return json.loads(content)
+                return _parse_vlm_content(content, orig_w, orig_h)
+
+        def _parse_vlm_content(raw_text: str, sw: int, sh: int):
+            raw_text = raw_text.strip()
+            # 1. Try finding complete JSON structure with "actions"
+            json_match = re.search(r'\{[\s\S]*"actions"[\s\S]*\}', raw_text)
+            if json_match:
+                try:
+                    data = json.loads(json_match.group(0))
+                    if "actions" in data and isinstance(data["actions"], list):
+                        for act in data["actions"]:
+                            if "point" in act and isinstance(act["point"], (list, tuple)) and len(act["point"]) >= 2:
+                                act["x"] = act["point"][0]
+                                act["y"] = act["point"][1]
+                            if "x" in act and "y" in act:
+                                ax = float(act["x"])
+                                ay = float(act["y"])
+                                if 0 <= ax <= 1000 and 0 <= ay <= 1000 and (sw > 1000 or sh > 1000):
+                                    act["x"] = int(round((ax / 1000.0) * sw))
+                                    act["y"] = int(round((ay / 1000.0) * sh))
+                                else:
+                                    act["x"] = int(round(ax))
+                                    act["y"] = int(round(ay))
+                        return data
+                except Exception:
+                    pass
+
+            # 2. Try parsing UI-TARS action syntax: Action: click(...) or click(point=[...])
+            actions = []
+            for m in re.finditer(r'(click|dblclick|double_click|right_click|rightclick|move)\s*\(([^)]*)\)', raw_text, re.IGNORECASE):
+                act_name = m.group(1).lower().replace("_", "")
+                if act_name == "doubleclick":
+                    act_name = "dblclick"
+                args_str = m.group(2)
+
+                pt_m = re.search(r'point\s*=\s*\[\s*(\d+)\s*,\s*(\d+)\s*\]', args_str)
+                if pt_m:
+                    x, y = int(pt_m.group(1)), int(pt_m.group(2))
+                else:
+                    xm = re.search(r'x\s*=\s*(\d+)', args_str)
+                    ym = re.search(r'y\s*=\s*(\d+)', args_str)
+                    if xm and ym:
+                        x, y = int(xm.group(1)), int(ym.group(2))
+                    else:
+                        box_m = re.search(r'\[\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\]', args_str)
+                        if box_m:
+                            y1, x1, y2, x2 = map(int, box_m.groups())
+                            x, y = (x1 + x2) // 2, (y1 + y2) // 2
+                        else:
+                            continue
+
+                if 0 <= x <= 1000 and 0 <= y <= 1000 and (sw > 1000 or sh > 1000):
+                    x = int(round((x / 1000.0) * sw))
+                    y = int(round((y / 1000.0) * sh))
+                actions.append({"type": act_name, "x": x, "y": y})
+
+            for m in re.finditer(r'type\s*\(\s*(?:text\s*=\s*)?["\']([^"\']+)["\']\s*\)', raw_text, re.IGNORECASE):
+                actions.append({"type": "type", "text": m.group(1)})
+
+            for m in re.finditer(r'press\s*\(\s*(?:key\s*=\s*)?["\']?([a-zA-Z0-9_-]+)["\']?\s*\)', raw_text, re.IGNORECASE):
+                actions.append({"type": "press", "key": m.group(1)})
+
+            if actions:
+                return {
+                    "actions": actions,
+                    "status": "done",
+                    "found": True,
+                    "reason": "Parsed from UI-TARS action syntax",
+                }
+            return None
 
         # Loop execution (multi-step or single step)
         total_substeps = max_steps if mode == "multi_step" else 1
