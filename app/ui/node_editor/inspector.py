@@ -2280,25 +2280,64 @@ class PropertyInspector(QWidget):
 
         layout.addWidget(combo_mode)
 
-        # 3. Server URL with Ping Check
-        layout.addWidget(QLabel("Local Server Endpoint (OpenAI / Ollama / vLLM):"))
+        # 3. Server URL with Ping Check & Quick Presets
+        layout.addWidget(QLabel("Local Server Endpoint (OpenAI / Ollama / LM Studio):"))
+        h_presets = QHBoxLayout()
+        btn_ollama = QPushButton("🦙 Ollama (11434)")
+        btn_ollama.setStyleSheet("background: #0284c7; color: white; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: bold;")
+        btn_lmstudio = QPushButton("🔮 LM Studio (1234)")
+        btn_lmstudio.setStyleSheet("background: #6366f1; color: white; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: bold;")
+        h_presets.addWidget(btn_ollama)
+        h_presets.addWidget(btn_lmstudio)
+        layout.addLayout(h_presets)
+
         h_srv = QHBoxLayout()
         edit_url = QLineEdit(node.properties.get("server_url", "http://localhost:11434/v1"))
-        edit_url.setPlaceholderText("http://localhost:11434/v1 or http://localhost:8000/v1")
+        edit_url.setPlaceholderText("http://localhost:11434/v1 or http://localhost:1234/v1")
         edit_url.textChanged.connect(lambda txt: (
             node.properties.__setitem__("server_url", txt.strip()),
             node.update(),
             self.property_changed.emit()
         ))
-        btn_ping = QPushButton("Ping")
+        btn_ping = QPushButton("Ping & Fetch Models")
         btn_ping.setCursor(Qt.CursorShape.PointingHandCursor)
         btn_ping.setStyleSheet("background: #334155; color: #f8fafc; font-weight: bold; padding: 4px 10px; border-radius: 4px;")
 
         lbl_ping_res = QLabel("")
         lbl_ping_res.setStyleSheet("font-size: 10px; font-weight: bold;")
 
+        btn_ollama.clicked.connect(lambda: (edit_url.setText("http://localhost:11434/v1"), on_ping()))
+        btn_lmstudio.clicked.connect(lambda: (edit_url.setText("http://localhost:1234/v1"), on_ping()))
+
+        # 4. Model Name
+        layout.addWidget(QLabel("Target Vision Model:"))
+        combo_model = QComboBox()
+        combo_model.setEditable(True)
+        common_models = [
+            "qwen2.5vl:7b",
+            "qwen2.5vl",
+            "qwen2.5-vl-7b",
+            "ui-tars-7b",
+            "llama3.2-vision",
+            "minicpm-v",
+            "showui-2b",
+            "qwen2-vl-7b",
+        ]
+        for m in common_models:
+            combo_model.addItem(m)
+        curr_m = node.properties.get("model_name", "qwen2.5vl:7b")
+        if curr_m in common_models:
+            combo_model.setCurrentIndex(common_models.index(curr_m))
+        else:
+            combo_model.setEditText(curr_m)
+        combo_model.currentTextChanged.connect(lambda txt: (
+            node.properties.__setitem__("model_name", txt.strip()),
+            self.property_changed.emit()
+        ))
+
         def on_ping():
             import urllib.request
+            import json
             url = edit_url.text().strip()
             if not url:
                 url = "http://localhost:11434/v1"
@@ -2306,9 +2345,28 @@ class PropertyInspector(QWidget):
             test_target = f"{base_url}/models"
             try:
                 req = urllib.request.Request(test_target, headers={"User-Agent": "Macrow-Agent"})
-                with urllib.request.urlopen(req, timeout=1.5) as resp:
+                with urllib.request.urlopen(req, timeout=2.0) as resp:
                     if resp.status == 200:
-                        lbl_ping_res.setText("🟢 Server Online")
+                        raw = resp.read().decode("utf-8")
+                        model_count = 0
+                        try:
+                            parsed = json.loads(raw)
+                            data = parsed.get("data")
+                            if isinstance(data, list) and len(data) > 0:
+                                current_text = combo_model.currentText()
+                                fetched_ids = [str(item.get("id")) for item in data if item.get("id")]
+                                model_count = len(fetched_ids)
+                                for mid in fetched_ids:
+                                    if combo_model.findText(mid) < 0:
+                                        combo_model.insertItem(0, mid)
+                                if current_text:
+                                    combo_model.setEditText(current_text)
+                                elif fetched_ids:
+                                    combo_model.setEditText(fetched_ids[0])
+                        except Exception:
+                            pass
+                        count_info = f" ({model_count} models loaded)" if model_count > 0 else ""
+                        lbl_ping_res.setText(f"🟢 Server Online{count_info}")
                         lbl_ping_res.setStyleSheet("color: #10b981; font-size: 10px; font-weight: bold;")
                         return
             except Exception:
@@ -2321,30 +2379,6 @@ class PropertyInspector(QWidget):
         h_srv.addWidget(btn_ping)
         layout.addLayout(h_srv)
         layout.addWidget(lbl_ping_res)
-
-        # 4. Model Name
-        layout.addWidget(QLabel("Target Vision Model:"))
-        combo_model = QComboBox()
-        combo_model.setEditable(True)
-        common_models = [
-            "qwen2.5-vl-7b",
-            "ui-tars-7b",
-            "qwen2-vl-7b",
-            "showui-2b",
-            "llama3.2-vision",
-            "molmo-7b",
-        ]
-        for m in common_models:
-            combo_model.addItem(m)
-        curr_m = node.properties.get("model_name", "ui-tars-7b")
-        if curr_m in common_models:
-            combo_model.setCurrentIndex(common_models.index(curr_m))
-        else:
-            combo_model.setEditText(curr_m)
-        combo_model.currentTextChanged.connect(lambda txt: (
-            node.properties.__setitem__("model_name", txt.strip()),
-            self.property_changed.emit()
-        ))
         layout.addWidget(combo_model)
 
         # 5. Multi-Step Options Container
