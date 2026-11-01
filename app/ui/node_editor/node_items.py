@@ -1233,7 +1233,7 @@ class AIVisionNodeItem(BaseNodeItem):
         self.properties.setdefault("prompt", "Find and click target element")
         self.properties.setdefault("mode", "multi_step")
         self.properties.setdefault("server_url", "http://localhost:11434/v1")
-        self.properties.setdefault("model_name", "qwen2.5-vl-7b")
+        self.properties.setdefault("model_name", "qwen2.5vl:7b")
         self.properties.setdefault("max_steps", 5)
         self.properties.setdefault("step_delay_ms", 300)
         self.properties.setdefault("region_mode", "fullscreen")
