@@ -383,31 +383,34 @@ class MacroPlayer:
         if not val_str:
             return default
 
-        # 1. Substitute any $variable tokens with their resolved values
+        # 1. Substitute variable tokens (both $var and bare identifiers matching defined variables)
         def _replace_var(m):
-            vname = m.group(1)
-            res = self.variables.get(vname, self.variables.get(f"${vname}", 0))
+            token = m.group(0)
+            clean_name = token.lstrip("$")
+            if token in self.variables:
+                res = self.variables[token]
+            elif clean_name in self.variables:
+                res = self.variables[clean_name]
+            elif f"${clean_name}" in self.variables:
+                res = self.variables[f"${clean_name}"]
+            elif token.startswith("$"):
+                res = 0
+            else:
+                return token  # Unrecognized word, leave intact
             try:
                 return str(int(float(res)))
             except (ValueError, TypeError):
                 return "0"
 
-        substituted = re.sub(r"\$([a-zA-Z_][a-zA-Z0-9_]*)", _replace_var, val_str)
+        substituted = re.sub(r"\$?[a-zA-Z_][a-zA-Z0-9_]*", _replace_var, val_str)
 
-        # 2. Check if the string matches a variable name without $ (e.g. "found_x")
-        if substituted in self.variables:
-            try:
-                return int(float(self.variables[substituted]))
-            except (ValueError, TypeError):
-                pass
-
-        # 3. Direct numeric parse
+        # 2. Direct numeric parse
         try:
             return int(float(substituted))
         except (ValueError, TypeError):
             pass
 
-        # 4. Safe arithmetic expression evaluation (e.g. "450 + 50", "300 - 20", "200 + 10 * 2")
+        # 3. Safe arithmetic expression evaluation (e.g. "found_x + 50", "$found_y - 20", "200 + 10 * 2")
         if re.fullmatch(r"[\d\s\+\-\*\/\(\)\%]+", substituted):
             try:
                 res_calc = eval(substituted, {"__builtins__": None}, {})

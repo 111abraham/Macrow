@@ -88,51 +88,64 @@ class InputSimulator:
         user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(INPUT))
 
     def _raw_key_down(self, vk):
-        """Send low-level Win32 keydown event without altering keys_held set."""
-        scan = user32.MapVirtualKeyW(vk, 0)
-        flags = KEYEVENTF_EXTENDEDKEY if vk in EXTENDED_KEYS else 0
-        inp = INPUT()
-        inp.type = INPUT_KEYBOARD
-        inp.u.ki = KEYBDINPUT(
-            wVk=vk,
-            wScan=scan,
-            dwFlags=flags,
-            time=0,
-            dwExtraInfo=SYNTHETIC_EXTRA_INFO,
-        )
-        user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(INPUT))
+        """Send low-level Win32 keydown event without altering keys_held set.
+        For generic modifier VKs (16=Shift, 17=Ctrl, 18=Alt), dual-dispatches the corresponding
+        left-variant so both legacy Win32 message loops and modern Chromium/WPF engines register
+        the hardware keystroke unambiguously.
+        """
+        targets = [vk]
+        if vk == 16:
+            targets = [16, 160]  # VK_SHIFT + VK_LSHIFT
+        elif vk == 17:
+            targets = [17, 162]  # VK_CONTROL + VK_LCONTROL
+        elif vk == 18:
+            targets = [18, 164]  # VK_MENU + VK_LMENU
+
+        for target_vk in targets:
+            scan = user32.MapVirtualKeyW(target_vk, 0)
+            flags = KEYEVENTF_EXTENDEDKEY if target_vk in EXTENDED_KEYS else 0
+            inp = INPUT()
+            inp.type = INPUT_KEYBOARD
+            inp.u.ki = KEYBDINPUT(
+                wVk=target_vk,
+                wScan=scan,
+                dwFlags=flags,
+                time=0,
+                dwExtraInfo=SYNTHETIC_EXTRA_INFO,
+            )
+            user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(INPUT))
 
     def _raw_key_up(self, vk):
-        """Send low-level Win32 keyup event without altering keys_held set."""
-        scan = user32.MapVirtualKeyW(vk, 0)
-        flags = KEYEVENTF_KEYUP | (KEYEVENTF_EXTENDEDKEY if vk in EXTENDED_KEYS else 0)
-        inp = INPUT()
-        inp.type = INPUT_KEYBOARD
-        inp.u.ki = KEYBDINPUT(
-            wVk=vk,
-            wScan=scan,
-            dwFlags=flags,
-            time=0,
-            dwExtraInfo=SYNTHETIC_EXTRA_INFO,
-        )
-        user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(INPUT))
+        """Send low-level Win32 keyup event without altering keys_held set.
+        Releases all paired hardware variants cleanly.
+        """
+        targets = [vk]
+        if vk in (16, 160, 161):
+            targets = [16, 160, 161]
+        elif vk in (17, 162, 163):
+            targets = [17, 162, 163]
+        elif vk in (18, 164, 165):
+            targets = [18, 164, 165]
+
+        for target_vk in targets:
+            scan = user32.MapVirtualKeyW(target_vk, 0)
+            flags = KEYEVENTF_KEYUP | (KEYEVENTF_EXTENDEDKEY if target_vk in EXTENDED_KEYS else 0)
+            inp = INPUT()
+            inp.type = INPUT_KEYBOARD
+            inp.u.ki = KEYBDINPUT(
+                wVk=target_vk,
+                wScan=scan,
+                dwFlags=flags,
+                time=0,
+                dwExtraInfo=SYNTHETIC_EXTRA_INFO,
+            )
+            user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(INPUT))
 
     def mouse_down(self, button="left", x=None, y=None):
         """Press down a mouse button at optional coordinate (x, y)."""
         if x is not None and y is not None:
-            # Temporarily release any held modifiers during mouse travel
-            # to avoid dragging selections or expanding ranges across screen
-            held_mods = [k for k in self.keys_held if k in MODIFIER_VKS]
-            for mod in held_mods:
-                self._raw_key_up(mod)
-
             self.move_to(x, y)
             time.sleep(0.015)  # Allow Windows hit-test queue to settle beneath the new position
-
-            for mod in held_mods:
-                self._raw_key_down(mod)
-            if held_mods:
-                time.sleep(0.010)
 
         button = button.lower()
         if button == "left":
@@ -163,21 +176,12 @@ class InputSimulator:
             self.buttons_held.discard("middle")
 
     def click(self, x=None, y=None, button="left", delay=0.015):
-        """Perform a single click (down -> delay -> up)."""
+        """Perform a single click (down -> delay -> up).
+        Preserves any held modifiers continuously throughout cursor transit and click.
+        """
         if x is not None and y is not None:
-            # Temporarily release any held modifiers during mouse travel
-            # to avoid dragging selections or expanding ranges across screen
-            held_mods = [k for k in self.keys_held if k in MODIFIER_VKS]
-            for mod in held_mods:
-                self._raw_key_up(mod)
-
             self.move_to(x, y)
             time.sleep(0.015)  # Settle time so click hits the target coordinate cleanly
-
-            for mod in held_mods:
-                self._raw_key_down(mod)
-            if held_mods:
-                time.sleep(0.010)
 
         self.mouse_down(button)
         if delay > 0:

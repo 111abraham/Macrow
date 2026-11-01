@@ -1300,13 +1300,14 @@ class StickyNoteNodeItem(BaseNodeItem):
         self.properties = dict(properties) if properties else {}
         self.properties.setdefault("text", "this are the social media automation nodes")
         self.properties.setdefault("collapsed", False)
-        self.properties.setdefault("color", "#E5D875")
+        self.properties.setdefault("color", "#BCB367")
         self.properties.setdefault("width", 220.0)
         self.properties.setdefault("height", 160.0)
 
         self.width = float(self.properties.get("width", 220.0))
         self.height = float(self.properties.get("height", 160.0))
         self.collapsed = bool(self.properties.get("collapsed", False))
+        self.setAcceptHoverEvents(True)
 
         # No input/output execution sockets for comment/sticky note
         self.input_sockets = []
@@ -1316,19 +1317,41 @@ class StickyNoteNodeItem(BaseNodeItem):
         self._resize_start_scene = None
         self._resize_start_size = None
 
+    def get_pill_width(self) -> float:
+        """Calculate clean pill width tailored to first line text in collapsed mode."""
+        txt = str(self.properties.get("text", "")).strip().split("\n")[0]
+        needed = max(130.0, min(self.width, 28.0 + len(txt) * 7.5 + 24.0))
+        return needed
+
     def boundingRect(self) -> QRectF:
-        h = 28.0 if self.collapsed else self.height
-        return QRectF(-4, -4, self.width + 8, h + 8)
+        if self.collapsed:
+            pw = self.get_pill_width()
+            return QRectF(-4, -4, pw + 8, 24.0 + 8)
+        return QRectF(-4, -4, self.width + 8, self.height + 8)
 
     def get_collapse_btn_rect(self) -> QRectF:
         if self.collapsed:
-            return QRectF(4, 3, 22, 22)
-        return QRectF(4, 3, 20, 16)
+            return QRectF(4, 2, 20, 20)
+        return QRectF(4, 2, 20, 18)
 
     def get_resize_grip_rect(self) -> QRectF:
         if self.collapsed:
             return QRectF()
-        return QRectF(self.width - 16, self.height - 16, 16, 16)
+        return QRectF(self.width - 18, self.height - 18, 18, 18)
+
+    def hoverMoveEvent(self, event):
+        pos = event.pos()
+        if self.get_collapse_btn_rect().contains(pos):
+            self.setCursor(Qt.CursorShape.PointingHandCursor)
+        elif not self.collapsed and self.get_resize_grip_rect().contains(pos):
+            self.setCursor(Qt.CursorShape.SizeFDiagCursor)
+        else:
+            self.setCursor(Qt.CursorShape.ArrowCursor)
+        super().hoverMoveEvent(event)
+
+    def hoverLeaveEvent(self, event):
+        self.setCursor(Qt.CursorShape.ArrowCursor)
+        super().hoverLeaveEvent(event)
 
     def toggle_collapse(self):
         self.prepareGeometryChange()
@@ -1409,30 +1432,33 @@ class StickyNoteNodeItem(BaseNodeItem):
     def paint(self, painter: QPainter, option, widget=None):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        base_hex = self.properties.get("color", "#E5D875")
-        bg_col = QColor(base_hex)
-        if not bg_col.isValid():
-            bg_col = QColor("#E5D875")
+        base_hex = self.properties.get("color", "#BCB367")
+        body_col = QColor(base_hex)
+        if not body_col.isValid():
+            body_col = QColor("#BCB367")
+        # Header / pill is a lighter pastel yellow matching the screenshot reference
+        header_col = body_col.lighter(130)
 
         is_sel = self.isSelected()
         text_content = str(self.properties.get("text", ""))
 
         if self.collapsed:
-            # 1. Collapsed state: Sleek rounded pill / capsule strip (height 28.0)
-            pill_h = 28.0
-            pill_rect = QRectF(0, 0, self.width, pill_h)
+            # 1. Collapsed state: Sleek rounded pill / capsule strip matching Image 2
+            pill_h = 24.0
+            pill_w = self.get_pill_width()
+            pill_rect = QRectF(0, 0, pill_w, pill_h)
             radius = pill_h / 2.0
 
             # Background capsule
             painter.setPen(Qt.PenStyle.NoPen)
-            painter.setBrush(QBrush(bg_col))
+            painter.setBrush(QBrush(header_col))
             painter.drawRoundedRect(pill_rect, radius, radius)
 
             # Border
             if is_sel:
-                painter.setPen(QPen(QColor(251, 146, 60), 2.2))
+                painter.setPen(QPen(QColor(251, 146, 60), 2.0))
             else:
-                painter.setPen(QPen(bg_col.darker(120), 1.0))
+                painter.setPen(QPen(header_col.darker(118), 1.0))
             painter.setBrush(Qt.BrushStyle.NoBrush)
             painter.drawRoundedRect(pill_rect, radius, radius)
 
@@ -1443,11 +1469,11 @@ class StickyNoteNodeItem(BaseNodeItem):
             painter.drawText(btn_r, Qt.AlignmentFlag.AlignCenter, "+")
 
             # Subtle vertical separator after [+] button
-            painter.setPen(QPen(bg_col.darker(115), 1.0))
-            painter.drawLine(int(btn_r.right() + 3), 5, int(btn_r.right() + 3), int(pill_h - 5))
+            painter.setPen(QPen(header_col.darker(118), 1.0))
+            painter.drawLine(int(btn_r.right() + 3), 4, int(btn_r.right() + 3), int(pill_h - 4))
 
             # Truncated single-line text with ellipsis
-            text_rect = QRectF(btn_r.right() + 8, 0, self.width - btn_r.right() - 16, pill_h)
+            text_rect = QRectF(btn_r.right() + 8, 0, pill_w - btn_r.right() - 14, pill_h)
             painter.setFont(QFont("Segoe UI", 9, QFont.Weight.Normal))
             painter.setPen(QColor(15, 23, 42))
             metrics = painter.fontMetrics()
@@ -1456,19 +1482,17 @@ class StickyNoteNodeItem(BaseNodeItem):
             painter.drawText(text_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, elided)
 
         else:
-            # 2. Expanded state: Pastel card with header, multi-line text & resize grip
+            # 2. Expanded state: Two-tone sticky note card matching Image 1
             card_rect = QRectF(0, 0, self.width, self.height)
-            card_radius = 8.0
+            card_radius = 10.0
 
-            # Background card
+            # Body background
             painter.setPen(Qt.PenStyle.NoPen)
-            painter.setBrush(QBrush(bg_col))
+            painter.setBrush(QBrush(body_col))
             painter.drawRoundedRect(card_rect, card_radius, card_radius)
 
-            # Header bar (slightly darker/tinted pastel)
-            hdr_h = 22.0
-            hdr_col = bg_col.darker(106)
-            painter.setBrush(QBrush(hdr_col))
+            # Header bar (lighter yellow top strip matching Image 1)
+            hdr_h = 24.0
             hdr_path = QPainterPath()
             hdr_path.moveTo(0, card_radius)
             hdr_path.quadTo(0, 0, card_radius, 0)
@@ -1477,28 +1501,28 @@ class StickyNoteNodeItem(BaseNodeItem):
             hdr_path.lineTo(self.width, hdr_h)
             hdr_path.lineTo(0, hdr_h)
             hdr_path.closeSubpath()
-            painter.drawPath(hdr_path)
 
-            # Border
-            if is_sel:
-                painter.setPen(QPen(QColor(251, 146, 60), 2.2))
-            else:
-                painter.setPen(QPen(bg_col.darker(120), 1.0))
-            painter.setBrush(Qt.BrushStyle.NoBrush)
-            painter.drawRoundedRect(card_rect, card_radius, card_radius)
+            painter.setBrush(QBrush(header_col))
+            painter.drawPath(hdr_path)
 
             # Top-left [-] Collapse button
             btn_r = self.get_collapse_btn_rect()
-            painter.setPen(QColor(15, 23, 42))
-            painter.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
-            painter.drawText(btn_r, Qt.AlignmentFlag.AlignCenter, "−")
+            painter.setPen(QPen(QColor(15, 23, 42), 2.5, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+            cy = btn_r.center().y()
+            painter.drawLine(int(btn_r.left() + 4), int(cy), int(btn_r.right() - 4), int(cy))
 
             # Subtle vertical separator after [-] button
-            painter.setPen(QPen(bg_col.darker(118), 1.0))
+            painter.setPen(QPen(header_col.darker(118), 1.0))
             painter.drawLine(int(btn_r.right() + 3), 3, int(btn_r.right() + 3), int(hdr_h - 3))
 
+            # Outer border
+            if is_sel:
+                painter.setPen(QPen(QColor(251, 146, 60), 2.0))
+                painter.setBrush(Qt.BrushStyle.NoBrush)
+                painter.drawRoundedRect(card_rect, card_radius, card_radius)
+
             # Multi-line word-wrapped body text
-            body_rect = QRectF(10, hdr_h + 6, self.width - 20, self.height - hdr_h - 18)
+            body_rect = QRectF(10, hdr_h + 8, self.width - 20, self.height - hdr_h - 22)
             painter.setFont(QFont("Segoe UI", 10, QFont.Weight.Normal))
             painter.setPen(QColor(15, 23, 42))
             painter.drawText(
@@ -1508,8 +1532,13 @@ class StickyNoteNodeItem(BaseNodeItem):
             )
 
             # Bottom-right resize grip handle (3 diagonal corner lines)
-            grip_pen = QPen(bg_col.darker(135), 1.5)
+            grip_pen = QPen(body_col.darker(135), 1.5)
             painter.setPen(grip_pen)
+            gw = self.width
+            gh = self.height
+            painter.drawLine(int(gw - 12), int(gh - 4), int(gw - 4), int(gh - 12))
+            painter.drawLine(int(gw - 8), int(gh - 4), int(gw - 4), int(gh - 8))
+            painter.drawLine(int(gw - 4), int(gh - 4), int(gw - 4), int(gh - 4))
             gw = self.width
             gh = self.height
             painter.drawLine(int(gw - 12), int(gh - 4), int(gw - 4), int(gh - 12))

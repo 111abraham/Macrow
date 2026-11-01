@@ -8222,14 +8222,14 @@
   },
   "instances": {
     "1": {
-      "x": 1376,
-      "y": 936,
+      "x": 0,
+      "y": 0,
       "minimized": false,
-      "selected_macro": "Macro 2",
+      "selected_macro": "del",
       "speed": 0.98,
       "repeat": false,
-      "width": 546,
-      "height": 390
+      "width": 474,
+      "height": 590
     }
   },
   "hotkeys": {

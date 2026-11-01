@@ -21,6 +21,7 @@ from app.ui.node_editor.node_items import (
 from app.ui.node_editor.node_view import NodeView
 from app.ui.node_editor.graph_compiler import macro_to_graph, graph_to_macro
 from app.ui.node_editor.node_group import NodeGroupItem
+from app.core.player import MacroPlayer
 
 
 class TestNodeEditor(unittest.TestCase):
@@ -2007,7 +2008,7 @@ class TestNodeEditor(unittest.TestCase):
         self.assertTrue(note.collapsed)
         self.assertTrue(note.properties["collapsed"])
         b_rect = note.boundingRect()
-        self.assertEqual(b_rect.height(), 36.0)  # 28 + 8
+        self.assertEqual(b_rect.height(), 32.0)  # 24 + 8 compact pill strip
 
         # Test re-expand toggle
         note.toggle_collapse()
@@ -2210,6 +2211,39 @@ class TestNodeEditor(unittest.TestCase):
         self.assertNotIn(16, sim.keys_held)
         self.assertNotIn(160, sim.keys_held)
         self.assertNotIn(161, sim.keys_held)
+
+    def test_resolve_coord_expressions_and_bare_variables(self):
+        """Test that MacroPlayer._resolve_coord handles bare variable names, $ prefixes, and arithmetic."""
+        player = MacroPlayer()
+        player.variables = {
+            "found_x": 450,
+            "$found_x": 450,
+            "found_y": 320,
+            "$found_y": 320,
+            "i": 5,
+            "$i": 5,
+        }
+
+        # Bare variables
+        self.assertEqual(player._resolve_coord("found_x"), 450)
+        self.assertEqual(player._resolve_coord("found_y"), 320)
+
+        # $ variables
+        self.assertEqual(player._resolve_coord("$found_x"), 450)
+        self.assertEqual(player._resolve_coord("$found_y"), 320)
+
+        # Expressions with bare variables
+        self.assertEqual(player._resolve_coord("found_x + 50"), 500)
+        self.assertEqual(player._resolve_coord("found_y - 20"), 300)
+        self.assertEqual(player._resolve_coord("i * 10 + 2"), 52)
+
+        # Expressions with $ variables
+        self.assertEqual(player._resolve_coord("$found_x + 35"), 485)
+        self.assertEqual(player._resolve_coord("$found_y - 10"), 310)
+
+        # Direct numbers
+        self.assertEqual(player._resolve_coord(780), 780)
+        self.assertEqual(player._resolve_coord("920"), 920)
 
 
 if __name__ == "__main__":

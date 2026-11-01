@@ -2378,6 +2378,44 @@ class PropertyInspector(QWidget):
         h_srv.addWidget(edit_url)
         h_srv.addWidget(btn_ping)
         layout.addLayout(h_srv)
+
+        # Quick Sync LM Studio Models Button
+        btn_sync = QPushButton("🔄 Sync LM Studio Models to Ollama (Zero-Copy)")
+        btn_sync.setToolTip("Automatically hardlinks all GGUF models from LM Studio into Ollama with 0 duplicate SSD space")
+        btn_sync.setStyleSheet("""
+            QPushButton {
+                background: #0f766e;
+                color: #f0fdfa;
+                border-radius: 4px;
+                padding: 4px 8px;
+                font-size: 10px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background: #0d9488;
+            }
+        """)
+
+        def on_sync_models():
+            btn_sync.setEnabled(False)
+            btn_sync.setText("⏳ Syncing models...")
+
+            def _worker():
+                import subprocess
+                ps_script = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "scripts", "sync_lmstudio_to_ollama.ps1"))
+                if os.path.exists(ps_script):
+                    try:
+                        subprocess.run(["powershell", "-ExecutionPolicy", "Bypass", "-File", ps_script], capture_output=True, timeout=60)
+                    except Exception:
+                        pass
+                btn_sync.setEnabled(True)
+                btn_sync.setText("🔄 Sync LM Studio Models to Ollama (Zero-Copy)")
+                on_ping()
+
+            threading.Thread(target=_worker, daemon=True).start()
+
+        btn_sync.clicked.connect(on_sync_models)
+        layout.addWidget(btn_sync)
         layout.addWidget(lbl_ping_res)
         layout.addWidget(combo_model)
 
