@@ -938,6 +938,14 @@ class LoopNodeItem(BaseNodeItem):
         self.shelf_height = 26.0
         self.header_height = 28.0
 
+        self._is_resizing: bool = False
+        self._user_manual_resized: bool = False
+        self._resize_start_scene: Optional[QPointF] = None
+        self._resize_start_w: float = 0.0
+        self._resize_start_h: float = 0.0
+        self._resize_initial_node_rel_positions: Dict[Any, Tuple[float, float]] = {}
+        self.setAcceptHoverEvents(True)
+
         self.width = self.clamp_width
         self.height = self.clamp_height
 
@@ -982,7 +990,88 @@ class LoopNodeItem(BaseNodeItem):
                             queue.append(target)
         return nodes
 
+    def get_resize_grip_rect(self) -> QRectF:
+        """Returns corner bounding rect on bottom-right shelf for mouse drag resizing."""
+        return QRectF(self.clamp_width - 22, self.clamp_height - 22, 22, 22)
+
+    def hoverMoveEvent(self, event):
+        if self.get_resize_grip_rect().contains(event.pos()):
+            self.setCursor(Qt.CursorShape.SizeFDiagCursor)
+        else:
+            self.setCursor(Qt.CursorShape.ArrowCursor)
+        super().hoverMoveEvent(event)
+
+    def hoverLeaveEvent(self, event):
+        self.setCursor(Qt.CursorShape.ArrowCursor)
+        super().hoverLeaveEvent(event)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton and self.get_resize_grip_rect().contains(event.pos()):
+            self._is_resizing = True
+            self._user_manual_resized = True
+            self._resize_start_scene = event.scenePos()
+            self._resize_start_w = self.clamp_width
+            self._resize_start_h = self.clamp_height
+            body_nodes = self.get_body_nodes()
+            self._resize_initial_node_rel_positions = {
+                n: (n.pos().x() - self.pos().x(), n.pos().y() - self.pos().y())
+                for n in body_nodes
+            }
+            if self.scene():
+                loop_scene_rect = self.sceneBoundingRect()
+                for grp in getattr(self.scene(), "groups", []):
+                    if loop_scene_rect.contains(grp.sceneBoundingRect().center()):
+                        self._resize_initial_node_rel_positions[grp] = (
+                            grp.pos().x() - self.pos().x(),
+                            grp.pos().y() - self.pos().y()
+                        )
+            event.accept()
+            return
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if self._is_resizing and self._resize_start_scene:
+            delta = event.scenePos() - self._resize_start_scene
+            new_w = max(200.0, self._resize_start_w + delta.x())
+            new_h = max(110.0, self._resize_start_h + delta.y())
+            self.prepareGeometryChange()
+            self.clamp_width = new_w
+            self.clamp_height = new_h
+            self.width = new_w
+            self.height = new_h
+            self._layout_sockets()
+
+            # Proportional compress / expand of space between enclosed nodes horizontally & vertically
+            s_x = new_w / max(1.0, self._resize_start_w)
+            s_y = new_h / max(1.0, self._resize_start_h)
+            for item, (rx, ry) in getattr(self, "_resize_initial_node_rel_positions", {}).items():
+                nx = self.pos().x() + self.spine_width + max(0.0, (rx - self.spine_width)) * s_x
+                ny = self.pos().y() + self.header_height + max(0.0, (ry - self.header_height)) * s_y
+                item.setPos(nx, ny)
+                if hasattr(item, "update_connected_wires"):
+                    item.update_connected_wires()
+
+            self.update()
+            event.accept()
+            return
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        if self._is_resizing:
+            self._is_resizing = False
+            self._resize_start_scene = None
+            if hasattr(self, "_resize_initial_node_rel_positions"):
+                self._resize_initial_node_rel_positions.clear()
+            if self.scene() and hasattr(self.scene(), "scene_modified"):
+                self.scene().scene_modified.emit()
+            event.accept()
+            return
+        super().mouseReleaseEvent(event)
+
     def update_clamp_bounds(self):
+        if getattr(self, "_is_resizing", False):
+            return
+
         body_nodes = self.get_body_nodes()
         my_x = self.pos().x()
         my_y = self.pos().y()
@@ -1016,6 +1105,10 @@ class LoopNodeItem(BaseNodeItem):
         else:
             new_w = max(240.0, (max_x - my_x) + 40.0)
             new_h = max(125.0, (max_y - my_y) + 45.0)
+
+        if getattr(self, "_user_manual_resized", False):
+            new_w = max(self.clamp_width, new_w)
+            new_h = max(self.clamp_height, new_h)
 
         if abs(new_w - self.clamp_width) > 1.0 or abs(new_h - self.clamp_height) > 1.0:
             self.prepareGeometryChange()
@@ -1250,6 +1343,15 @@ class LoopNodeItem(BaseNodeItem):
             Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
             "Done →",
         )
+
+        # Resize grip notches on bottom right shelf
+        grip_r = self.get_resize_grip_rect()
+        painter.setPen(QPen(QColor(148, 163, 184, 180), 1.5, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+        for off in (5, 9, 13):
+            painter.drawLine(
+                int(grip_r.right() - off), int(grip_r.bottom() - 3),
+                int(grip_r.right() - 3), int(grip_r.bottom() - off)
+            )
 
     def clone(self) -> "LoopNodeItem":
         return LoopNodeItem(properties=dict(self.properties))

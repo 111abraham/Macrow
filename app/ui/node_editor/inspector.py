@@ -688,20 +688,34 @@ class PropertyInspector(QWidget):
         layout.addWidget(QLabel("Dimensions (Width × Height):"))
         row_size = QHBoxLayout()
         spin_w = QSpinBox()
-        spin_w.setRange(160, 4000)
+        spin_w.setRange(80, 20000)
         spin_w.setValue(int(r.width()))
         spin_w.setPrefix("W: ")
         spin_w.setStyleSheet("background: #0f172a; color: white; border: 1px solid #475569; padding: 4px; border-radius: 4px;")
 
         spin_h = QSpinBox()
-        spin_h.setRange(100, 4000)
+        spin_h.setRange(60, 20000)
         spin_h.setValue(int(r.height()))
         spin_h.setPrefix("H: ")
         spin_h.setStyleSheet("background: #0f172a; color: white; border: 1px solid #475569; padding: 4px; border-radius: 4px;")
 
         def on_size_change():
+            old_w = max(1.0, group.rect().width())
+            old_h = max(1.0, group.rect().height())
+            new_w = spin_w.value()
+            new_h = spin_h.value()
+            s_x = new_w / old_w
+            s_y = new_h / old_h
+            for node in group.nodes:
+                rx = node.pos().x() - group.pos().x()
+                ry = node.pos().y() - group.pos().y()
+                nx = group.pos().x() + max(8.0, rx * s_x)
+                ny = group.pos().y() + group.header_height + max(8.0, (ry - group.header_height) * s_y)
+                node.setPos(nx, ny)
+                node.update_connected_wires()
+
             group.prepareGeometryChange()
-            group.setRect(0, 0, spin_w.value(), spin_h.value())
+            group.setRect(0, 0, new_w, new_h)
             group.update()
             if group.scene() and hasattr(group.scene(), "scene_modified"):
                 group.scene().scene_modified.emit()

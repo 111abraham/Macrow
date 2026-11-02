@@ -417,11 +417,29 @@ class NodeScene(QGraphicsScene):
     # --- Grouping & Duplication Features ---
 
     def group_selected(self) -> Optional[NodeGroupItem]:
-        selected_nodes = [item for item in self.selectedItems() if isinstance(item, BaseNodeItem)]
+        selected_nodes = [item for item in self.selectedItems() if isinstance(item, BaseNodeItem) and not isinstance(item, StartNodeItem)]
         if not selected_nodes:
             return None
 
+        # Check if selection already matches an existing group exactly
+        for grp in self.groups:
+            if set(grp.nodes) == set(selected_nodes):
+                self.clearSelection()
+                grp.setSelected(True)
+                return grp
+
+        # Find any existing groups that these nodes currently belong to
+        old_groups = set(n.group for n in selected_nodes if getattr(n, "group", None))
+
         group = self.add_group(title=f"Group {len(self.groups) + 1}", nodes=selected_nodes)
+
+        for og in list(old_groups):
+            if og is not group and og in self.groups:
+                if not og.nodes:
+                    self.remove_group(og)
+                else:
+                    og.fit_to_nodes()
+
         self.clearSelection()
         group.setSelected(True)
         return group

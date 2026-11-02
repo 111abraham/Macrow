@@ -24,6 +24,27 @@ from app.ui.node_editor.node_group import NodeGroupItem
 from app.core.player import MacroPlayer
 
 
+from PyQt6.QtGui import QMouseEvent, QKeyEvent
+
+class MockMouseEvent:
+    def __init__(self, button=Qt.MouseButton.LeftButton, pos=QPointF(0, 0), scene_pos=QPointF(0, 0)):
+        self._button = button
+        self._pos = pos
+        self._scene_pos = scene_pos
+
+    def button(self):
+        return self._button
+
+    def pos(self):
+        return self._pos
+
+    def scenePos(self):
+        return self._scene_pos
+
+    def accept(self):
+        pass
+
+
 class TestNodeEditor(unittest.TestCase):
     def setUp(self):
         self.scene = NodeScene()
@@ -2476,6 +2497,286 @@ class TestNodeEditor(unittest.TestCase):
         inspector = PropertyInspector(self.scene)
         inspector.set_node(group)
         self.assertEqual(inspector.current_node, group)
+
+    def test_edge_auto_panning_timer_and_delta(self):
+        """Test that dragging nodes or cables to viewport edges triggers smooth auto-panning."""
+        from app.ui.node_editor.node_view import NodeView
+        from app.ui.node_editor.node_items import ActionNodeItem
+
+        view = NodeView(self.scene)
+        view.resize(800, 600)
+        n = ActionNodeItem("click", {"x": 100, "y": 100})
+        self.scene.add_node(n)
+        n.setSelected(True)
+        view._dragged_node = n
+
+        # Move mouse near left edge (x=10)
+        ev_left = QMouseEvent(
+            QMouseEvent.Type.MouseMove,
+            QPointF(10, 300),
+            Qt.MouseButton.NoButton,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        view.mouseMoveEvent(ev_left)
+        self.assertTrue(view._edge_scroll_timer.isActive())
+        self.assertLess(view._edge_scroll_delta.x(), 0.0)
+
+        # Move mouse to center (x=400, y=300) -> edge scrolling stops
+        ev_center = QMouseEvent(
+            QMouseEvent.Type.MouseMove,
+            QPointF(400, 300),
+            Qt.MouseButton.NoButton,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        view.mouseMoveEvent(ev_center)
+        self.assertFalse(view._edge_scroll_timer.isActive())
+        self.assertEqual(view._edge_scroll_delta.x(), 0.0)
+
+        # Release mouse stops timer
+        ev_rel = QMouseEvent(
+            QMouseEvent.Type.MouseButtonRelease,
+            QPointF(400, 300),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        view.mouseReleaseEvent(ev_rel)
+        self.assertFalse(view._edge_scroll_timer.isActive())
+
+    def test_space_navigation_hand_cursor(self):
+        """Test Space + Drag navigation changes cursor to open and closed hand."""
+        from app.ui.node_editor.node_view import NodeView
+        view = NodeView(self.scene)
+
+        # 1. Press Space alone -> OpenHandCursor
+        ev_sp_press = QKeyEvent(QKeyEvent.Type.KeyPress, Qt.Key.Key_Space, Qt.KeyboardModifier.NoModifier)
+        view.keyPressEvent(ev_sp_press)
+        self.assertTrue(view._space_held)
+        self.assertEqual(view.cursor().shape(), Qt.CursorShape.OpenHandCursor)
+
+        # 2. Left click while Space held -> Panning & ClosedHandCursor
+        ev_mouse_press = QMouseEvent(
+            QMouseEvent.Type.MouseButtonPress,
+            QPointF(200, 200),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        view.mousePressEvent(ev_mouse_press)
+        self.assertTrue(view._is_panning)
+        self.assertEqual(view.cursor().shape(), Qt.CursorShape.ClosedHandCursor)
+
+        # 3. Mouse release -> Still OpenHandCursor because Space is still held
+        ev_mouse_rel = QMouseEvent(
+            QMouseEvent.Type.MouseButtonRelease,
+            QPointF(250, 250),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        view.mouseReleaseEvent(ev_mouse_rel)
+        self.assertFalse(view._is_panning)
+        self.assertEqual(view.cursor().shape(), Qt.CursorShape.OpenHandCursor)
+
+        # 4. Release Space -> ArrowCursor
+        ev_sp_rel = QKeyEvent(QKeyEvent.Type.KeyRelease, Qt.Key.Key_Space, Qt.KeyboardModifier.NoModifier)
+        view.keyReleaseEvent(ev_sp_rel)
+        self.assertFalse(view._space_held)
+        self.assertEqual(view.cursor().shape(), Qt.CursorShape.ArrowCursor)
+
+    def test_shift_click_range_selection(self):
+        """Test that clicking node A, then Shift+clicking node B selects all nodes in between."""
+        from app.ui.node_editor.node_view import NodeView
+        from app.ui.node_editor.node_items import ActionNodeItem
+
+        view = NodeView(self.scene)
+        n1 = ActionNodeItem("click", {"x": 0, "y": 0})
+        n2 = ActionNodeItem("delay", {"duration": 100})
+        n3 = ActionNodeItem("delay", {"duration": 200})
+        n4 = ActionNodeItem("click", {"x": 400, "y": 0})
+
+        for n in (n1, n2, n3, n4):
+            self.scene.add_node(n)
+
+        # Connect n1 -> n2 -> n3 -> n4
+        self.scene.add_connection(n1.output_sockets[0], n2.input_sockets[0])
+        self.scene.add_connection(n2.output_sockets[0], n3.input_sockets[0])
+        self.scene.add_connection(n3.output_sockets[0], n4.input_sockets[0])
+
+        # 1. Normal click on n1
+        view._last_selected_node = n1
+        n1.setSelected(True)
+
+        # 2. Shift + Click on n4
+        view._shift_candidate_item = n4
+        view._is_shift_branch_drag = False
+        release_event = QMouseEvent(
+            QMouseEvent.Type.MouseButtonRelease,
+            QPointF(400, 0),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.ShiftModifier,
+        )
+        view.mouseReleaseEvent(release_event)
+
+        # All 4 nodes along the path should be selected
+        self.assertTrue(n1.isSelected())
+        self.assertTrue(n2.isSelected())
+        self.assertTrue(n3.isSelected())
+        self.assertTrue(n4.isSelected())
+
+    def test_ctrl_drag_downstream_excludes_enclosing_repeat_node(self):
+        """Test that Ctrl+Drag on a node inside a repeat zone does not pull the repeat zone itself."""
+        from app.ui.node_editor.node_view import NodeView
+        from app.ui.node_editor.node_items import LoopNodeItem, ActionNodeItem
+
+        view = NodeView(self.scene)
+        loop = LoopNodeItem(properties={"count": 5})
+        loop.setPos(100, 100)
+        self.scene.add_node(loop)
+
+        n1 = ActionNodeItem("click", {"x": 160, "y": 150})
+        n1.setPos(160, 150)
+        n2 = ActionNodeItem("delay", {"duration": 50})
+        n2.setPos(260, 150)
+        self.scene.add_node(n1)
+        self.scene.add_node(n2)
+
+        self.scene.add_connection(loop.socket_body, n1.input_sockets[0])
+        self.scene.add_connection(n1.output_sockets[0], n2.input_sockets[0])
+        self.scene.add_connection(n2.output_sockets[0], loop.socket_repeat)
+
+        downstream = view._get_downstream_nodes(n1)
+        self.assertIn(n1, downstream)
+        self.assertIn(n2, downstream)
+        self.assertNotIn(loop, downstream)
+
+    def test_repeat_zone_in_canvas_resizing_and_compression(self):
+        """Test that repeat zone has resize grip and proportionally compresses / expands space between nodes."""
+        from app.ui.node_editor.node_items import LoopNodeItem, ActionNodeItem
+        from PyQt6.QtCore import QPointF
+        from PyQt6.QtWidgets import QGraphicsSceneMouseEvent
+
+        loop = LoopNodeItem(properties={"count": 3})
+        loop.setPos(100, 100)
+        loop.clamp_width = 300.0
+        loop.clamp_height = 200.0
+        self.scene.add_node(loop)
+
+        n1 = ActionNodeItem("click", {"x": 10, "y": 10})
+        n1.setPos(150, 150)
+        n2 = ActionNodeItem("click", {"x": 20, "y": 20})
+        n2.setPos(250, 180)
+        self.scene.add_node(n1)
+        self.scene.add_node(n2)
+        self.scene.add_connection(loop.socket_body, n1.input_sockets[0])
+        self.scene.add_connection(n1.output_sockets[0], n2.input_sockets[0])
+        self.scene.add_connection(n2.output_sockets[0], loop.socket_repeat)
+
+        # Grip exists on bottom right
+        grip = loop.get_resize_grip_rect()
+        self.assertTrue(grip.isValid())
+        self.assertGreater(grip.right(), 270)
+
+        # 1. Start resize drag
+        ev_press = MockMouseEvent(
+            button=Qt.MouseButton.LeftButton,
+            pos=grip.center(),
+            scene_pos=loop.pos() + grip.center(),
+        )
+        loop.mousePressEvent(ev_press)
+        self.assertTrue(loop._is_resizing)
+
+        # 2. Drag resize by +100px width, +50px height
+        ev_move = MockMouseEvent(
+            button=Qt.MouseButton.LeftButton,
+            pos=grip.center() + QPointF(100, 50),
+            scene_pos=loop.pos() + grip.center() + QPointF(100, 50),
+        )
+        loop.mouseMoveEvent(ev_move)
+
+        self.assertGreater(loop.clamp_width, 350.0)
+        self.assertGreater(n2.pos().x(), 250.0)  # Node space expanded!
+
+        # 3. Release resize
+        ev_rel = MockMouseEvent(button=Qt.MouseButton.LeftButton)
+        loop.mouseReleaseEvent(ev_rel)
+        self.assertFalse(loop._is_resizing)
+
+    def test_group_in_canvas_resizing_and_compression(self):
+        """Test that group frame proportionally compresses / expands space between enclosed nodes."""
+        from app.ui.node_editor.node_group import NodeGroupItem
+        from app.ui.node_editor.node_items import ActionNodeItem
+        from PyQt6.QtCore import QPointF
+
+        group = NodeGroupItem(title="Test Group")
+        group.setPos(50, 50)
+        group.setRect(0, 0, 300, 200)
+        self.scene.addItem(group)
+        self.scene.groups.append(group)
+
+        n1 = ActionNodeItem("click", {"x": 10, "y": 10})
+        n1.setPos(100, 100)
+        n2 = ActionNodeItem("click", {"x": 20, "y": 20})
+        n2.setPos(200, 150)
+        self.scene.add_node(n1)
+        self.scene.add_node(n2)
+        group.add_node(n1)
+        group.add_node(n2)
+
+        # Start resize drag
+        grip = group.get_resize_grip_rect()
+        ev_press = MockMouseEvent(
+            button=Qt.MouseButton.LeftButton,
+            pos=grip.center(),
+            scene_pos=group.pos() + grip.center(),
+        )
+        group.mousePressEvent(ev_press)
+        self.assertTrue(group._is_resizing)
+
+        # Compress width from 300 to 150 (half width)
+        ev_move = MockMouseEvent(
+            button=Qt.MouseButton.LeftButton,
+            pos=grip.center() - QPointF(150, 50),
+            scene_pos=group.pos() + grip.center() - QPointF(150, 50),
+        )
+        group.mouseMoveEvent(ev_move)
+
+        # Space between nodes should be compressed
+        dx_after = n2.pos().x() - n1.pos().x()
+        self.assertLess(dx_after, 100.0)
+
+        ev_rel = MockMouseEvent(button=Qt.MouseButton.LeftButton)
+        group.mouseReleaseEvent(ev_rel)
+        self.assertFalse(group._is_resizing)
+
+    def test_group_selected_no_nesting_on_click_away(self):
+        """Test that grouping nodes twice or clicking away never creates duplicate nested groups."""
+        from app.ui.node_editor.node_items import ActionNodeItem
+
+        n1 = ActionNodeItem("click", {"x": 10, "y": 10})
+        n2 = ActionNodeItem("click", {"x": 20, "y": 20})
+        self.scene.add_node(n1)
+        self.scene.add_node(n2)
+
+        n1.setSelected(True)
+        n2.setSelected(True)
+        g1 = self.scene.group_selected()
+        self.assertIsNotNone(g1)
+        self.assertEqual(len(self.scene.groups), 1)
+
+        # Regrouping same nodes does not create a second group
+        n1.setSelected(True)
+        n2.setSelected(True)
+        g2 = self.scene.group_selected()
+        self.assertEqual(g1, g2)
+        self.assertEqual(len(self.scene.groups), 1)
+
+        # Clicking away clears selection without leaving zombie groups
+        self.scene.clearSelection()
+        self.assertEqual(len(self.scene.groups), 1)
 
 
 if __name__ == "__main__":

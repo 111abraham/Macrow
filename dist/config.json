@@ -11,247 +11,14 @@
   },
   "active_position": "M1",
   "repeat_interval_ms": 100,
-  "panel_opacity": 0.97,
+  "panel_opacity": 0.85,
   "macros": {
     "Macro 2": {
       "steps": [
         {
-          "id": "e3801e8a",
-          "type": "loop_count",
-          "count": 5,
-          "infinite": true,
-          "var_name": "i",
-          "body_next": "5d0c6416",
-          "next": null,
-          "dt": 10
-        },
-        {
-          "id": "5d0c6416",
+          "id": "170cfea3",
           "type": "wait_image",
-          "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261102_100755.png",
-          "confidence": 0.85,
-          "action": "click",
-          "button": "left",
-          "timeout": 2.0,
-          "break_loop_on_found": false,
-          "save_coords": true,
-          "var_x": "found_x",
-          "var_y": "found_y",
-          "found_next": "9dd9135f",
-          "miss_next": "ec5803f8",
-          "dt": 160
-        },
-        {
-          "id": "9dd9135f",
-          "type": "delay",
-          "next": "5d0c6416",
-          "duration": 250,
-          "dt": 410
-        },
-        {
-          "id": "ec5803f8",
-          "type": "wait_image",
-          "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261102_101052.png",
-          "confidence": 0.85,
-          "action": "none",
-          "button": "left",
-          "timeout": 2.0,
-          "break_loop_on_found": false,
-          "save_coords": true,
-          "var_x": "expandtab_x",
-          "var_y": "expandtab_y",
-          "found_next": "4321f54a",
-          "miss_next": "d0011adb",
-          "dt": 560
-        },
-        {
-          "id": "4321f54a",
-          "type": "wheel",
-          "next": "f553d880",
-          "deltaY": 720,
-          "deltaX": 0,
-          "x": "$expandtab_x",
-          "y": "$expandtab_y+500",
-          "dt": 640
-        },
-        {
-          "id": "d0011adb",
-          "type": "wait_image",
-          "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261101_215443.png",
-          "confidence": 0.85,
-          "action": "click",
-          "button": "left",
-          "timeout": 2.0,
-          "break_loop_on_found": false,
-          "save_coords": true,
-          "var_x": "found_x",
-          "var_y": "found_y",
-          "found_next": "7ff360dc",
-          "miss_next": "e3801e8a",
-          "dt": 790
-        },
-        {
-          "id": "f553d880",
-          "type": "move",
-          "next": "b5530200",
-          "x": "$expandtab_x+600",
-          "y": "$expandtab_y+500",
-          "button": "left",
-          "direct_jump": true,
-          "dt": 840
-        },
-        {
-          "id": "7ff360dc",
-          "type": "delay",
-          "next": "c930651c",
-          "duration": 250,
-          "dt": 1090
-        },
-        {
-          "id": "b5530200",
-          "type": "wait_image",
-          "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261102_101739.png;D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261102_104910.png",
-          "confidence": 0.99,
-          "action": "click",
-          "button": "left",
-          "timeout": 2.0,
-          "break_loop_on_found": false,
-          "save_coords": true,
-          "var_x": "",
-          "var_y": "",
-          "found_next": "5d0c6416",
-          "miss_next": "e52bdda4",
-          "dt": 1240
-        },
-        {
-          "id": "c930651c",
-          "type": "click",
-          "next": "d3da075a",
-          "x": "$found_x-100",
-          "y": "$found_y-100",
-          "button": "left",
-          "modifier": "none",
-          "dt": 1340
-        },
-        {
-          "id": "e52bdda4",
-          "type": "wait_image",
-          "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261028_094655.png",
-          "confidence": 0.85,
-          "action": "none",
-          "button": "left",
-          "timeout": 2.0,
-          "break_loop_on_found": false,
-          "save_coords": true,
-          "var_x": "createpost_x",
-          "var_y": "createpost_y",
-          "found_next": "8a97b671",
-          "miss_next": "4447b2ba",
-          "dt": 1490
-        },
-        {
-          "id": "d3da075a",
-          "type": "delay",
-          "next": "5d0c6416",
-          "duration": 1000,
-          "dt": 2490
-        },
-        {
-          "id": "8a97b671",
-          "type": "wheel",
-          "next": "7c30054f",
-          "deltaY": 1200,
-          "deltaX": 0,
-          "x": "$createpost_x+500",
-          "y": "$createpost_y+300",
-          "dt": 2570
-        },
-        {
-          "id": "4447b2ba",
-          "type": "delay",
-          "next": "3ec5d1d9",
-          "duration": 250,
-          "dt": 2820
-        },
-        {
-          "id": "7c30054f",
-          "type": "wait_image",
-          "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261102_121704.png",
-          "confidence": 0.99,
-          "action": "none",
-          "button": "left",
-          "timeout": 2.0,
-          "break_loop_on_found": false,
-          "save_coords": true,
-          "var_x": "delete_x",
-          "var_y": "delete_y",
-          "found_next": "97a8fe9a",
-          "miss_next": "b9ac1a5a",
-          "dt": 2970
-        },
-        {
-          "id": "01a48517",
-          "type": "delay",
-          "next": "b9ac1a5a",
-          "duration": 100,
-          "dt": 3070
-        },
-        {
-          "id": "3ec5d1d9",
-          "type": "wait_image",
-          "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261028_093456.png",
-          "confidence": 0.85,
-          "action": "none",
-          "button": "left",
-          "timeout": 2.0,
-          "break_loop_on_found": false,
-          "save_coords": true,
-          "var_x": "metabusiness_x",
-          "var_y": "metabusiness_y",
-          "found_next": "e2fed3c1",
-          "miss_next": "1bb0147e",
-          "dt": 3220
-        },
-        {
-          "id": "97a8fe9a",
-          "type": "click",
-          "next": "01a48517",
-          "x": "$delete_x+44",
-          "y": "$delete_y",
-          "button": "left",
-          "modifier": "none",
-          "dt": 3320
-        },
-        {
-          "id": "b9ac1a5a",
-          "type": "wait_image",
-          "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261102_111319.png",
-          "confidence": 0.85,
-          "action": "click",
-          "button": "left",
-          "timeout": 2.0,
-          "break_loop_on_found": false,
-          "save_coords": true,
-          "var_x": "found_x",
-          "var_y": "found_y",
-          "found_next": "2ae92688",
-          "miss_next": "e3801e8a",
-          "dt": 3470
-        },
-        {
-          "id": "e2fed3c1",
-          "type": "wheel",
-          "next": "d9ad9eb4",
-          "deltaY": 3600,
-          "deltaX": 0,
-          "x": "$metabusiness_x+500",
-          "y": "$metabusiness_y",
-          "dt": 3550
-        },
-        {
-          "id": "1bb0147e",
-          "type": "wait_image",
-          "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261102_130717_snippet_20261102_103407.png",
+          "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261102_233919.png",
           "confidence": 0.85,
           "action": "click",
           "button": "left",
@@ -260,267 +27,113 @@
           "save_coords": true,
           "var_x": "found_x",
           "var_y": "found_y",
-          "found_next": "7793f205",
-          "miss_next": "e3801e8a",
-          "dt": 3700
+          "found_next": "8a13f635",
+          "miss_next": "7ea125b2",
+          "dt": 150
         },
         {
-          "id": "2ae92688",
+          "id": "8a13f635",
           "type": "delay",
-          "next": "6060297b",
+          "next": "55edd3b0",
           "duration": 500,
-          "dt": 4200
+          "dt": 650
         },
         {
-          "id": "d9ad9eb4",
+          "id": "7ea125b2",
+          "type": "delay",
+          "next": "170cfea3",
+          "duration": 500,
+          "dt": 1150
+        },
+        {
+          "id": "55edd3b0",
           "type": "wait_image",
-          "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261102_105820.png",
+          "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261102_222200.png",
           "confidence": 0.85,
           "action": "click",
           "button": "left",
-          "timeout": 2.0,
+          "timeout": 5.0,
           "break_loop_on_found": false,
           "save_coords": true,
           "var_x": "found_x",
           "var_y": "found_y",
-          "found_next": "e5bdd327",
-          "miss_next": "e3801e8a",
-          "dt": 4350
+          "found_next": "9f9e3796",
+          "miss_next": "7f783cf8",
+          "dt": 1300
         },
         {
-          "id": "7793f205",
-          "type": "move",
-          "next": "e52bdda4",
-          "x": "$metabusiness_x+500",
-          "y": "$metabusiness_y",
-          "button": "middle",
-          "direct_jump": true,
-          "dt": 4400
+          "id": "9f9e3796",
+          "type": "loop_count",
+          "count": "2y",
+          "infinite": false,
+          "var_name": "i",
+          "body_next": "83a4b0a1",
+          "next": "20df7620",
+          "dt": 1310
         },
         {
-          "id": "6060297b",
+          "id": "7f783cf8",
+          "type": "delay",
+          "next": "55edd3b0",
+          "duration": 2000,
+          "dt": 3310
+        },
+        {
+          "id": "83a4b0a1",
+          "type": "key_press",
+          "next": "9f9e3796",
+          "key": "Enter",
+          "vk": 13,
+          "dt": 3360
+        },
+        {
+          "id": "20df7620",
+          "type": "key_press",
+          "next": "d99f6b9f",
+          "key": "Enter",
+          "vk": 13,
+          "dt": 3410
+        },
+        {
+          "id": "d99f6b9f",
+          "type": "delay",
+          "next": "5a2795cf",
+          "duration": 500,
+          "dt": 3910
+        },
+        {
+          "id": "5a2795cf",
           "type": "hotkey",
           "combo": "Shift+Tab",
           "cad_action": "taskmgr",
-          "next": "6410c05f",
-          "dt": 4500
+          "next": "7d6a6bd5",
+          "dt": 4010
         },
         {
-          "id": "e5bdd327",
-          "type": "delay",
-          "next": "8a97b671",
-          "duration": 250,
-          "dt": 4750
-        },
-        {
-          "id": "6410c05f",
+          "id": "7d6a6bd5",
           "type": "key_press",
-          "next": "2d2b7537",
+          "next": "5a234b07",
           "key": "Down Arrow",
           "vk": 40,
-          "dt": 4800
+          "dt": 4060
         },
         {
-          "id": "2d2b7537",
+          "id": "5a234b07",
           "type": "delay",
-          "next": "1ae2c533",
+          "next": "4329ecc4",
           "duration": 100,
-          "dt": 4900
+          "dt": 4160
         },
         {
-          "id": "1ae2c533",
-          "type": "key_press",
-          "next": "9e81b3ea",
-          "key": "Enter",
-          "vk": 13,
-          "dt": 4950
-        },
-        {
-          "id": "9e81b3ea",
-          "type": "loop_count",
-          "count": 3,
-          "infinite": false,
-          "var_name": "i",
-          "body_next": "10b5a4f8",
-          "next": "6b1843f9",
-          "dt": 4960
-        },
-        {
-          "id": "10b5a4f8",
-          "type": "hotkey",
-          "combo": "Ctrl+Tab",
-          "cad_action": "taskmgr",
-          "next": "9e81b3ea",
-          "dt": 5060
-        },
-        {
-          "id": "6b1843f9",
-          "type": "wait_image",
-          "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261102_132708.png",
-          "confidence": 0.85,
-          "action": "click",
-          "button": "left",
-          "timeout": 5.0,
-          "break_loop_on_found": false,
-          "save_coords": true,
-          "var_x": "found_x",
-          "var_y": "found_y",
-          "found_next": "ce676542",
-          "miss_next": "e3801e8a",
-          "dt": 5210
-        },
-        {
-          "id": "ce676542",
-          "type": "delay",
-          "next": "acef7ab5",
-          "duration": 500,
-          "dt": 5710
-        },
-        {
-          "id": "acef7ab5",
-          "type": "loop_count",
-          "count": 7,
-          "infinite": false,
-          "var_name": "i",
-          "body_next": "363a2e07",
-          "next": "eb6928b1",
-          "dt": 5720
-        },
-        {
-          "id": "363a2e07",
-          "type": "key_press",
-          "next": "acef7ab5",
-          "key": "Tab",
-          "vk": 9,
-          "dt": 5770
-        },
-        {
-          "id": "eb6928b1",
-          "type": "key_press",
-          "next": "9fa836a4",
-          "key": "Enter",
-          "vk": 13,
-          "dt": 5820
-        },
-        {
-          "id": "9fa836a4",
-          "type": "delay",
-          "next": "3257026e",
-          "duration": 5000,
-          "dt": 10820
-        },
-        {
-          "id": "3257026e",
-          "type": "wait_image",
-          "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261102_161116.png",
-          "confidence": 0.85,
-          "action": "click",
-          "button": "left",
-          "timeout": 5.0,
-          "break_loop_on_found": false,
-          "save_coords": true,
-          "var_x": "found_x",
-          "var_y": "found_y",
-          "found_next": "9085c0b0",
-          "miss_next": "e3801e8a",
-          "dt": 10970
-        },
-        {
-          "id": "9085c0b0",
-          "type": "delay",
-          "next": "2ed2c9b1",
-          "duration": 3500,
-          "dt": 14470
-        },
-        {
-          "id": "2ed2c9b1",
-          "type": "wait_image",
-          "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261102_161526.png",
-          "confidence": 0.85,
-          "action": "click",
-          "button": "left",
-          "timeout": 5.0,
-          "break_loop_on_found": false,
-          "save_coords": true,
-          "var_x": "found_x",
-          "var_y": "found_y",
-          "found_next": "39dece23",
-          "miss_next": "e3801e8a",
-          "dt": 14620
-        },
-        {
-          "id": "39dece23",
-          "type": "delay",
-          "next": "f71cc664",
-          "duration": 5000,
-          "dt": 19620
-        },
-        {
-          "id": "f71cc664",
-          "type": "wait_image",
-          "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261102_162014.png",
-          "confidence": 0.85,
-          "action": "none",
-          "button": "left",
-          "timeout": 5.0,
-          "break_loop_on_found": false,
-          "save_coords": true,
-          "var_x": "linkedinaddimage_x",
-          "var_y": "linkedinaddimage_y",
-          "found_next": "29a2696f",
-          "miss_next": "e3801e8a",
-          "dt": 19770
-        },
-        {
-          "id": "29a2696f",
-          "type": "click",
-          "next": "bb8d14fd",
-          "x": "$linkedinaddimage_x-40",
-          "y": "$linkedinaddimage_y",
-          "button": "left",
-          "modifier": "none",
-          "dt": 19870
-        },
-        {
-          "id": "bb8d14fd",
-          "type": "delay",
-          "next": "1ee043cb",
-          "duration": 500,
-          "dt": 20370
-        },
-        {
-          "id": "1ee043cb",
-          "type": "hotkey",
-          "combo": "Shift+Tab",
-          "cad_action": "taskmgr",
-          "next": "45a3cdc6",
-          "dt": 20470
-        },
-        {
-          "id": "45a3cdc6",
-          "type": "key_press",
-          "next": "2e91a8ee",
-          "key": "Down Arrow",
-          "vk": 40,
-          "dt": 20520
-        },
-        {
-          "id": "2e91a8ee",
-          "type": "delay",
-          "next": "1f2c7142",
-          "duration": 100,
-          "dt": 20620
-        },
-        {
-          "id": "1f2c7142",
+          "id": "4329ecc4",
           "type": "key_press",
           "next": null,
           "key": "Enter",
           "vk": 13,
-          "dt": 20670
+          "dt": 4210
         }
       ],
-      "duration": 20670,
+      "duration": 4210,
       "graph_data": {
         "nodes": [
           {
@@ -529,8 +142,8 @@
             "node_type": "start",
             "title": "▶ Start",
             "pos": [
-              683.1392552748956,
-              -1293.276473106709
+              13339.415020271108,
+              -2540.3622561999255
             ],
             "bypassed": false,
             "properties": {}
@@ -541,8 +154,8 @@
             "node_type": "wait_image",
             "title": "⏱ Wait For Image",
             "pos": [
-              3678.4939859020724,
-              -1466.473416901004
+              3551.699874359377,
+              -1282.8621677609924
             ],
             "bypassed": false,
             "properties": {
@@ -569,8 +182,8 @@
             "node_type": "wheel",
             "title": "📜 Mouse Wheel",
             "pos": [
-              3992.3391374063635,
-              -1484.4784802460172
+              3865.5450258636674,
+              -1285.249923651872
             ],
             "bypassed": false,
             "properties": {
@@ -591,8 +204,8 @@
             "node_type": "wait_image",
             "title": "⏱ Wait For Image",
             "pos": [
-              4221.277735631504,
-              -1458.7933989280177
+              4094.483624088808,
+              -1259.5648423338725
             ],
             "bypassed": false,
             "properties": {
@@ -614,8 +227,8 @@
             "node_type": "wheel",
             "title": "📜 Mouse Wheel",
             "pos": [
-              4822.725939013506,
-              -1573.9938305549495
+              4738.528049464389,
+              -1384.2311010704884
             ],
             "bypassed": false,
             "properties": {
@@ -636,8 +249,8 @@
             "node_type": "wait_image",
             "title": "⏱ Wait For Image",
             "pos": [
-              3099.3766216482277,
-              -1562.3421824040095
+              3013.0059472162557,
+              -1349.3525342464286
             ],
             "bypassed": false,
             "properties": {
@@ -659,8 +272,8 @@
             "node_type": "wait_image",
             "title": "⏱ Wait For Image",
             "pos": [
-              1471.7585982092612,
-              -1527.2667187645397
+              1387.9120821654337,
+              -1351.4641233515952
             ],
             "bypassed": false,
             "properties": {
@@ -682,8 +295,8 @@
             "node_type": "loop_count",
             "title": "🔁 Repeat Zone (Loop)",
             "pos": [
-              1240.0343064901344,
-              -1752.303854829267
+              1229.8034607960235,
+              -1762.5347005233775
             ],
             "bypassed": false,
             "properties": {
@@ -699,8 +312,8 @@
             "node_type": "wait_image",
             "title": "⏱ Wait For Image",
             "pos": [
-              1869.419430895487,
-              -1479.3884836392683
+              1742.6253193527928,
+              -1280.159927045123
             ],
             "bypassed": false,
             "properties": {
@@ -722,8 +335,8 @@
             "node_type": "wheel",
             "title": "📜 Mouse Wheel",
             "pos": [
-              2150.2052086651265,
-              -1607.0684190610384
+              1985.4618006690503,
+              -1394.4459931304054
             ],
             "bypassed": false,
             "properties": {
@@ -739,8 +352,8 @@
             "node_type": "wait_image",
             "title": "⏱ Wait For Image",
             "pos": [
-              2717.9589644247812,
-              -1584.4787723891252
+              2559.930237973819,
+              -1377.4415620679135
             ],
             "bypassed": false,
             "properties": {
@@ -762,8 +375,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              1796.0687318616342,
-              -1657.469512324636
+              1608.6599457625832,
+              -1449.2610039443641
             ],
             "bypassed": false,
             "properties": {
@@ -777,8 +390,8 @@
             "node_type": "wait_image",
             "title": "⏱ Wait For Image",
             "pos": [
-              2376.529263389402,
-              -1422.5366691936551
+              2226.3091906655063,
+              -1168.6475365100425
             ],
             "bypassed": false,
             "properties": {
@@ -800,8 +413,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              2875.0146688998384,
-              -1221.312462167531
+              2748.2205573571437,
+              -1022.0839055733859
             ],
             "bypassed": false,
             "properties": {
@@ -815,8 +428,8 @@
             "node_type": "click",
             "title": "🖱 Mouse Click",
             "pos": [
-              3161.170373105726,
-              -1232.8551093818537
+              3034.3762615630303,
+              -1033.6265527877085
             ],
             "bypassed": false,
             "properties": {
@@ -832,8 +445,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              3381.0665867232765,
-              -1300.4769363046425
+              3308.9330512700476,
+              -1107.1048700057975
             ],
             "bypassed": false,
             "properties": {
@@ -847,8 +460,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              3427.663609036553,
-              -1472.7350172550564
+              3300.8694974938585,
+              -1291.0759315468115
             ],
             "bypassed": false,
             "properties": {
@@ -862,8 +475,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              4512.604945273042,
-              -1471.357212673824
+              4385.8108337303465,
+              -1272.1286560796789
             ],
             "bypassed": false,
             "properties": {
@@ -877,8 +490,8 @@
             "node_type": "wait_image",
             "title": "⏱ Wait For Image",
             "pos": [
-              5877.74354137053,
-              -1413.0499226752672
+              5793.545651821413,
+              -1223.2871931908062
             ],
             "bypassed": false,
             "properties": {
@@ -900,8 +513,8 @@
             "node_type": "hotkey",
             "title": "⌨ Key Combination",
             "pos": [
-              6554.11373809408,
-              -1516.883502244706
+              6425.517997583426,
+              -1300.8135272880263
             ],
             "bypassed": false,
             "properties": {
@@ -915,8 +528,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              6247.88248928075,
-              -1491.5590883313182
+              6163.684599731635,
+              -1301.7963588468574
             ],
             "bypassed": false,
             "properties": {
@@ -930,8 +543,8 @@
             "node_type": "key_press",
             "title": "⌨ Key Press (Tap)",
             "pos": [
-              6847.988950281957,
-              -1538.0043971872178
+              6985.3795600716885,
+              -1332.589826220391
             ],
             "bypassed": false,
             "properties": {
@@ -946,8 +559,8 @@
             "node_type": "key_press",
             "title": "⌨ Key Press (Tap)",
             "pos": [
-              7365.8206210198405,
-              -1514.8850428473993
+              7455.9984888276,
+              -1304.879162300644
             ],
             "bypassed": false,
             "properties": {
@@ -962,8 +575,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              7094.29422873827,
-              -1527.4955997600277
+              7206.430029146389,
+              -1322.0810287932009
             ],
             "bypassed": false,
             "properties": {
@@ -977,8 +590,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              5607.3205559754115,
-              -1589.6045593578538
+              5523.122666426295,
+              -1399.8418298733927
             ],
             "bypassed": false,
             "properties": {
@@ -992,8 +605,8 @@
             "node_type": "move",
             "title": "🏹 Mouse Move",
             "pos": [
-              4265.693667947513,
-              -1307.4238646601193
+              4138.899556404817,
+              -1108.1953080659741
             ],
             "bypassed": false,
             "properties": {
@@ -1014,8 +627,8 @@
             "node_type": "wait_image",
             "title": "⏱ Wait For Image",
             "pos": [
-              5074.803069709629,
-              -1471.254156333969
+              4990.6051801605145,
+              -1281.4914268495081
             ],
             "bypassed": false,
             "properties": {
@@ -1038,8 +651,8 @@
             "node_type": "click",
             "title": "🖱 Mouse Click",
             "pos": [
-              5350.222892461463,
-              -1496.3296675498418
+              5276.855387768116,
+              -1311.208531574996
             ],
             "bypassed": false,
             "properties": {
@@ -1054,8 +667,8 @@
             "node_type": "wait_image",
             "title": "⏱ Wait For Image",
             "pos": [
-              3974.0452067624105,
-              -1377.8101701288524
+              3847.2510952197163,
+              -1178.5816135347072
             ],
             "bypassed": false,
             "properties": {
@@ -1072,31 +685,13 @@
             }
           },
           {
-            "id": "490e178e",
-            "class_name": "StickyNoteNodeItem",
-            "node_type": "sticky_note",
-            "title": "Sticky Note",
-            "pos": [
-              7352.551808857731,
-              -1713.167185956315
-            ],
-            "bypassed": false,
-            "properties": {
-              "text": "facebook ends here",
-              "collapsed": false,
-              "color": "#7DD3FC",
-              "width": 220.0,
-              "height": 160.0
-            }
-          },
-          {
             "id": "10b5a4f8",
             "class_name": "HotkeyNodeItem",
             "node_type": "hotkey",
             "title": "⌨ Key Combination",
             "pos": [
-              7787.800148342608,
-              -1467.382562475098
+              8209.155360491586,
+              -1456.390340483273
             ],
             "bypassed": false,
             "properties": {
@@ -1110,8 +705,8 @@
             "node_type": "loop_count",
             "title": "🔁 Repeat Zone (Loop)",
             "pos": [
-              7715.15981134124,
-              -1535.6573945398848
+              8136.515023490217,
+              -1524.6651725480594
             ],
             "bypassed": false,
             "properties": {
@@ -1127,8 +722,8 @@
             "node_type": "wait_image",
             "title": "⏱ Wait For Image",
             "pos": [
-              8071.8394408094155,
-              -1438.076141679686
+              8494.495394218407,
+              -1425.815460206653
             ],
             "bypassed": false,
             "properties": {
@@ -1150,8 +745,8 @@
             "node_type": "loop_count",
             "title": "🔁 Repeat Zone (Loop)",
             "pos": [
-              8681.139333286594,
-              -1475.2840567758979
+              9069.823536259402,
+              -1462.203199587721
             ],
             "bypassed": false,
             "properties": {
@@ -1167,8 +762,8 @@
             "node_type": "key_press",
             "title": "⌨ Key Press (Tap)",
             "pos": [
-              8760.60917828322,
-              -1423.1069761576227
+              9149.29338125603,
+              -1410.0261189694456
             ],
             "bypassed": false,
             "properties": {
@@ -1183,8 +778,8 @@
             "node_type": "key_press",
             "title": "⌨ Key Press (Tap)",
             "pos": [
-              9056.738806339732,
-              -1329.5560773614584
+              9535.668887293843,
+              -1343.849425811822
             ],
             "bypassed": false,
             "properties": {
@@ -1199,8 +794,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              8332.456700837009,
-              -1450.1487592740868
+              8756.560805098165,
+              -1493.524865977136
             ],
             "bypassed": false,
             "properties": {
@@ -1214,8 +809,8 @@
             "node_type": "move",
             "title": "🏹 Mouse Move",
             "pos": [
-              2386.6171836303565,
-              -1607.0684190610384
+              2300.5561029073183,
+              -1410.623596833168
             ],
             "bypassed": false,
             "properties": {
@@ -1231,8 +826,8 @@
             "node_type": "wait_image",
             "title": "⏱ Wait For Image",
             "pos": [
-              9566.750260119328,
-              -1389.1836566389277
+              10055.039571842664,
+              -1367.2099858585216
             ],
             "bypassed": false,
             "properties": {
@@ -1254,8 +849,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              9318.2887216578,
-              -1362.2605797158508
+              9797.218802611906,
+              -1351.985947396984
             ],
             "bypassed": false,
             "properties": {
@@ -1269,8 +864,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              9878.730472487123,
-              -1396.3145701485432
+              10368.189688056616,
+              -1402.4185916758297
             ],
             "bypassed": false,
             "properties": {
@@ -1284,8 +879,8 @@
             "node_type": "wait_image",
             "title": "⏱ Wait For Image",
             "pos": [
-              10192.389215888563,
-              -1452.5946871677738
+              10651.430931458053,
+              -1422.4316894642916
             ],
             "bypassed": false,
             "properties": {
@@ -1307,13 +902,13 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              10466.665650371739,
-              -1458.2024836100816
+              10965.032125329648,
+              -1434.7929478989995
             ],
             "bypassed": false,
             "properties": {
               "action_type": "delay",
-              "duration": 5000
+              "duration": 2000
             }
           },
           {
@@ -1322,8 +917,8 @@
             "node_type": "wait_image",
             "title": "⏱ Wait For Image",
             "pos": [
-              10713.81758254929,
-              -1499.0547015930358
+              11216.145740426475,
+              -1528.5568000434
             ],
             "bypassed": false,
             "properties": {
@@ -1345,8 +940,8 @@
             "node_type": "click",
             "title": "🖱 Mouse Click",
             "pos": [
-              10983.833144896986,
-              -1491.5325040909113
+              11483.821495081864,
+              -1529.2239294643516
             ],
             "bypassed": false,
             "properties": {
@@ -1361,8 +956,8 @@
             "node_type": "key_press",
             "title": "⌨ Key Press (Tap)",
             "pos": [
-              11894.547875030725,
-              -1591.3878957943523
+              12580.392812790307,
+              -1611.519295516346
             ],
             "bypassed": false,
             "properties": {
@@ -1377,8 +972,8 @@
             "node_type": "hotkey",
             "title": "⌨ Key Combination",
             "pos": [
-              11600.672662842846,
-              -1570.2670008518405
+              12046.517600602427,
+              -1599.1784133995575
             ],
             "bypassed": false,
             "properties": {
@@ -1392,13 +987,13 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              11294.441414029518,
-              -1544.942586938453
+              11794.429764214392,
+              -1582.6340123118937
             ],
             "bypassed": false,
             "properties": {
               "action_type": "delay",
-              "duration": 500
+              "duration": 1000
             }
           },
           {
@@ -1407,8 +1002,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              12140.853153487036,
-              -1580.8790983671622
+              12880.841503671914,
+              -1618.570523740603
             ],
             "bypassed": false,
             "properties": {
@@ -1422,14 +1017,601 @@
             "node_type": "key_press",
             "title": "⌨ Key Press (Tap)",
             "pos": [
-              12412.379545768608,
-              -1568.2685414545338
+              13115.784509179637,
+              -1613.2766441827441
             ],
             "bypassed": false,
             "properties": {
               "key": "Enter",
               "vk": 13,
               "action_type": "key_press"
+            }
+          },
+          {
+            "id": "b58891ed",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              7700.837770506964,
+              -1308.7055034963255
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 100
+            }
+          },
+          {
+            "id": "9624f68b",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              6708.11525991562,
+              -1320.7356393701234
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 100
+            }
+          },
+          {
+            "id": "15cd6af9",
+            "class_name": "StickyNoteNodeItem",
+            "node_type": "sticky_note",
+            "title": "Sticky Note",
+            "pos": [
+              12903.795202962687,
+              -1793.2162446846419
+            ],
+            "bypassed": false,
+            "properties": {
+              "text": "linked in ends here.",
+              "collapsed": false,
+              "color": "#BCB367",
+              "width": 220.0,
+              "height": 160.0
+            }
+          },
+          {
+            "id": "86cee7a3",
+            "class_name": "VisionNodeItem",
+            "node_type": "wait_image",
+            "title": "⏱ Wait For Image",
+            "pos": [
+              14233.321920926195,
+              -1492.7498604994216
+            ],
+            "bypassed": false,
+            "properties": {
+              "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261102_233919.png",
+              "timeout": 5.0,
+              "action_type": "wait_image",
+              "confidence": 0.85,
+              "action": "click",
+              "button": "left",
+              "break_loop_on_found": false,
+              "save_coords": true,
+              "var_x": "found_x",
+              "var_y": "found_y"
+            }
+          },
+          {
+            "id": "c632b984",
+            "class_name": "ActionNodeItem",
+            "node_type": "key_press",
+            "title": "⌨ Key Press (Tap)",
+            "pos": [
+              16577.045798929365,
+              -1491.745931313453
+            ],
+            "bypassed": false,
+            "properties": {
+              "key": "Down Arrow",
+              "vk": 40,
+              "action_type": "key_press"
+            }
+          },
+          {
+            "id": "bed2d383",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              16823.351077385683,
+              -1481.2371338862629
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 100
+            }
+          },
+          {
+            "id": "7112aedc",
+            "class_name": "ActionNodeItem",
+            "node_type": "key_press",
+            "title": "⌨ Key Press (Tap)",
+            "pos": [
+              17094.877469667255,
+              -1468.6265769736344
+            ],
+            "bypassed": false,
+            "properties": {
+              "key": "Enter",
+              "vk": 13,
+              "action_type": "key_press"
+            }
+          },
+          {
+            "id": "5717dbe1",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              14541.63037140099,
+              -1509.4518799771154
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 500
+            }
+          },
+          {
+            "id": "37b6a3df",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              15961.730587928176,
+              -1440.6210070729383
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 500
+            }
+          },
+          {
+            "id": "f6192083",
+            "class_name": "ActionNodeItem",
+            "node_type": "key_press",
+            "title": "⌨ Key Press (Tap)",
+            "pos": [
+              15305.126627129472,
+              -1509.09196222151
+            ],
+            "bypassed": false,
+            "properties": {
+              "key": "Enter",
+              "vk": 13,
+              "action_type": "key_press"
+            }
+          },
+          {
+            "id": "0776884c",
+            "class_name": "HotkeyNodeItem",
+            "node_type": "hotkey",
+            "title": "⌨ Key Combination",
+            "pos": [
+              16283.170586741506,
+              -1470.6250363709412
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "hotkey",
+              "combo": "Shift+Tab"
+            }
+          },
+          {
+            "id": "9afee71a",
+            "class_name": "LoopNodeItem",
+            "node_type": "loop_count",
+            "title": "🔁 Repeat Zone (Loop)",
+            "pos": [
+              15194.830314556573,
+              -1593.3150629204856
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "loop_count",
+              "infinite": false,
+              "count": "2y",
+              "var_name": "i"
+            }
+          },
+          {
+            "id": "3f0e01ee",
+            "class_name": "HotkeyNodeItem",
+            "node_type": "hotkey",
+            "title": "⌨ Key Combination",
+            "pos": [
+              13712.912367866335,
+              -1590.3238165446526
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "hotkey",
+              "combo": "Ctrl+Tab"
+            }
+          },
+          {
+            "id": "cac9dbdc",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              8774.109362790472,
+              -1304.0004429002136
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 2000
+            }
+          },
+          {
+            "id": "43b1d2ba",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              10370.47168722729,
+              -1270.0926781662154
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 2000
+            }
+          },
+          {
+            "id": "e713d0c2",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              10914.21694876852,
+              -1234.515153379934
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 2000
+            }
+          },
+          {
+            "id": "3f9e0bd7",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              14419.487078887018,
+              -1262.1683744835475
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 500
+            }
+          },
+          {
+            "id": "7645c816",
+            "class_name": "VisionNodeItem",
+            "node_type": "wait_image",
+            "title": "⏱ Wait For Image",
+            "pos": [
+              14827.143844754495,
+              -1542.359056504595
+            ],
+            "bypassed": false,
+            "properties": {
+              "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261102_222200.png",
+              "timeout": 5.0,
+              "action_type": "wait_image",
+              "confidence": 0.85,
+              "action": "click",
+              "button": "left",
+              "break_loop_on_found": false,
+              "save_coords": true,
+              "var_x": "found_x",
+              "var_y": "found_y"
+            }
+          },
+          {
+            "id": "8694a0f1",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              15343.253533782618,
+              -1178.2205673911774
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 2000
+            }
+          },
+          {
+            "id": "a2c3ff2f",
+            "class_name": "ActionNodeItem",
+            "node_type": "key_press",
+            "title": "⌨ Key Press (Tap)",
+            "pos": [
+              15701.131054194402,
+              -1398.0563625063262
+            ],
+            "bypassed": false,
+            "properties": {
+              "key": "Enter",
+              "vk": 13,
+              "action_type": "key_press"
+            }
+          },
+          {
+            "id": "16faab2d",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              13977.280537222608,
+              -1493.399476255491
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 250
+            }
+          },
+          {
+            "id": "bac86455",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              12300.743837164466,
+              -1611.9007217309727
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 250
+            }
+          },
+          {
+            "id": "5136b67c",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              13400.325595860566,
+              -1605.4005045020176
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 250
+            }
+          },
+          {
+            "id": "7f783cf8",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              14911.415317050367,
+              -2231.4845106405764
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 2000
+            }
+          },
+          {
+            "id": "170cfea3",
+            "class_name": "VisionNodeItem",
+            "node_type": "wait_image",
+            "title": "⏱ Wait For Image",
+            "pos": [
+              13801.483704193943,
+              -2546.0138037488205
+            ],
+            "bypassed": false,
+            "properties": {
+              "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261102_233919.png",
+              "timeout": 5.0,
+              "action_type": "wait_image",
+              "confidence": 0.85,
+              "action": "click",
+              "button": "left",
+              "break_loop_on_found": false,
+              "save_coords": true,
+              "var_x": "found_x",
+              "var_y": "found_y"
+            }
+          },
+          {
+            "id": "5a2795cf",
+            "class_name": "HotkeyNodeItem",
+            "node_type": "hotkey",
+            "title": "⌨ Key Combination",
+            "pos": [
+              15851.332370009255,
+              -2523.8889796203403
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "hotkey",
+              "combo": "Shift+Tab"
+            }
+          },
+          {
+            "id": "4329ecc4",
+            "class_name": "ActionNodeItem",
+            "node_type": "key_press",
+            "title": "⌨ Key Press (Tap)",
+            "pos": [
+              16663.039252935003,
+              -2521.8905202230335
+            ],
+            "bypassed": false,
+            "properties": {
+              "key": "Enter",
+              "vk": 13,
+              "action_type": "key_press"
+            }
+          },
+          {
+            "id": "5a234b07",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              16391.51286065343,
+              -2534.501077135662
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 100
+            }
+          },
+          {
+            "id": "7ea125b2",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              13987.648862154765,
+              -2315.432317732946
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 500
+            }
+          },
+          {
+            "id": "55edd3b0",
+            "class_name": "VisionNodeItem",
+            "node_type": "wait_image",
+            "title": "⏱ Wait For Image",
+            "pos": [
+              14395.30562802224,
+              -2595.622999753994
+            ],
+            "bypassed": false,
+            "properties": {
+              "template": "D:\\anti gravity experimenting folder\\desktop auto clicker gemini\\dist\\snippets\\snippet_20261102_222200.png",
+              "timeout": 5.0,
+              "action_type": "wait_image",
+              "confidence": 0.85,
+              "action": "click",
+              "button": "left",
+              "break_loop_on_found": false,
+              "save_coords": true,
+              "var_x": "found_x",
+              "var_y": "found_y"
+            }
+          },
+          {
+            "id": "7d6a6bd5",
+            "class_name": "ActionNodeItem",
+            "node_type": "key_press",
+            "title": "⌨ Key Press (Tap)",
+            "pos": [
+              16145.207582197112,
+              -2545.009874562852
+            ],
+            "bypassed": false,
+            "properties": {
+              "key": "Down Arrow",
+              "vk": 40,
+              "action_type": "key_press"
+            }
+          },
+          {
+            "id": "83a4b0a1",
+            "class_name": "ActionNodeItem",
+            "node_type": "key_press",
+            "title": "⌨ Key Press (Tap)",
+            "pos": [
+              14873.288410397221,
+              -2562.3559054709085
+            ],
+            "bypassed": false,
+            "properties": {
+              "key": "Enter",
+              "vk": 13,
+              "action_type": "key_press"
+            }
+          },
+          {
+            "id": "20df7620",
+            "class_name": "ActionNodeItem",
+            "node_type": "key_press",
+            "title": "⌨ Key Press (Tap)",
+            "pos": [
+              15269.292837462152,
+              -2451.320305755725
+            ],
+            "bypassed": false,
+            "properties": {
+              "key": "Enter",
+              "vk": 13,
+              "action_type": "key_press"
+            }
+          },
+          {
+            "id": "d99f6b9f",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              15529.892371195925,
+              -2493.8849503223373
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 500
+            }
+          },
+          {
+            "id": "8a13f635",
+            "class_name": "ActionNodeItem",
+            "node_type": "delay",
+            "title": "⏳ Delay Wait",
+            "pos": [
+              14109.79215466874,
+              -2562.7158232265137
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "delay",
+              "duration": 500
+            }
+          },
+          {
+            "id": "9f9e3796",
+            "class_name": "LoopNodeItem",
+            "node_type": "loop_count",
+            "title": "🔁 Repeat Zone (Loop)",
+            "pos": [
+              14762.99209782432,
+              -2646.5790061698845
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "loop_count",
+              "infinite": false,
+              "count": "2y",
+              "var_name": "i"
             }
           }
         ],
@@ -1549,12 +1731,6 @@
             "to_socket_idx": 0
           },
           {
-            "from_node": "6060297b",
-            "from_socket_idx": 0,
-            "to_node": "6410c05f",
-            "to_socket_idx": 0
-          },
-          {
             "from_node": "e3801e8a",
             "from_socket_idx": 0,
             "to_node": "5d0c6416",
@@ -1627,12 +1803,6 @@
             "to_socket_idx": 0
           },
           {
-            "from_node": "1ae2c533",
-            "from_socket_idx": 0,
-            "to_node": "9e81b3ea",
-            "to_socket_idx": 0
-          },
-          {
             "from_node": "9e81b3ea",
             "from_socket_idx": 0,
             "to_node": "10b5a4f8",
@@ -1658,12 +1828,6 @@
           },
           {
             "from_node": "6b1843f9",
-            "from_socket_idx": 1,
-            "to_node": "e3801e8a",
-            "to_socket_idx": 1
-          },
-          {
-            "from_node": "6b1843f9",
             "from_socket_idx": 0,
             "to_node": "ce676542",
             "to_socket_idx": 0
@@ -1672,12 +1836,6 @@
             "from_node": "ce676542",
             "from_socket_idx": 0,
             "to_node": "acef7ab5",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "100a32d5",
-            "from_socket_idx": 0,
-            "to_node": "e3801e8a",
             "to_socket_idx": 0
           },
           {
@@ -1741,22 +1899,10 @@
             "to_socket_idx": 0
           },
           {
-            "from_node": "3257026e",
-            "from_socket_idx": 1,
-            "to_node": "e3801e8a",
-            "to_socket_idx": 1
-          },
-          {
             "from_node": "9085c0b0",
             "from_socket_idx": 0,
             "to_node": "2ed2c9b1",
             "to_socket_idx": 0
-          },
-          {
-            "from_node": "2ed2c9b1",
-            "from_socket_idx": 1,
-            "to_node": "e3801e8a",
-            "to_socket_idx": 1
           },
           {
             "from_node": "2ed2c9b1",
@@ -1783,12 +1929,6 @@
             "to_socket_idx": 0
           },
           {
-            "from_node": "1ee043cb",
-            "from_socket_idx": 0,
-            "to_node": "45a3cdc6",
-            "to_socket_idx": 0
-          },
-          {
             "from_node": "45a3cdc6",
             "from_socket_idx": 0,
             "to_node": "2e91a8ee",
@@ -1801,80 +1941,386 @@
             "to_socket_idx": 0
           },
           {
-            "from_node": "f71cc664",
-            "from_socket_idx": 1,
-            "to_node": "e3801e8a",
-            "to_socket_idx": 1
-          },
-          {
             "from_node": "29a2696f",
             "from_socket_idx": 0,
             "to_node": "bb8d14fd",
             "to_socket_idx": 0
+          },
+          {
+            "from_node": "1ae2c533",
+            "from_socket_idx": 0,
+            "to_node": "b58891ed",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "b58891ed",
+            "from_socket_idx": 0,
+            "to_node": "9e81b3ea",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "6060297b",
+            "from_socket_idx": 0,
+            "to_node": "9624f68b",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "9624f68b",
+            "from_socket_idx": 0,
+            "to_node": "6410c05f",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "86cee7a3",
+            "from_socket_idx": 0,
+            "to_node": "5717dbe1",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "37b6a3df",
+            "from_socket_idx": 0,
+            "to_node": "0776884c",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "0776884c",
+            "from_socket_idx": 0,
+            "to_node": "c632b984",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "c632b984",
+            "from_socket_idx": 0,
+            "to_node": "bed2d383",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "bed2d383",
+            "from_socket_idx": 0,
+            "to_node": "7112aedc",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "6b1843f9",
+            "from_socket_idx": 1,
+            "to_node": "cac9dbdc",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "cac9dbdc",
+            "from_socket_idx": 0,
+            "to_node": "6b1843f9",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "3257026e",
+            "from_socket_idx": 1,
+            "to_node": "43b1d2ba",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "43b1d2ba",
+            "from_socket_idx": 0,
+            "to_node": "3257026e",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "2ed2c9b1",
+            "from_socket_idx": 1,
+            "to_node": "e713d0c2",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "e713d0c2",
+            "from_socket_idx": 0,
+            "to_node": "2ed2c9b1",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "f71cc664",
+            "from_socket_idx": 1,
+            "to_node": "39dece23",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "86cee7a3",
+            "from_socket_idx": 1,
+            "to_node": "3f9e0bd7",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "3f9e0bd7",
+            "from_socket_idx": 0,
+            "to_node": "86cee7a3",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "5717dbe1",
+            "from_socket_idx": 0,
+            "to_node": "7645c816",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "7645c816",
+            "from_socket_idx": 1,
+            "to_node": "8694a0f1",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "8694a0f1",
+            "from_socket_idx": 0,
+            "to_node": "7645c816",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "9afee71a",
+            "from_socket_idx": 0,
+            "to_node": "f6192083",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "7645c816",
+            "from_socket_idx": 0,
+            "to_node": "9afee71a",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "9afee71a",
+            "from_socket_idx": 1,
+            "to_node": "a2c3ff2f",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "a2c3ff2f",
+            "from_socket_idx": 0,
+            "to_node": "37b6a3df",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "3f0e01ee",
+            "from_socket_idx": 0,
+            "to_node": "16faab2d",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "16faab2d",
+            "from_socket_idx": 0,
+            "to_node": "86cee7a3",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "1ee043cb",
+            "from_socket_idx": 0,
+            "to_node": "bac86455",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "bac86455",
+            "from_socket_idx": 0,
+            "to_node": "45a3cdc6",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "1f2c7142",
+            "from_socket_idx": 0,
+            "to_node": "5136b67c",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "5136b67c",
+            "from_socket_idx": 0,
+            "to_node": "3f0e01ee",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "170cfea3",
+            "from_socket_idx": 0,
+            "to_node": "8a13f635",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "d99f6b9f",
+            "from_socket_idx": 0,
+            "to_node": "5a2795cf",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "5a2795cf",
+            "from_socket_idx": 0,
+            "to_node": "7d6a6bd5",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "7d6a6bd5",
+            "from_socket_idx": 0,
+            "to_node": "5a234b07",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "5a234b07",
+            "from_socket_idx": 0,
+            "to_node": "4329ecc4",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "170cfea3",
+            "from_socket_idx": 1,
+            "to_node": "7ea125b2",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "7ea125b2",
+            "from_socket_idx": 0,
+            "to_node": "170cfea3",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "8a13f635",
+            "from_socket_idx": 0,
+            "to_node": "55edd3b0",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "55edd3b0",
+            "from_socket_idx": 1,
+            "to_node": "7f783cf8",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "7f783cf8",
+            "from_socket_idx": 0,
+            "to_node": "55edd3b0",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "9f9e3796",
+            "from_socket_idx": 0,
+            "to_node": "83a4b0a1",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "55edd3b0",
+            "from_socket_idx": 0,
+            "to_node": "9f9e3796",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "9f9e3796",
+            "from_socket_idx": 1,
+            "to_node": "20df7620",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "20df7620",
+            "from_socket_idx": 0,
+            "to_node": "d99f6b9f",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "100a32d5",
+            "from_socket_idx": 0,
+            "to_node": "170cfea3",
+            "to_socket_idx": 0
           }
         ],
-        "groups": [],
+        "groups": [
+          {
+            "title": "facebook",
+            "node_ids": [
+              "6410c05f",
+              "ec5803f8",
+              "97a8fe9a",
+              "8a97b671",
+              "4321f54a",
+              "b9ac1a5a",
+              "6060297b",
+              "c930651c",
+              "e5bdd327",
+              "d3da075a",
+              "f553d880",
+              "2d2b7537",
+              "2ae92688",
+              "e2fed3c1",
+              "4447b2ba",
+              "b5530200",
+              "9dd9135f",
+              "9624f68b",
+              "1ae2c533",
+              "7c30054f",
+              "d0011adb",
+              "d9ad9eb4",
+              "e52bdda4",
+              "b58891ed",
+              "01a48517",
+              "3ec5d1d9",
+              "7ff360dc",
+              "7793f205",
+              "1bb0147e",
+              "5d0c6416"
+            ]
+          }
+        ],
         "custom_variables": [
-          "$createpost_y",
-          "$expandtab_x+00",
-          "$delete_x+44",
-          "$createpost_x+5",
-          "$metabusiness_x+400",
-          "$expandtab_y-20",
-          "$found_x-100",
-          "$createpost_y+00",
           "$metabusiness_x+500",
-          "$expandtab_x6",
-          "$expandtab_x+7",
-          "$createpost_y+100",
-          "$delete_x",
-          "$metabusiness_x",
-          "$found_y-",
-          "$found_x",
-          "$expandtab_y-2",
-          "$linkedinaddimage_x-4",
-          "$found_y-1",
-          "$expandtab_x+",
-          "$metabusiness_x+40",
+          "$expandtab_x+00",
           "$createpost_y+",
-          "$createpost_x+50",
-          "$expandtab_x670",
-          "$createpost_y+300",
-          "$delete_x+",
-          "$metabusiness_x+4",
-          "$delete_x+4",
-          "$expandtab_y-",
-          "$metabusiness_x+00",
-          "$found_x+",
-          "$createpost_y+1",
-          "$expandtab_x",
-          "$expandtab_y-200",
-          "$delete_y",
+          "$found_y-10",
           "$expandtab_",
-          "$createpost_x",
-          "$found_x-1",
-          "$createpost_x+500",
-          "$createpost_x+",
-          "$metabusiness_x+",
+          "$found_y-100",
+          "$expandtab_y+500",
+          "$expandtab_y",
+          "$metabusiness_x+00",
+          "$found_x",
+          "$linkedinaddimage_y",
+          "$found_x-100",
           "$expandtab_y+00",
+          "$found_x+",
+          "$expandtab_y-",
+          "$createpost_x",
+          "$createpost_x+5",
+          "$found_x-1",
+          "$createpost_y+10",
+          "$found_y",
+          "$createpost_x+",
+          "$createpost_y+1",
+          "$metabusiness_x",
+          "$createpost_x+500",
+          "$expandtab_y-20",
+          "$delete_x",
+          "$delete_x+4",
+          "$expandtab_y-200",
+          "$linkedinaddimage_x-40",
+          "$linkedinaddimage_x-4",
+          "$metabusiness_y",
+          "$found_x-",
+          "$expandtab_x6",
+          "$metabusiness_x+40",
+          "$metabusiness_x+400",
+          "$delete_x+",
+          "$expandtab_x67",
+          "$delete_y",
+          "$metabusiness_x+",
+          "$createpost_y+00",
+          "$createpost_y",
+          "$createpost_y+300",
           "$found_x-10",
           "$expandtab_y+200",
-          "$found_x-",
-          "$expandtab_y+500",
-          "$expandtab_x+700",
-          "$found_y-100",
-          "$linkedinaddimage_x-",
-          "$expandtab_x67",
-          "$linkedinaddimage_x-40",
+          "$metabusiness_x+4",
+          "$expandtab_x670",
           "$expandtab_x+600",
-          "$linkedinaddimage_x",
-          "$found_y-10",
-          "$metabusiness_y",
-          "$createpost_y+10",
-          "$linkedinaddimage_y",
+          "$expandtab_x+",
+          "$createpost_x+50",
+          "$expandtab_x",
+          "$expandtab_x+700",
           "$expandtab_x+70",
-          "$expandtab_y",
-          "$found_y"
+          "$found_y-1",
+          "$linkedinaddimage_x-",
+          "$delete_x+44",
+          "$linkedinaddimage_x",
+          "$expandtab_y-2",
+          "$createpost_y+100",
+          "$found_y-",
+          "$expandtab_x+7"
         ]
       }
     },
@@ -9217,14 +9663,14 @@
   },
   "instances": {
     "1": {
-      "x": 1186,
-      "y": 687,
+      "x": 1509,
+      "y": 480,
       "minimized": false,
       "selected_macro": "Macro 2",
       "speed": 1.01,
       "repeat": false,
-      "width": 536,
-      "height": 485
+      "width": 525,
+      "height": 607
     }
   },
   "hotkeys": {

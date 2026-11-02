@@ -49,6 +49,12 @@ class NodeGroupItem(QGraphicsRectItem):
         self.setRect(0, 0, 300, 200)
 
     def add_node(self, node: "BaseNodeItem"):
+        if getattr(node, "group", None) and node.group is not self:
+            old_grp = node.group
+            old_grp.remove_node(node)
+            if not old_grp.nodes and old_grp.scene():
+                if hasattr(old_grp.scene(), "remove_group"):
+                    old_grp.scene().remove_group(old_grp)
         if node not in self.nodes:
             self.nodes.append(node)
             node.group = self
@@ -103,6 +109,10 @@ class NodeGroupItem(QGraphicsRectItem):
                 self._is_resizing = True
                 self._resize_start_scene = event.scenePos()
                 self._resize_start_rect = self.rect()
+                self._resize_initial_node_rel_positions = {
+                    n: (n.pos().x() - self.pos().x(), n.pos().y() - self.pos().y())
+                    for n in self.nodes
+                }
                 event.accept()
                 return
 
@@ -112,11 +122,26 @@ class NodeGroupItem(QGraphicsRectItem):
     def mouseMoveEvent(self, event):
         if self._is_resizing and self._resize_start_scene and self._resize_start_rect:
             delta = event.scenePos() - self._resize_start_scene
-            new_w = max(160.0, self._resize_start_rect.width() + delta.x())
-            new_h = max(100.0, self._resize_start_rect.height() + delta.y())
+            new_w = max(80.0, self._resize_start_rect.width() + delta.x())
+            new_h = max(60.0, self._resize_start_rect.height() + delta.y())
             self.prepareGeometryChange()
             self.setRect(0, 0, new_w, new_h)
+
+            # Proportional compress / expand of space between nodes horizontally & vertically
+            start_w = max(1.0, self._resize_start_rect.width())
+            start_h = max(1.0, self._resize_start_rect.height())
+            s_x = new_w / start_w
+            s_y = new_h / start_h
+
+            for node, (rx, ry) in getattr(self, "_resize_initial_node_rel_positions", {}).items():
+                nx = self.pos().x() + max(8.0, rx * s_x)
+                ny = self.pos().y() + self.header_height + max(8.0, (ry - self.header_height) * s_y)
+                node.setPos(nx, ny)
+                node.update_connected_wires()
+
             self.update()
+            if self.scene() and hasattr(self.scene(), "update_loop_bounds"):
+                self.scene().update_loop_bounds()
             event.accept()
             return
 
@@ -135,14 +160,19 @@ class NodeGroupItem(QGraphicsRectItem):
             self._is_resizing = False
             self._resize_start_scene = None
             self._resize_start_rect = None
+            if hasattr(self, "_resize_initial_node_rel_positions"):
+                self._resize_initial_node_rel_positions.clear()
             if self.scene() and hasattr(self.scene(), "scene_modified"):
                 self.scene().scene_modified.emit()
+            if self.scene() and hasattr(self.scene(), "update_loop_bounds"):
+                self.scene().update_loop_bounds()
             event.accept()
             return
 
         self._last_drag_pos = None
         super().mouseReleaseEvent(event)
         if self.scene() and hasattr(self.scene(), "scene_modified"):
+            self.scene().scene_modified.emit()
             self.scene().scene_modified.emit()
 
     def prompt_rename(self):

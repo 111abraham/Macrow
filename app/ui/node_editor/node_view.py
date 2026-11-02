@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import math
 import time
-from typing import Optional, List
-from PyQt6.QtCore import Qt, QRectF, QPointF, QPoint
+from typing import Optional, List, Set, Dict
+from PyQt6.QtCore import Qt, QRectF, QPointF, QPoint, QTimer
 from PyQt6.QtGui import (
     QPainter,
     QColor,
@@ -109,6 +109,16 @@ class NodeView(QGraphicsView):
         self._pending_single_selection: Optional[QGraphicsItem] = None
         self._press_view_pos: Optional[QPoint] = None
 
+        # Space Navigation
+        self._space_held = False
+        self._last_selected_node: Optional[BaseNodeItem] = None
+
+        # Edge Auto-Panning
+        self._edge_scroll_timer = QTimer(self)
+        self._edge_scroll_timer.setInterval(20)
+        self._edge_scroll_timer.timeout.connect(self._on_edge_scroll_tick)
+        self._edge_scroll_delta = QPointF(0, 0)
+
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
     def _get_node_at(self, pos: QPoint) -> Optional[BaseNodeItem]:
@@ -141,45 +151,166 @@ class NodeView(QGraphicsView):
         visited = set()
         queue = [start_node]
         result = []
+
+        # Identify any enclosing repeat zones to exclude when dragging enclosed nodes
+        enclosing_loops = set()
+        if self.node_scene:
+            for n in self.node_scene.nodes:
+                if isinstance(n, LoopNodeItem) and n is not start_node:
+                    if start_node in n.get_body_nodes() or n.sceneBoundingRect().contains(start_node.sceneBoundingRect().center()):
+                        enclosing_loops.add(n)
+
         while queue:
             curr = queue.pop(0)
             if curr in visited:
                 continue
             visited.add(curr)
-            result.append(curr)
+            if curr not in enclosing_loops:
+                result.append(curr)
+
             for sock in curr.output_sockets:
-                if self._is_loop_socket(sock):
-                    continue
                 for conn in sock.connections:
                     end_sock = conn.end_socket
                     if end_sock and end_sock.node:
-                        if self._is_loop_socket(end_sock):
+                        target = end_sock.node
+                        if target in enclosing_loops:
                             continue
-                        if end_sock.node not in visited:
-                            queue.append(end_sock.node)
-        return result
+                        if target not in visited:
+                            queue.append(target)
+        return [n for n in result if n not in enclosing_loops]
 
     def _get_upstream_nodes(self, start_node: BaseNodeItem) -> List[BaseNodeItem]:
         visited = set()
         queue = [start_node]
         result = []
+
+        # Identify any enclosing repeat zones to exclude when dragging enclosed nodes
+        enclosing_loops = set()
+        if self.node_scene:
+            for n in self.node_scene.nodes:
+                if isinstance(n, LoopNodeItem) and n is not start_node:
+                    if start_node in n.get_body_nodes() or n.sceneBoundingRect().contains(start_node.sceneBoundingRect().center()):
+                        enclosing_loops.add(n)
+
         while queue:
             curr = queue.pop(0)
             if curr in visited:
                 continue
             visited.add(curr)
-            result.append(curr)
+            if curr not in enclosing_loops:
+                result.append(curr)
+
             for sock in curr.input_sockets:
-                if self._is_loop_socket(sock):
-                    continue
                 for conn in sock.connections:
                     start_sock = conn.start_socket
                     if start_sock and start_sock.node:
-                        if self._is_loop_socket(start_sock):
+                        target = start_sock.node
+                        if target in enclosing_loops:
                             continue
-                        if start_sock.node not in visited:
-                            queue.append(start_sock.node)
-        return result
+                        if target not in visited:
+                            queue.append(target)
+        return [n for n in result if n not in enclosing_loops]
+
+    def _find_nodes_between(self, node_a: BaseNodeItem, node_b: BaseNodeItem) -> Set[BaseNodeItem]:
+        """Finds all nodes on the graph path between node_a and node_b for Shift+Click range selection."""
+        # 1. Check directed path A -> B
+        down_a = set(self._get_downstream_nodes(node_a))
+        up_b = set(self._get_upstream_nodes(node_b))
+        between_ab = down_a.intersection(up_b)
+        if between_ab:
+            return between_ab
+
+        # 2. Check directed path B -> A
+        down_b = set(self._get_downstream_nodes(node_b))
+        up_a = set(self._get_upstream_nodes(node_a))
+        between_ba = down_b.intersection(up_a)
+        if between_ba:
+            return between_ba
+
+        # 3. Check undirected shortest path via BFS across all connections
+        adj: Dict[BaseNodeItem, List[BaseNodeItem]] = {}
+        for conn in self.node_scene.connections:
+            if conn.start_socket and conn.end_socket:
+                na, nb = conn.start_socket.node, conn.end_socket.node
+                if na and nb:
+                    adj.setdefault(na, []).append(nb)
+                    adj.setdefault(nb, []).append(na)
+
+        visited = {node_a: None}
+        queue = [node_a]
+        found = False
+        while queue:
+            curr = queue.pop(0)
+            if curr == node_b:
+                found = True
+                break
+            for neighbor in adj.get(curr, []):
+                if neighbor not in visited:
+                    visited[neighbor] = curr
+                    queue.append(neighbor)
+
+        if found:
+            path = set()
+            curr = node_b
+            while curr is not None:
+                path.add(curr)
+                curr = visited[curr]
+            return path
+
+        return {node_a, node_b}
+
+    def _on_edge_scroll_tick(self):
+        if self._edge_scroll_delta.isNull():
+            self._edge_scroll_timer.stop()
+            return
+
+        # Stop if no left mouse button held and no wire drag active
+        if not (QApplication.mouseButtons() & Qt.MouseButton.LeftButton) and not getattr(self.node_scene, "_dragging_connection", None):
+            self._edge_scroll_timer.stop()
+            return
+
+        h_bar = self.horizontalScrollBar()
+        v_bar = self.verticalScrollBar()
+        h_bar.setValue(int(h_bar.value() + self._edge_scroll_delta.x()))
+        v_bar.setValue(int(v_bar.value() + self._edge_scroll_delta.y()))
+
+        global_pos = QCursor.pos()
+        view_pos = self.mapFromGlobal(global_pos)
+        scene_pos = self.mapToScene(view_pos)
+
+        # 1. Update dragged wire end position if active
+        if self.node_scene._dragging_connection:
+            snap_target = self.node_scene._find_snap_socket(scene_pos, self.node_scene._drag_start_socket)
+            if snap_target != self.node_scene._current_snap_socket:
+                if self.node_scene._current_snap_socket:
+                    self.node_scene._current_snap_socket.set_snap_target(False)
+                self.node_scene._current_snap_socket = snap_target
+                if self.node_scene._current_snap_socket:
+                    self.node_scene._current_snap_socket.set_snap_target(True)
+
+            if self.node_scene._current_snap_socket:
+                self.node_scene._dragging_connection.set_target_pos(self.node_scene._current_snap_socket.scene_pos())
+            else:
+                self.node_scene._dragging_connection.set_target_pos(scene_pos)
+
+        # 2. Update branch drag if active
+        if self._branch_drag_nodes and self._branch_drag_prev_scene_pos:
+            delta = scene_pos - self._branch_drag_prev_scene_pos
+            self._branch_drag_prev_scene_pos = scene_pos
+            for n in self._branch_drag_nodes:
+                n.setPos(n.pos() + delta)
+                n.update_connected_wires()
+
+        # 3. Update normal dragged node
+        if self._dragged_node and not self._branch_drag_nodes:
+            move_ev = QMouseEvent(
+                QMouseEvent.Type.MouseMove,
+                QPointF(view_pos),
+                Qt.MouseButton.NoButton,
+                Qt.MouseButton.LeftButton,
+                QApplication.keyboardModifiers(),
+            )
+            self.mouseMoveEvent(move_ev)
 
     def _find_wire_under_node(self, node: BaseNodeItem) -> Optional[NodeConnection]:
         node_rect = node.sceneBoundingRect()
@@ -365,6 +496,14 @@ class NodeView(QGraphicsView):
         self.node_scene.update_loop_bounds()
 
     def mousePressEvent(self, event: QMouseEvent):
+        # 0. Space + Left click pan navigation with hand cursor
+        if event.button() == Qt.MouseButton.LeftButton and self._space_held:
+            self._is_panning = True
+            self._pan_start_pos = event.pos()
+            self.setCursor(Qt.CursorShape.ClosedHandCursor)
+            event.accept()
+            return
+
         # 1. Knife Tool: Y held + Left Click starts cutting wire trail
         if event.button() == Qt.MouseButton.LeftButton and self._y_key_held:
             self._is_cutting = True
@@ -415,6 +554,8 @@ class NodeView(QGraphicsView):
             target_node = target_item if isinstance(target_item, BaseNodeItem) else None
 
             if target_item:
+                if target_node and not (event.modifiers() & Qt.KeyboardModifier.ShiftModifier):
+                    self._last_selected_node = target_node
                 # A + Drag: Align branch horizontally
                 if self._a_key_held and target_node:
                     self._a_align_node = target_node
@@ -556,6 +697,42 @@ class NodeView(QGraphicsView):
             if (event.pos() - self._press_view_pos).manhattanLength() > 4:
                 self._pending_single_selection = None
 
+        # Edge auto-panning check when dragging connection or dragging nodes
+        is_dragging_item = (
+            getattr(self.node_scene, "_dragging_connection", None) is not None
+            or self._dragged_node is not None
+            or bool(self._branch_drag_nodes)
+            or (bool(event.buttons() & Qt.MouseButton.LeftButton) and len(self.node_scene.selectedItems()) > 0)
+        )
+        if is_dragging_item and not self._is_panning and not self._is_cutting:
+            vr = self.viewport().rect()
+            p = event.pos()
+            margin = 50.0
+            dx = 0.0
+            dy = 0.0
+
+            if p.x() < margin:
+                dx = -max(4.0, (margin - p.x()) * 0.4)
+            elif p.x() > vr.width() - margin:
+                dx = max(4.0, (p.x() - (vr.width() - margin)) * 0.4)
+
+            if p.y() < margin:
+                dy = -max(4.0, (margin - p.y()) * 0.4)
+            elif p.y() > vr.height() - margin:
+                dy = max(4.0, (p.y() - (vr.height() - margin)) * 0.4)
+
+            if dx != 0.0 or dy != 0.0:
+                self._edge_scroll_delta = QPointF(dx, dy)
+                if not self._edge_scroll_timer.isActive():
+                    self._edge_scroll_timer.start()
+            else:
+                self._edge_scroll_delta = QPointF(0.0, 0.0)
+                self._edge_scroll_timer.stop()
+        else:
+            if self._edge_scroll_timer.isActive():
+                self._edge_scroll_delta = QPointF(0.0, 0.0)
+                self._edge_scroll_timer.stop()
+
         super().mouseMoveEvent(event)
 
         # Shake detection and wire drop target detection during node drag (single or multi-node)
@@ -607,6 +784,9 @@ class NodeView(QGraphicsView):
                     self._hovered_wire = None
 
     def mouseReleaseEvent(self, event: QMouseEvent):
+        self._edge_scroll_timer.stop()
+        self._edge_scroll_delta = QPointF(0, 0)
+
         if self._is_cutting and event.button() == Qt.MouseButton.LeftButton:
             self._is_cutting = False
             self._cut_path_points.clear()
@@ -618,7 +798,10 @@ class NodeView(QGraphicsView):
 
         if self._is_panning and (event.button() in (Qt.MouseButton.MiddleButton, Qt.MouseButton.LeftButton, Qt.MouseButton.RightButton)):
             self._is_panning = False
-            self.setCursor(Qt.CursorShape.ArrowCursor)
+            if self._space_held:
+                self.setCursor(Qt.CursorShape.OpenHandCursor)
+            elif not self._y_key_held:
+                self.setCursor(Qt.CursorShape.ArrowCursor)
             event.accept()
             return
 
@@ -716,12 +899,23 @@ class NodeView(QGraphicsView):
             self._ctrl_candidate_item = None
             self._is_ctrl_branch_drag = False
 
-        # Handle Shift + Click (add to selection)
+        # Handle Shift + Click (range selection along graph path)
         if self._shift_candidate_item:
             if not self._is_shift_branch_drag:
-                self._shift_candidate_item.setSelected(True)
-                self.node_scene._current_selected_node = self._shift_candidate_item
-                self.node_scene.node_selected.emit(self._shift_candidate_item)
+                cand_node = self._shift_candidate_item if isinstance(self._shift_candidate_item, BaseNodeItem) else None
+                if cand_node and self._last_selected_node and self._last_selected_node != cand_node and cand_node.scene() == self.node_scene:
+                    path_nodes = self._find_nodes_between(self._last_selected_node, cand_node)
+                    for n in path_nodes:
+                        n.setSelected(True)
+                    self.node_scene._current_selected_node = cand_node
+                    self.node_scene.node_selected.emit(cand_node)
+                    self._last_selected_node = cand_node
+                else:
+                    self._shift_candidate_item.setSelected(True)
+                    if cand_node:
+                        self._last_selected_node = cand_node
+                    self.node_scene._current_selected_node = self._shift_candidate_item
+                    self.node_scene.node_selected.emit(self._shift_candidate_item)
             self._shift_candidate_item = None
             self._is_shift_branch_drag = False
 
@@ -751,6 +945,14 @@ class NodeView(QGraphicsView):
             self.node_scene.scene_modified.emit()
 
     def keyPressEvent(self, event: QKeyEvent):
+        # Space: Pan Navigation with Hand Cursor
+        if event.key() == Qt.Key.Key_Space and not event.isAutoRepeat():
+            self._space_held = True
+            if not self._is_panning:
+                self.setCursor(Qt.CursorShape.OpenHandCursor)
+            event.accept()
+            return
+
         # Tab: Quick Add Node popup menu under cursor
         if event.key() == Qt.Key.Key_Tab:
             global_pos = QCursor.pos()
@@ -823,6 +1025,13 @@ class NodeView(QGraphicsView):
         super().keyPressEvent(event)
 
     def keyReleaseEvent(self, event: QKeyEvent):
+        if event.key() == Qt.Key.Key_Space and not event.isAutoRepeat():
+            self._space_held = False
+            if not self._is_panning and not self._is_cutting and not self._y_key_held:
+                self.setCursor(Qt.CursorShape.ArrowCursor)
+            event.accept()
+            return
+
         if event.key() == Qt.Key.Key_A:
             self._a_key_held = False
 
@@ -834,6 +1043,14 @@ class NodeView(QGraphicsView):
             return
 
         super().keyReleaseEvent(event)
+
+    def focusOutEvent(self, event):
+        self._space_held = False
+        self._a_key_held = False
+        self._y_key_held = False
+        self._edge_scroll_timer.stop()
+        self._edge_scroll_delta = QPointF(0, 0)
+        super().focusOutEvent(event)
 
     def drawForeground(self, painter: QPainter, rect: QRectF):
         super().drawForeground(painter, rect)
