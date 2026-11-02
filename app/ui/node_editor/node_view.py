@@ -111,6 +111,13 @@ class NodeView(QGraphicsView):
             curr = curr.parentItem()
         return None
 
+    @staticmethod
+    def _is_loop_socket(sock) -> bool:
+        """Check if socket belongs to a LoopNodeItem (repeat zone)."""
+        if not sock or not getattr(sock, "node", None):
+            return False
+        return isinstance(sock.node, LoopNodeItem)
+
     def _get_downstream_nodes(self, start_node: BaseNodeItem) -> List[BaseNodeItem]:
         visited = set()
         queue = [start_node]
@@ -122,9 +129,15 @@ class NodeView(QGraphicsView):
             visited.add(curr)
             result.append(curr)
             for sock in curr.output_sockets:
+                if self._is_loop_socket(sock):
+                    continue
                 for conn in sock.connections:
-                    if conn.end_socket and conn.end_socket.node and conn.end_socket.node not in visited:
-                        queue.append(conn.end_socket.node)
+                    end_sock = conn.end_socket
+                    if end_sock and end_sock.node:
+                        if self._is_loop_socket(end_sock):
+                            continue
+                        if end_sock.node not in visited:
+                            queue.append(end_sock.node)
         return result
 
     def _get_upstream_nodes(self, start_node: BaseNodeItem) -> List[BaseNodeItem]:
@@ -138,9 +151,15 @@ class NodeView(QGraphicsView):
             visited.add(curr)
             result.append(curr)
             for sock in curr.input_sockets:
+                if self._is_loop_socket(sock):
+                    continue
                 for conn in sock.connections:
-                    if conn.start_socket and conn.start_socket.node and conn.start_socket.node not in visited:
-                        queue.append(conn.start_socket.node)
+                    start_sock = conn.start_socket
+                    if start_sock and start_sock.node:
+                        if self._is_loop_socket(start_sock):
+                            continue
+                        if start_sock.node not in visited:
+                            queue.append(start_sock.node)
         return result
 
     def _find_wire_under_node(self, node: BaseNodeItem) -> Optional[NodeConnection]:
@@ -560,6 +579,7 @@ class NodeView(QGraphicsView):
                     n.update_connected_wires()
                     curr_x += n.width + 50.0
                 self.node_scene.scene_modified.emit()
+                self.node_scene.update_loop_bounds()
             elif dx < -25.0:
                 # Left drag: Align upstream connected nodes
                 upstream = self._get_upstream_nodes(anchor)
@@ -572,6 +592,7 @@ class NodeView(QGraphicsView):
                     n.update_connected_wires()
                     curr_right = target_x - 50.0
                 self.node_scene.scene_modified.emit()
+                self.node_scene.update_loop_bounds()
 
             self._a_align_node = None
             self._a_align_start_scene_pos = None
@@ -583,6 +604,7 @@ class NodeView(QGraphicsView):
             self._branch_drag_nodes = []
             self._branch_drag_prev_scene_pos = None
             self.node_scene.scene_modified.emit()
+            self.node_scene.update_loop_bounds()
             event.accept()
             return
 

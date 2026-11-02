@@ -25,6 +25,7 @@ from PyQt6.QtWidgets import (
     QScrollArea,
     QInputDialog,
     QMenu,
+    QMessageBox,
 )
 
 from app.ui.node_editor.node_items import (
@@ -2661,14 +2662,18 @@ class PropertyInspector(QWidget):
         def refresh_gallery():
             while gallery_box.count() > 0:
                 item = gallery_box.takeAt(0)
-                if item.widget():
-                    item.widget().deleteLater()
+                w = item.widget()
+                if w is not None:
+                    w.setParent(None)
+                    w.deleteLater()
                 elif item.layout():
                     sub = item.layout()
                     while sub.count() > 0:
                         si = sub.takeAt(0)
-                        if si.widget():
-                            si.widget().deleteLater()
+                        sw = si.widget()
+                        if sw is not None:
+                            sw.setParent(None)
+                            sw.deleteLater()
 
             raw_tmpl = node.properties.get("template", "")
             tmpls = [p.strip() for p in str(raw_tmpl).split(";") if p.strip()]
@@ -2771,29 +2776,67 @@ class PropertyInspector(QWidget):
         btn_browse.setStyleSheet("background: #334155; color: #e2e8f0; padding: 5px; border-radius: 4px;")
 
         def on_browse():
-            path, _ = QFileDialog.getOpenFileName(
-                self, "Select Template Image", "", "Images (*.png *.jpg *.bmp)"
-            )
-            if path:
+            parent_win = self.window() if self.window() else None
+            try:
+                import shutil
+                from datetime import datetime
+
+                init_dir = os.path.abspath("snippets") if os.path.exists("snippets") else ""
+                path, _ = QFileDialog.getOpenFileName(
+                    parent_win,
+                    "Select Template Image",
+                    init_dir,
+                    "Images (*.png *.jpg *.jpeg *.bmp *.webp);;All Files (*.*)",
+                    options=QFileDialog.Option.DontUseNativeDialog,
+                )
+            except Exception as e:
+                import logging
+                logging.warning(f"Error opening file dialog: {e}")
+                return
+
+            if not path or not os.path.exists(path):
+                return
+
+            try:
+                # Copy external image to snippets folder so macro remains self-contained and durable
+                save_dir = os.path.abspath("snippets")
+                os.makedirs(save_dir, exist_ok=True)
+                dest_name = f"snippet_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{os.path.basename(path)}"
+                dest_path = os.path.join(save_dir, dest_name)
+                try:
+                    shutil.copy2(path, dest_path)
+                    saved_path = dest_path
+                except Exception:
+                    saved_path = path
+
                 cur = str(node.properties.get("template", "")).strip()
                 if cur:
-                    reply = QMessageBox.question(
-                        self,
-                        "Add or Replace?",
-                        "Do you want to add this as an additional OR variant, or replace existing templates?",
-                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Cancel,
-                        QMessageBox.StandardButton.Yes,
-                    )
-                    if reply == QMessageBox.StandardButton.Yes:
-                        node.update_template(path, append=True)
-                    elif reply == QMessageBox.StandardButton.No:
-                        node.update_template(path, append=False)
+                    msg = QMessageBox(parent_win)
+                    msg.setWindowTitle("Template Image Option")
+                    msg.setText("How would you like to update the template image?")
+                    btn_replace = msg.addButton("🔄 Replace Existing", QMessageBox.ButtonRole.AcceptRole)
+                    btn_add_or = msg.addButton("➕ Add as Variant (OR)", QMessageBox.ButtonRole.ActionRole)
+                    btn_cancel = msg.addButton("Cancel", QMessageBox.ButtonRole.RejectRole)
+                    msg.setDefaultButton(btn_replace)
+                    msg.exec()
+
+                    clicked_btn = msg.clickedButton()
+                    if clicked_btn == btn_replace:
+                        node.update_template(saved_path, append=False)
+                    elif clicked_btn == btn_add_or:
+                        node.update_template(saved_path, append=True)
                     else:
                         return
                 else:
-                    node.update_template(path, append=False)
+                    node.update_template(saved_path, append=False)
+
                 refresh_gallery()
                 self.property_changed.emit()
+            except Exception as ex:
+                import logging
+                logging.error(f"Error replacing template image: {ex}")
+                if parent_win:
+                    QMessageBox.warning(parent_win, "Image Error", f"Could not update image template: {ex}")
 
         btn_browse.clicked.connect(on_browse)
         layout.addWidget(btn_browse)

@@ -2245,6 +2245,110 @@ class TestNodeEditor(unittest.TestCase):
         self.assertEqual(player._resolve_coord(780), 780)
         self.assertEqual(player._resolve_coord("920"), 920)
 
+    def test_loop_body_nodes_branch_drag_isolation(self):
+        """Test that dragging nodes inside a Loop repeat zone does NOT move or include LoopNodeItem."""
+        from app.ui.node_editor.node_view import NodeView
+        from app.ui.node_editor.node_items import LoopNodeItem, ActionNodeItem
+        from PyQt6.QtCore import QPointF
+
+        view = NodeView(self.scene)
+        loop_node = LoopNodeItem(properties={"count": 5})
+        loop_node.setPos(100, 100)
+        self.scene.add_node(loop_node)
+
+        node1 = ActionNodeItem("click", {"x": 10, "y": 20})
+        node1.setPos(150, 150)
+        self.scene.add_node(node1)
+
+        node2 = ActionNodeItem("delay", {"duration": 200})
+        node2.setPos(250, 150)
+        self.scene.add_node(node2)
+
+        # Wire: Loop.socket_body -> node1 -> node2 -> Loop.socket_repeat
+        self.scene.add_connection(loop_node.socket_body, node1.input_sockets[0])
+        self.scene.add_connection(node1.output_sockets[0], node2.input_sockets[0])
+        self.scene.add_connection(node2.output_sockets[0], loop_node.socket_repeat)
+
+        # 1. Downstream from node1 should only be [node1, node2], NOT loop_node
+        downstream = view._get_downstream_nodes(node1)
+        self.assertIn(node1, downstream)
+        self.assertIn(node2, downstream)
+        self.assertNotIn(loop_node, downstream)
+
+        # 2. Upstream from node2 should only be [node2, node1], NOT loop_node
+        upstream = view._get_upstream_nodes(node2)
+        self.assertIn(node1, upstream)
+        self.assertIn(node2, upstream)
+        self.assertNotIn(loop_node, upstream)
+
+        # 3. Simulate Ctrl+Drag on node1
+        initial_loop_pos = QPointF(loop_node.pos())
+        view._branch_drag_nodes = view._get_downstream_nodes(node1)
+        view._branch_drag_prev_scene_pos = QPointF(150, 150)
+
+        # Move mouse
+        delta = QPointF(40, 20)
+        for n in view._branch_drag_nodes:
+            n.setPos(n.pos() + delta)
+        view.node_scene.update_loop_bounds()
+
+        # Verify loop bracket position remained strictly anchored
+        self.assertEqual(loop_node.pos(), initial_loop_pos)
+        self.assertEqual(node1.pos(), QPointF(190, 170))
+        self.assertEqual(node2.pos(), QPointF(290, 170))
+
+    def test_browse_template_replacement_crash_proof(self):
+        """Test that browsing and replacing a template image is crash-proof and handles dialogs safely."""
+        from unittest.mock import patch
+        import tempfile
+        import os
+        from app.ui.node_editor.inspector import PropertyInspector
+        from app.ui.node_editor.node_items import VisionNodeItem
+        from PyQt6.QtWidgets import QMessageBox, QPushButton
+
+        inspector = PropertyInspector(self.scene)
+        vnode = VisionNodeItem()
+
+        # Create temporary dummy template image
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f1, \
+             tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f2:
+            orig_path = f1.name
+            new_path = f2.name
+
+        try:
+            vnode.properties["template"] = orig_path
+            inspector.set_node(vnode)
+
+            # Find browse button
+            btn_browse = None
+            for child in inspector.findChildren(QPushButton):
+                if "Browse" in child.text():
+                    btn_browse = child
+                    break
+            self.assertIsNotNone(btn_browse, "Browse button should exist in inspector")
+
+            # Mock QFileDialog to return new_path, and QMessageBox to click 'Replace'
+            orig_add_btn = QMessageBox.addButton
+            def fake_add_btn(box_self, text, role):
+                btn = orig_add_btn(box_self, text, role)
+                if "Replace" in text:
+                    box_self._chosen_btn = btn
+                return btn
+
+            with patch("PyQt6.QtWidgets.QFileDialog.getOpenFileName", return_value=(new_path, "Images (*.png)")):
+                with patch.object(QMessageBox, "addButton", fake_add_btn), \
+                     patch.object(QMessageBox, "exec", return_value=0), \
+                     patch.object(QMessageBox, "clickedButton", lambda box_self: getattr(box_self, "_chosen_btn", None)):
+                    btn_browse.click()
+
+            # Verify that template was replaced with the new snippet path
+            self.assertTrue(os.path.basename(new_path) in vnode.properties["template"] or "snippet_" in vnode.properties["template"])
+        finally:
+            if os.path.exists(orig_path):
+                os.remove(orig_path)
+            if os.path.exists(new_path):
+                os.remove(new_path)
+
 
 if __name__ == "__main__":
     unittest.main()
