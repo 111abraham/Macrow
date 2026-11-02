@@ -984,14 +984,36 @@ class LoopNodeItem(BaseNodeItem):
 
     def update_clamp_bounds(self):
         body_nodes = self.get_body_nodes()
-        if not body_nodes:
+        my_x = self.pos().x()
+        my_y = self.pos().y()
+        max_x = my_x + 200.0
+        max_y = my_y + 80.0
+        has_content = False
+
+        if body_nodes:
+            has_content = True
+            max_x = max(max_x, max(n.pos().x() + n.width for n in body_nodes))
+            max_y = max(max_y, max(n.pos().y() + n.height for n in body_nodes))
+
+        # Also account for any group node inside the repeat zone
+        if self.scene():
+            for b_node in body_nodes:
+                grp = getattr(b_node, "group", None)
+                if grp:
+                    has_content = True
+                    max_x = max(max_x, grp.pos().x() + grp.rect().width())
+                    max_y = max(max_y, grp.pos().y() + grp.rect().height())
+            loop_rect = self.sceneBoundingRect()
+            for grp in getattr(self.scene(), "groups", []):
+                if loop_rect.contains(grp.sceneBoundingRect().center()):
+                    has_content = True
+                    max_x = max(max_x, grp.pos().x() + grp.rect().width())
+                    max_y = max(max_y, grp.pos().y() + grp.rect().height())
+
+        if not has_content:
             new_w = 240.0
             new_h = 125.0
         else:
-            my_x = self.pos().x()
-            my_y = self.pos().y()
-            max_x = max(n.pos().x() + n.width for n in body_nodes)
-            max_y = max(n.pos().y() + n.height for n in body_nodes)
             new_w = max(240.0, (max_x - my_x) + 40.0)
             new_h = max(125.0, (max_y - my_y) + 45.0)
 
@@ -1019,6 +1041,30 @@ class LoopNodeItem(BaseNodeItem):
     def boundingRect(self) -> QRectF:
         return QRectF(-10, -10, self.clamp_width + 20, self.clamp_height + 20)
 
+    def shape(self) -> QPainterPath:
+        """Returns C-clamp bracket structural path, leaving mouth cavity hollow for node and group selection."""
+        w = self.clamp_width
+        h = self.clamp_height
+        sp_w = self.spine_width
+        sh_h = self.shelf_height
+        hdr_h = self.header_height
+
+        path = QPainterPath()
+        path.moveTo(0, 8)
+        path.quadTo(0, 0, 8, 0)
+        path.lineTo(w - 8, 0)
+        path.quadTo(w, 0, w, 8)
+        path.lineTo(w, hdr_h)
+        path.lineTo(sp_w, hdr_h)
+        path.lineTo(sp_w, h - sh_h)
+        path.lineTo(w, h - sh_h)
+        path.lineTo(w, h - 8)
+        path.quadTo(w, h, w - 8, h)
+        path.lineTo(8, h)
+        path.quadTo(0, h, 0, h - 8)
+        path.closeSubpath()
+        return path
+
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionChange and self.scene():
             new_pos = value
@@ -1026,11 +1072,39 @@ class LoopNodeItem(BaseNodeItem):
             delta = new_pos - old_pos
             if not getattr(self, "_in_body_sync", False):
                 self._in_body_sync = True
-                for b_node in self.get_body_nodes():
+                moved_nodes = set(self.get_body_nodes())
+                for b_node in list(moved_nodes):
                     # Only move nodes that are not already being moved by Qt's selection drag
                     if not b_node.isSelected():
                         b_node.setPos(b_node.pos() + delta)
                         b_node.update_connected_wires()
+
+                # Also move any group nodes that contain body nodes or sit inside the repeat zone
+                moved_groups = set()
+                loop_scene_rect = self.sceneBoundingRect()
+                for b_node in list(moved_nodes):
+                    grp = getattr(b_node, "group", None)
+                    if grp and grp not in moved_groups and not grp.isSelected():
+                        grp.setPos(grp.pos() + delta)
+                        moved_groups.add(grp)
+                        for gn in grp.nodes:
+                            if gn not in moved_nodes and not gn.isSelected():
+                                gn.setPos(gn.pos() + delta)
+                                gn.update_connected_wires()
+                                moved_nodes.add(gn)
+
+                scene_groups = getattr(self.scene(), "groups", [])
+                for grp in scene_groups:
+                    if grp not in moved_groups and not grp.isSelected():
+                        if loop_scene_rect.contains(grp.sceneBoundingRect().center()):
+                            grp.setPos(grp.pos() + delta)
+                            moved_groups.add(grp)
+                            for gn in grp.nodes:
+                                if gn not in moved_nodes and not gn.isSelected():
+                                    gn.setPos(gn.pos() + delta)
+                                    gn.update_connected_wires()
+                                    moved_nodes.add(gn)
+
                 self._in_body_sync = False
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
             self.update_connected_wires()

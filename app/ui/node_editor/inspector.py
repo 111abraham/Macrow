@@ -43,6 +43,7 @@ from app.ui.node_editor.node_items import (
     AIVisionNodeItem,
     StickyNoteNodeItem,
 )
+from app.ui.node_editor.node_group import NodeGroupItem
 from app.core.key_catalog import KEY_CATALOG_GROUPS, get_name_for_vk, get_vk_for_key
 from app.ui.snippet_tool import ScreenSnipper
 from app.ui.eye_dropper import CoordinateEyeDropper
@@ -276,16 +277,22 @@ class PropertyInspector(QWidget):
         self.content_layout.addWidget(lbl)
         self.content_layout.addStretch()
 
-    def set_node(self, node: Optional[BaseNodeItem], force: bool = False):
+    def set_node(self, node: Optional[Union[BaseNodeItem, NodeGroupItem]], force: bool = False):
         if getattr(self, "_updating_from_overlay", False):
             return
         if node is self.current_node and not force and self.content_layout.count() > 1:
-            self._update_region_overlay(node)
+            if isinstance(node, BaseNodeItem):
+                self._update_region_overlay(node)
             return
         self.current_node = node
         if not node:
             self._show_empty_state()
             self._update_region_overlay(None)
+            return
+
+        if isinstance(node, NodeGroupItem):
+            self._update_region_overlay(None)
+            self._build_group_controls(node)
             return
 
         self._update_region_overlay(node)
@@ -634,6 +641,109 @@ class PropertyInspector(QWidget):
         layout.addWidget(btn_type)
 
         return container, edit
+
+    def _build_group_controls(self, group: NodeGroupItem):
+        self._clear_content()
+
+        badge = QLabel(f"🗂 Visual Group: {group.title}")
+        badge.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        badge.setStyleSheet("color: #f1f5f9; background: #1e293b; padding: 6px; border-radius: 4px;")
+        self.content_layout.addWidget(badge)
+
+        frame = QFrame()
+        frame.setStyleSheet("background: #1e293b; border: 1px solid #334155; border-radius: 6px; padding: 10px;")
+        layout = QVBoxLayout(frame)
+        layout.setSpacing(10)
+
+        # Title / Name
+        layout.addWidget(QLabel("Group Title:"))
+        txt_title = QLineEdit(group.title)
+        txt_title.setStyleSheet("background: #0f172a; color: white; border: 1px solid #475569; padding: 5px; border-radius: 4px;")
+
+        def on_title_changed(text):
+            group.set_title(text.strip() or "Group")
+            badge.setText(f"🗂 Visual Group: {group.title}")
+            self.property_changed.emit()
+
+        txt_title.textChanged.connect(on_title_changed)
+        layout.addWidget(txt_title)
+
+        # Color
+        btn_color = QPushButton("🎨 Change Frame Color...")
+        col_hex = group.color.name()
+        btn_color.setStyleSheet(f"background: {col_hex}; color: white; font-weight: bold; padding: 6px; border-radius: 4px;")
+
+        def on_color_click():
+            col = QColorDialog.getColor(group.color, self.window() if self.window() else None, "Select Group Color")
+            if col.isValid():
+                group.set_color(col)
+                btn_color.setStyleSheet(f"background: {col.name()}; color: white; font-weight: bold; padding: 6px; border-radius: 4px;")
+                self.property_changed.emit()
+
+        btn_color.clicked.connect(on_color_click)
+        layout.addWidget(btn_color)
+
+        # Size Controls
+        r = group.rect()
+        layout.addWidget(QLabel("Dimensions (Width × Height):"))
+        row_size = QHBoxLayout()
+        spin_w = QSpinBox()
+        spin_w.setRange(160, 4000)
+        spin_w.setValue(int(r.width()))
+        spin_w.setPrefix("W: ")
+        spin_w.setStyleSheet("background: #0f172a; color: white; border: 1px solid #475569; padding: 4px; border-radius: 4px;")
+
+        spin_h = QSpinBox()
+        spin_h.setRange(100, 4000)
+        spin_h.setValue(int(r.height()))
+        spin_h.setPrefix("H: ")
+        spin_h.setStyleSheet("background: #0f172a; color: white; border: 1px solid #475569; padding: 4px; border-radius: 4px;")
+
+        def on_size_change():
+            group.prepareGeometryChange()
+            group.setRect(0, 0, spin_w.value(), spin_h.value())
+            group.update()
+            if group.scene() and hasattr(group.scene(), "scene_modified"):
+                group.scene().scene_modified.emit()
+            if group.scene() and hasattr(group.scene(), "update_loop_bounds"):
+                group.scene().update_loop_bounds()
+            self.property_changed.emit()
+
+        spin_w.valueChanged.connect(lambda _: on_size_change())
+        spin_h.valueChanged.connect(lambda _: on_size_change())
+        row_size.addWidget(spin_w)
+        row_size.addWidget(spin_h)
+        layout.addLayout(row_size)
+
+        # Actions
+        btn_fit = QPushButton("📐 Fit to Enclosed Nodes")
+        btn_fit.setStyleSheet("background: #334155; color: #f8fafc; padding: 6px; border-radius: 4px;")
+
+        def on_fit():
+            group.fit_to_nodes()
+            spin_w.setValue(int(group.rect().width()))
+            spin_h.setValue(int(group.rect().height()))
+            if group.scene() and hasattr(group.scene(), "update_loop_bounds"):
+                group.scene().update_loop_bounds()
+            self.property_changed.emit()
+
+        btn_fit.clicked.connect(on_fit)
+        layout.addWidget(btn_fit)
+
+        btn_del = QPushButton("🗑 Delete Group Frame")
+        btn_del.setStyleSheet("background: #7f1d1d; color: white; padding: 6px; border-radius: 4px; font-weight: bold;")
+
+        def on_del():
+            if group.scene() and hasattr(group.scene(), "remove_group"):
+                group.scene().remove_group(group)
+            self._show_empty_state()
+            self.property_changed.emit()
+
+        btn_del.clicked.connect(on_del)
+        layout.addWidget(btn_del)
+
+        self.content_layout.addWidget(frame)
+        self.content_layout.addStretch()
 
     def _build_action_controls(self, node: ActionNodeItem):
         at = node.properties.get("action_type", node.node_type)
@@ -2781,14 +2891,24 @@ class PropertyInspector(QWidget):
                 import shutil
                 from datetime import datetime
 
-                init_dir = os.path.abspath("snippets") if os.path.exists("snippets") else ""
-                path, _ = QFileDialog.getOpenFileName(
-                    parent_win,
-                    "Select Template Image",
-                    init_dir,
-                    "Images (*.png *.jpg *.jpeg *.bmp *.webp);;All Files (*.*)",
-                    options=QFileDialog.Option.DontUseNativeDialog,
-                )
+                init_dir = os.path.abspath("snippets")
+                os.makedirs(init_dir, exist_ok=True)
+                try:
+                    # Native dialog displays image thumbnail previews in Windows File Explorer
+                    path, _ = QFileDialog.getOpenFileName(
+                        parent_win,
+                        "Select Template Image",
+                        init_dir,
+                        "Images (*.png *.jpg *.jpeg *.bmp *.webp);;All Files (*.*)",
+                    )
+                except Exception:
+                    path, _ = QFileDialog.getOpenFileName(
+                        parent_win,
+                        "Select Template Image",
+                        init_dir,
+                        "Images (*.png *.jpg *.jpeg *.bmp *.webp);;All Files (*.*)",
+                        options=QFileDialog.Option.DontUseNativeDialog,
+                    )
             except Exception as e:
                 import logging
                 logging.warning(f"Error opening file dialog: {e}")

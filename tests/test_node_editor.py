@@ -2349,6 +2349,134 @@ class TestNodeEditor(unittest.TestCase):
             if os.path.exists(new_path):
                 os.remove(new_path)
 
+    def test_ctrl_click_selection_toggle(self):
+        """Test that Ctrl + Click toggles selection: adds unselected node, deselects already selected node."""
+        from app.ui.node_editor.node_view import NodeView
+        from app.ui.node_editor.node_items import ActionNodeItem
+        from PyQt6.QtGui import QMouseEvent
+        from PyQt6.QtCore import QPointF, Qt
+
+        view = NodeView(self.scene)
+        n1 = ActionNodeItem("click", {"x": 10, "y": 10})
+        n2 = ActionNodeItem("click", {"x": 100, "y": 10})
+        n3 = ActionNodeItem("click", {"x": 200, "y": 10})
+        self.scene.add_node(n1)
+        self.scene.add_node(n2)
+        self.scene.add_node(n3)
+
+        # 1. Select n1 normally
+        n1.setSelected(True)
+        self.assertTrue(n1.isSelected())
+        self.assertFalse(n2.isSelected())
+
+        # 2. Ctrl + Click on n2: n2 becomes selected, n1 stays selected
+        view._ctrl_candidate_item = n2
+        view._ctrl_initial_selected = False
+        view._is_ctrl_branch_drag = False
+
+        release_event = QMouseEvent(
+            QMouseEvent.Type.MouseButtonRelease,
+            QPointF(100, 10),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.ControlModifier,
+        )
+        view.mouseReleaseEvent(release_event)
+        self.assertTrue(n1.isSelected())
+        self.assertTrue(n2.isSelected())
+
+        # 3. Ctrl + Click again on n2: n2 becomes deselected, n1 stays selected
+        view._ctrl_candidate_item = n2
+        view._ctrl_initial_selected = True
+        view._is_ctrl_branch_drag = False
+        view.mouseReleaseEvent(release_event)
+        self.assertTrue(n1.isSelected())
+        self.assertFalse(n2.isSelected())
+
+    def test_multi_node_shake_disconnect_and_heal(self):
+        """Test that shaking multiple inline nodes removes them and heals connection across the gap."""
+        from app.ui.node_editor.node_view import NodeView
+        from app.ui.node_editor.node_items import ActionNodeItem
+
+        view = NodeView(self.scene)
+        n0 = ActionNodeItem("click", {"x": 0, "y": 0})
+        n1 = ActionNodeItem("delay", {"duration": 50})
+        n2 = ActionNodeItem("delay", {"duration": 100})
+        n3 = ActionNodeItem("delay", {"duration": 150})
+        n4 = ActionNodeItem("click", {"x": 500, "y": 0})
+
+        for n in (n0, n1, n2, n3, n4):
+            self.scene.add_node(n)
+
+        # Connect n0 -> n1 -> n2 -> n3 -> n4
+        self.scene.add_connection(n0.output_sockets[0], n1.input_sockets[0])
+        self.scene.add_connection(n1.output_sockets[0], n2.input_sockets[0])
+        self.scene.add_connection(n2.output_sockets[0], n3.input_sockets[0])
+        self.scene.add_connection(n3.output_sockets[0], n4.input_sockets[0])
+        self.assertEqual(len(self.scene.connections), 4)
+
+        # Shake multiple selected nodes: n1, n2, n3
+        view._trigger_shake_disconnect([n1, n2, n3])
+
+        # All intermediate connections should be removed
+        for n in (n1, n2, n3):
+            self.assertEqual(len(n.input_sockets[0].connections), 0)
+            self.assertEqual(len(n.output_sockets[0].connections), 0)
+
+        # The connection should heal directly from n0 -> n4
+        self.assertEqual(len(self.scene.connections), 1)
+        healed_conn = self.scene.connections[0]
+        self.assertEqual(healed_conn.start_socket.node, n0)
+        self.assertEqual(healed_conn.end_socket.node, n4)
+
+    def test_group_inside_repeat_zone_movement_and_selection(self):
+        """Test that group node moves with repeat zone, is resizable and renamable."""
+        from app.ui.node_editor.node_items import LoopNodeItem, ActionNodeItem
+        from app.ui.node_editor.node_group import NodeGroupItem
+        from app.ui.node_editor.inspector import PropertyInspector
+        from PyQt6.QtCore import QPointF
+
+        loop = LoopNodeItem(properties={"count": 3})
+        loop.setPos(100, 100)
+        self.scene.add_node(loop)
+
+        # Create a group frame inside the repeat zone
+        group = self.scene.add_group(title="Work Steps")
+        group.setPos(140, 140)
+        group.setRect(0, 0, 260, 160)
+
+        action_in_grp = ActionNodeItem("click", {"x": 20, "y": 20})
+        action_in_grp.setPos(160, 180)
+        self.scene.add_node(action_in_grp)
+        group.add_node(action_in_grp)
+
+        # Connect loop body to action_in_grp
+        self.scene.add_connection(loop.socket_body, action_in_grp.input_sockets[0])
+        self.scene.add_connection(action_in_grp.output_sockets[0], loop.socket_repeat)
+
+        # 1. Moving repeat zone moves group node
+        initial_grp_pos = QPointF(group.pos())
+        delta = QPointF(80, 50)
+        loop.setPos(loop.pos() + delta)
+
+        self.assertEqual(group.pos(), initial_grp_pos + delta)
+        self.assertEqual(action_in_grp.pos(), QPointF(240, 230))
+
+        # 2. Group node is resizable
+        self.assertTrue(group.get_resize_grip_rect().isValid())
+        group.setRect(0, 0, 320, 220)
+        self.assertEqual(group.rect().width(), 320)
+        self.assertEqual(group.rect().height(), 220)
+
+        # 3. Group node is renamable
+        group.set_title("Updated Batch")
+        self.assertEqual(group.title, "Updated Batch")
+
+        # 4. Group node in PropertyInspector
+        inspector = PropertyInspector(self.scene)
+        inspector.set_node(group)
+        self.assertEqual(inspector.current_node, group)
+
 
 if __name__ == "__main__":
     unittest.main()

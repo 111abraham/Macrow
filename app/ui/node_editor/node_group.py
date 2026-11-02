@@ -9,6 +9,8 @@ from PyQt6.QtWidgets import (
     QGraphicsItem,
     QGraphicsRectItem,
     QInputDialog,
+    QColorDialog,
+    QMenu,
     QApplication,
 )
 
@@ -17,7 +19,7 @@ if TYPE_CHECKING:
 
 
 class NodeGroupItem(QGraphicsRectItem):
-    """Encloses multiple nodes in an organized, draggable visual group frame."""
+    """Encloses multiple nodes in an organized, draggable, resizable visual group frame."""
 
     def __init__(
         self,
@@ -33,11 +35,16 @@ class NodeGroupItem(QGraphicsRectItem):
 
         self.nodes: List["BaseNodeItem"] = []
         self._last_drag_pos: Optional[QPointF] = None
+        self._is_resizing: bool = False
+        self._resize_start_scene: Optional[QPointF] = None
+        self._resize_start_rect: Optional[QRectF] = None
 
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
-        self.setZValue(-2)  # Behind connections and nodes
+        # Position in front of Loop repeat bracket (z=0.1) but behind regular nodes (z=1.0)
+        self.setZValue(0.15)
+        self.setAcceptHoverEvents(True)
 
         self.setRect(0, 0, 300, 200)
 
@@ -49,7 +56,7 @@ class NodeGroupItem(QGraphicsRectItem):
     def remove_node(self, node: "BaseNodeItem"):
         if node in self.nodes:
             self.nodes.remove(node)
-            if node.group == self:
+            if getattr(node, "group", None) == self:
                 node.group = None
 
     def fit_to_nodes(self, padding: float = 30.0):
@@ -67,14 +74,52 @@ class NodeGroupItem(QGraphicsRectItem):
         w = (max_x - min_x) + padding * 2
         h = (max_y - min_y) + padding * 2 + self.header_height
 
+        self.prepareGeometryChange()
         self.setPos(x, y)
         self.setRect(0, 0, max(w, 200.0), max(h, 150.0))
+        self.update()
+        if self.scene() and hasattr(self.scene(), "scene_modified"):
+            self.scene().scene_modified.emit()
+
+    def get_resize_grip_rect(self) -> QRectF:
+        """Returns corner bounding rect for mouse drag resizing."""
+        r = self.rect()
+        return QRectF(r.width() - 22, r.height() - 22, 22, 22)
+
+    def hoverMoveEvent(self, event):
+        if self.get_resize_grip_rect().contains(event.pos()):
+            self.setCursor(Qt.CursorShape.SizeFDiagCursor)
+        else:
+            self.setCursor(Qt.CursorShape.ArrowCursor)
+        super().hoverMoveEvent(event)
+
+    def hoverLeaveEvent(self, event):
+        self.setCursor(Qt.CursorShape.ArrowCursor)
+        super().hoverLeaveEvent(event)
 
     def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            if self.get_resize_grip_rect().contains(event.pos()):
+                self._is_resizing = True
+                self._resize_start_scene = event.scenePos()
+                self._resize_start_rect = self.rect()
+                event.accept()
+                return
+
         self._last_drag_pos = event.scenePos()
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
+        if self._is_resizing and self._resize_start_scene and self._resize_start_rect:
+            delta = event.scenePos() - self._resize_start_scene
+            new_w = max(160.0, self._resize_start_rect.width() + delta.x())
+            new_h = max(100.0, self._resize_start_rect.height() + delta.y())
+            self.prepareGeometryChange()
+            self.setRect(0, 0, new_w, new_h)
+            self.update()
+            event.accept()
+            return
+
         if self._last_drag_pos and (event.buttons() & Qt.MouseButton.LeftButton):
             delta = event.scenePos() - self._last_drag_pos
             self._last_drag_pos = event.scenePos()
@@ -86,21 +131,76 @@ class NodeGroupItem(QGraphicsRectItem):
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
+        if self._is_resizing:
+            self._is_resizing = False
+            self._resize_start_scene = None
+            self._resize_start_rect = None
+            if self.scene() and hasattr(self.scene(), "scene_modified"):
+                self.scene().scene_modified.emit()
+            event.accept()
+            return
+
         self._last_drag_pos = None
         super().mouseReleaseEvent(event)
+        if self.scene() and hasattr(self.scene(), "scene_modified"):
+            self.scene().scene_modified.emit()
+
+    def prompt_rename(self):
+        new_title, ok = QInputDialog.getText(
+            None, "Rename Group", "Enter group title:", text=self.title
+        )
+        if ok and new_title.strip():
+            self.set_title(new_title.strip())
+
+    def set_title(self, new_title: str):
+        self.title = new_title
+        self.update()
+        if self.scene() and hasattr(self.scene(), "scene_modified"):
+            self.scene().scene_modified.emit()
+
+    def prompt_color(self):
+        col = QColorDialog.getColor(self.color, None, "Select Group Color")
+        if col.isValid():
+            self.set_color(col)
+
+    def set_color(self, color: QColor):
+        self.color = color
+        self.update()
+        if self.scene() and hasattr(self.scene(), "scene_modified"):
+            self.scene().scene_modified.emit()
 
     def mouseDoubleClickEvent(self, event):
         """Double click group title bar to rename."""
         if event.pos().y() <= self.header_height:
-            new_title, ok = QInputDialog.getText(
-                None, "Rename Group", "Enter group title:", text=self.title
-            )
-            if ok and new_title.strip():
-                self.title = new_title.strip()
-                self.update()
+            self.prompt_rename()
             event.accept()
         else:
             super().mouseDoubleClickEvent(event)
+
+    def contextMenuEvent(self, event):
+        menu = QMenu()
+        menu.setStyleSheet("""
+            QMenu { background-color: #1e293b; color: #f8fafc; border: 1px solid #334155; border-radius: 6px; padding: 4px; }
+            QMenu::item { padding: 6px 20px; border-radius: 4px; }
+            QMenu::item:selected { background-color: #3b82f6; }
+        """)
+        act_rename = menu.addAction("✏ Rename Group...")
+        act_color = menu.addAction("🎨 Change Color...")
+        act_fit = menu.addAction("📐 Fit to Enclosed Nodes")
+        menu.addSeparator()
+        act_delete = menu.addAction("🗑 Delete Group Frame")
+
+        action = menu.exec(event.screenPos())
+        if action == act_rename:
+            self.prompt_rename()
+        elif action == act_color:
+            self.prompt_color()
+        elif action == act_fit:
+            self.fit_to_nodes()
+        elif action == act_delete:
+            if self.scene() and hasattr(self.scene(), "remove_group"):
+                self.scene().remove_group(self)
+        event.accept()
 
     def paint(self, painter: QPainter, option, widget=None):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -135,3 +235,12 @@ class NodeGroupItem(QGraphicsRectItem):
             Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft,
             f"🗂  {self.title}",
         )
+
+        # Resize grip notches in bottom-right corner
+        grip_r = self.get_resize_grip_rect()
+        painter.setPen(QPen(QColor(148, 163, 184, 180), 1.5, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+        for off in (5, 9, 13):
+            painter.drawLine(
+                int(grip_r.right() - off), int(grip_r.bottom() - 3),
+                int(grip_r.right() - 3), int(grip_r.bottom() - off)
+            )

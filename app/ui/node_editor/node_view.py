@@ -42,6 +42,7 @@ from app.ui.node_editor.node_items import (
     AIVisionNodeItem,
     StickyNoteNodeItem,
 )
+from app.ui.node_editor.node_group import NodeGroupItem
 from app.ui.node_editor.node_connection import NodeConnection
 
 
@@ -84,9 +85,17 @@ class NodeView(QGraphicsView):
         self._a_align_node: Optional[BaseNodeItem] = None
         self._a_align_start_scene_pos: Optional[QPointF] = None
 
-        # 2. Ctrl / Shift branch dragging
+        # 2. Ctrl / Shift branch dragging & toggle selection
         self._branch_drag_nodes: List[BaseNodeItem] = []
         self._branch_drag_prev_scene_pos: Optional[QPointF] = None
+        self._ctrl_candidate_item: Optional[QGraphicsItem] = None
+        self._ctrl_press_pos: Optional[QPoint] = None
+        self._ctrl_initial_selected: bool = False
+        self._is_ctrl_branch_drag: bool = False
+        self._shift_candidate_item: Optional[QGraphicsItem] = None
+        self._shift_press_pos: Optional[QPoint] = None
+        self._shift_initial_selected: bool = False
+        self._is_shift_branch_drag: bool = False
 
         # 3. Shake to disconnect tracker
         self._dragged_node: Optional[BaseNodeItem] = None
@@ -97,7 +106,7 @@ class NodeView(QGraphicsView):
         self._hovered_wire: Optional[NodeConnection] = None
 
         # 5. Multi-selection drag tracking
-        self._pending_single_selection: Optional[BaseNodeItem] = None
+        self._pending_single_selection: Optional[QGraphicsItem] = None
         self._press_view_pos: Optional[QPoint] = None
 
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -107,6 +116,16 @@ class NodeView(QGraphicsView):
         curr = item
         while curr:
             if isinstance(curr, BaseNodeItem):
+                return curr
+            curr = curr.parentItem()
+        return None
+
+    def _get_selectable_item_at(self, pos: QPoint) -> Optional[QGraphicsItem]:
+        """Returns node item or group item under cursor."""
+        item = self.itemAt(pos)
+        curr = item
+        while curr:
+            if isinstance(curr, (BaseNodeItem, NodeGroupItem)):
                 return curr
             curr = curr.parentItem()
         return None
@@ -300,23 +319,40 @@ class NodeView(QGraphicsView):
         """Prevent Tab key from switching widget focus away from the canvas."""
         return False
 
-    def _trigger_shake_disconnect(self, node: BaseNodeItem):
-        """Disconnects all wires connected to node. If inline, heals connections between upstream and downstream."""
-        incoming = [
-            c.start_socket for sock in node.input_sockets for c in sock.connections
-            if c.start_socket and c.start_socket.node != node
-        ]
-        outgoing = [
-            c.end_socket for sock in node.output_sockets for c in sock.connections
-            if c.end_socket and c.end_socket.node != node
-        ]
+    def _trigger_shake_disconnect(self, nodes):
+        """Disconnects all wires connected to node(s). If inline, heals connections between upstream and downstream."""
+        if not nodes:
+            return
+        if not isinstance(nodes, list):
+            nodes = [nodes]
 
-        # Disconnect all existing connections on node
+        node_set = set(nodes)
+
+        # External incoming sockets: start sockets from outside nodes leading into this group
+        incoming = []
+        for n in nodes:
+            for sock in n.input_sockets:
+                for c in sock.connections:
+                    if c.start_socket and c.start_socket.node and c.start_socket.node not in node_set:
+                        if c.start_socket not in incoming:
+                            incoming.append(c.start_socket)
+
+        # External outgoing sockets: end sockets on outside nodes receiving from this group
+        outgoing = []
+        for n in nodes:
+            for sock in n.output_sockets:
+                for c in sock.connections:
+                    if c.end_socket and c.end_socket.node and c.end_socket.node not in node_set:
+                        if c.end_socket not in outgoing:
+                            outgoing.append(c.end_socket)
+
+        # Disconnect all existing connections on shaken nodes
         to_remove = []
-        for sock in node.input_sockets + node.output_sockets:
-            for conn in list(sock.connections):
-                if conn not in to_remove:
-                    to_remove.append(conn)
+        for n in nodes:
+            for sock in n.input_sockets + n.output_sockets:
+                for conn in list(sock.connections):
+                    if conn not in to_remove:
+                        to_remove.append(conn)
         for conn in to_remove:
             self.node_scene.remove_connection(conn)
 
@@ -326,6 +362,7 @@ class NodeView(QGraphicsView):
                 self.node_scene.add_connection(in_sock, out_sock)
 
         self.node_scene.scene_modified.emit()
+        self.node_scene.update_loop_bounds()
 
     def mousePressEvent(self, event: QMouseEvent):
         # 1. Knife Tool: Y held + Left Click starts cutting wire trail
@@ -372,63 +409,64 @@ class NodeView(QGraphicsView):
             super().mousePressEvent(event)
             return
 
-        # 5. Houdini Gestures on Nodes:
+        # 5. Houdini Gestures & Node / Group Selection:
         if event.button() == Qt.MouseButton.LeftButton:
-            target_node = self._get_node_at(event.pos())
-            if target_node:
+            target_item = self._get_selectable_item_at(event.pos())
+            target_node = target_item if isinstance(target_item, BaseNodeItem) else None
+
+            if target_item:
                 # A + Drag: Align branch horizontally
-                if self._a_key_held:
+                if self._a_key_held and target_node:
                     self._a_align_node = target_node
                     self._a_align_start_scene_pos = self.mapToScene(event.pos())
                     event.accept()
                     return
 
-                # Ctrl + Drag: Move downstream branch (all nodes connected to right)
+                # Ctrl + Click (toggle selection) or Ctrl + Drag (downstream branch)
                 if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
-                    self._branch_drag_nodes = self._get_downstream_nodes(target_node)
-                    self._branch_drag_prev_scene_pos = self.mapToScene(event.pos())
-                    self.node_scene.clearSelection()
-                    for n in self._branch_drag_nodes:
-                        n.setSelected(True)
+                    self._ctrl_candidate_item = target_item
+                    self._ctrl_press_pos = event.pos()
+                    self._ctrl_initial_selected = target_item.isSelected()
+                    self._is_ctrl_branch_drag = False
                     event.accept()
                     return
 
-                # Shift + Drag: Move upstream branch (all nodes connected to left)
+                # Shift + Click (add selection) or Shift + Drag (upstream branch)
                 if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
-                    self._branch_drag_nodes = self._get_upstream_nodes(target_node)
-                    self._branch_drag_prev_scene_pos = self.mapToScene(event.pos())
-                    self.node_scene.clearSelection()
-                    for n in self._branch_drag_nodes:
-                        n.setSelected(True)
+                    self._shift_candidate_item = target_item
+                    self._shift_press_pos = event.pos()
+                    self._shift_initial_selected = target_item.isSelected()
+                    self._is_shift_branch_drag = False
                     event.accept()
                     return
 
                 # Normal node drag: track for shake disconnect and wire auto-insert
-                self._dragged_node = target_node
-                self._press_view_pos = event.pos()
-                now = time.time()
-                self._shake_samples = [(now, target_node.pos().x(), target_node.pos().y())]
-                self._shake_triggered = False
+                if target_node:
+                    self._dragged_node = target_node
+                    self._press_view_pos = event.pos()
+                    now = time.time()
+                    self._shake_samples = [(now, target_node.pos().x(), target_node.pos().y())]
+                    self._shake_triggered = False
 
                 # Handle multi-selection movement:
-                # If target_node is ALREADY selected and part of a multi-selection, do NOT deselect others!
+                # If target_item is ALREADY selected and part of a multi-selection, do NOT deselect others!
                 # Keep all selected items so dragging moves the whole group together.
                 sel = self.node_scene.selectedItems()
                 if not (event.modifiers() & (Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier)):
-                    if target_node.isSelected() and len(sel) > 1:
+                    if target_item.isSelected() and len(sel) > 1:
                         # Defer potential single selection to mouseRelease in case user is just clicking, not dragging
-                        self._pending_single_selection = target_node
-                    elif not target_node.isSelected():
+                        self._pending_single_selection = target_item
+                    elif not target_item.isSelected():
                         self.node_scene.clearSelection()
-                        target_node.setSelected(True)
+                        target_item.setSelected(True)
                         self._pending_single_selection = None
                     else:
                         self._pending_single_selection = None
                 else:
                     self._pending_single_selection = None
 
-                self.node_scene._current_selected_node = target_node
-                self.node_scene.node_selected.emit(target_node)
+                self.node_scene._current_selected_node = target_item
+                self.node_scene.node_selected.emit(target_item)
             else:
                 # Clicked empty canvas: clear selection and empty inspector
                 from app.ui.node_editor.node_socket import NodeSocketItem
@@ -480,6 +518,28 @@ class NodeView(QGraphicsView):
             event.accept()
             return
 
+        # Check if Ctrl candidate gesture transitioned to a Ctrl + Drag!
+        if self._ctrl_candidate_item and not self._is_ctrl_branch_drag and self._ctrl_press_pos:
+            if (event.pos() - self._ctrl_press_pos).manhattanLength() > 5:
+                self._is_ctrl_branch_drag = True
+                if isinstance(self._ctrl_candidate_item, BaseNodeItem):
+                    self._branch_drag_nodes = self._get_downstream_nodes(self._ctrl_candidate_item)
+                    self._branch_drag_prev_scene_pos = self.mapToScene(event.pos())
+                    self.node_scene.clearSelection()
+                    for n in self._branch_drag_nodes:
+                        n.setSelected(True)
+
+        # Check if Shift candidate gesture transitioned to a Shift + Drag!
+        if self._shift_candidate_item and not self._is_shift_branch_drag and self._shift_press_pos:
+            if (event.pos() - self._shift_press_pos).manhattanLength() > 5:
+                self._is_shift_branch_drag = True
+                if isinstance(self._shift_candidate_item, BaseNodeItem):
+                    self._branch_drag_nodes = self._get_upstream_nodes(self._shift_candidate_item)
+                    self._branch_drag_prev_scene_pos = self.mapToScene(event.pos())
+                    self.node_scene.clearSelection()
+                    for n in self._branch_drag_nodes:
+                        n.setSelected(True)
+
         # Houdini Ctrl / Shift branch dragging
         if self._branch_drag_nodes and self._branch_drag_prev_scene_pos:
             cur_scene_pos = self.mapToScene(event.pos())
@@ -498,8 +558,8 @@ class NodeView(QGraphicsView):
 
         super().mouseMoveEvent(event)
 
-        # Shake detection and wire drop target detection during node drag (single node only)
-        if self._dragged_node and not self._is_cutting and not self._is_panning and len(self.node_scene.selectedItems()) <= 1:
+        # Shake detection and wire drop target detection during node drag (single or multi-node)
+        if self._dragged_node and not self._is_cutting and not self._is_panning:
             now = time.time()
             cur_pos = self._dragged_node.pos()
             self._shake_samples = [s for s in self._shake_samples if now - s[0] <= 0.45]
@@ -520,7 +580,10 @@ class NodeView(QGraphicsView):
                         prev_dir = cur_dir
 
                 if reversals >= 3 and total_travel >= 70.0:
-                    self._trigger_shake_disconnect(self._dragged_node)
+                    sel_nodes = [item for item in self.node_scene.selectedItems() if isinstance(item, BaseNodeItem)]
+                    if not sel_nodes or self._dragged_node not in sel_nodes:
+                        sel_nodes = [self._dragged_node]
+                    self._trigger_shake_disconnect(sel_nodes)
                     self._shake_triggered = True
 
             # Wire hover detection for inserting node into a wire:
@@ -639,6 +702,28 @@ class NodeView(QGraphicsView):
             self._hovered_wire.is_drop_target = False
             self._hovered_wire.update()
             self._hovered_wire = None
+
+        # Handle Ctrl + Click (toggle selection)
+        if self._ctrl_candidate_item:
+            if not self._is_ctrl_branch_drag:
+                # User performed Ctrl + Click (clicked without dragging)
+                if self._ctrl_initial_selected:
+                    self._ctrl_candidate_item.setSelected(False)
+                else:
+                    self._ctrl_candidate_item.setSelected(True)
+                    self.node_scene._current_selected_node = self._ctrl_candidate_item
+                    self.node_scene.node_selected.emit(self._ctrl_candidate_item)
+            self._ctrl_candidate_item = None
+            self._is_ctrl_branch_drag = False
+
+        # Handle Shift + Click (add to selection)
+        if self._shift_candidate_item:
+            if not self._is_shift_branch_drag:
+                self._shift_candidate_item.setSelected(True)
+                self.node_scene._current_selected_node = self._shift_candidate_item
+                self.node_scene.node_selected.emit(self._shift_candidate_item)
+            self._shift_candidate_item = None
+            self._is_shift_branch_drag = False
 
         # If user clicked on a node within a multi-selection without dragging, isolate that selection now
         if self._pending_single_selection and self._press_view_pos:
