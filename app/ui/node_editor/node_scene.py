@@ -349,15 +349,46 @@ class NodeScene(QGraphicsScene):
                     "to_socket_idx": e_idx,
                 })
 
+        groups_data = []
+        for grp in self.groups:
+            enclosed_selected = [getattr(n, "id", None) or hex(id(n)) for n in grp.nodes if n in selected_nodes]
+            if enclosed_selected:
+                groups_data.append({
+                    "title": grp.title,
+                    "color": grp.color.name() if hasattr(grp.color, "name") else str(grp.color),
+                    "node_ids": enclosed_selected,
+                })
+
         NodeScene._clipboard = {
+            "_macrow_clipboard": True,
             "nodes": nodes_data,
             "connections": conns_data,
+            "groups": groups_data,
             "offset_count": 1,
         }
+        try:
+            from PyQt6.QtWidgets import QApplication
+            import json
+            QApplication.clipboard().setText(json.dumps(NodeScene._clipboard))
+        except Exception:
+            pass
+
         return len(nodes_data)
 
     def paste_clipboard(self, offset_step: Optional[QPointF] = None) -> List[BaseNodeItem]:
         """Pastes clipboard contents with offset into the scene."""
+        try:
+            from PyQt6.QtWidgets import QApplication
+            import json
+            sys_clip_text = QApplication.clipboard().text()
+            if sys_clip_text and sys_clip_text.strip().startswith("{") and "_macrow_clipboard" in sys_clip_text:
+                parsed = json.loads(sys_clip_text)
+                if isinstance(parsed, dict) and parsed.get("nodes"):
+                    if not NodeScene._clipboard or parsed.get("nodes") != NodeScene._clipboard.get("nodes"):
+                        NodeScene._clipboard = parsed
+        except Exception:
+            pass
+
         if not NodeScene._clipboard or not NodeScene._clipboard.get("nodes"):
             return []
 
@@ -411,13 +442,33 @@ class NodeScene(QGraphicsScene):
                 if s_idx < len(src.output_sockets) and e_idx < len(dst.input_sockets):
                     self.add_connection(src.output_sockets[s_idx], dst.input_sockets[e_idx])
 
+        # Recreate groups around pasted nodes
+        for gd in clip.get("groups", []):
+            gnodes = [id_map[nid] for nid in gd.get("node_ids", []) if nid in id_map]
+            if gnodes:
+                grp = self.add_group(title=gd.get("title", "Group"), nodes=gnodes)
+                if "color" in gd and gd["color"]:
+                    from PyQt6.QtGui import QColor
+                    grp.set_color(QColor(gd["color"]))
+
         self.scene_modified.emit()
         return new_nodes
 
     # --- Grouping & Duplication Features ---
 
     def group_selected(self) -> Optional[NodeGroupItem]:
+        from app.ui.node_editor.node_items import LoopNodeItem
         selected_nodes = [item for item in self.selectedItems() if isinstance(item, BaseNodeItem) and not isinstance(item, StartNodeItem)]
+        if not selected_nodes:
+            return None
+
+        # Exclude LoopNodeItem from being enclosed in a group with its own body nodes
+        loops_in_selection = [n for n in selected_nodes if isinstance(n, LoopNodeItem)]
+        for loop in loops_in_selection:
+            body = loop.get_body_nodes()
+            if any(b in selected_nodes for b in body):
+                selected_nodes.remove(loop)
+
         if not selected_nodes:
             return None
 

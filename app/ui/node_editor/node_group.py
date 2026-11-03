@@ -42,8 +42,8 @@ class NodeGroupItem(QGraphicsRectItem):
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
-        # Position in front of Loop repeat bracket (z=0.1) but behind regular nodes (z=1.0)
-        self.setZValue(0.15)
+        # Position behind Loop repeat bracket (z=0.1) and regular nodes (z=1.0)
+        self.setZValue(0.05)
         self.setAcceptHoverEvents(True)
 
         self.setRect(0, 0, 300, 200)
@@ -80,12 +80,67 @@ class NodeGroupItem(QGraphicsRectItem):
         w = (max_x - min_x) + padding * 2
         h = (max_y - min_y) + padding * 2 + self.header_height
 
+        # If inside a LoopNodeItem, ensure group body stays completely inside the repeat zone mouth
+        if self.scene():
+            for loop in getattr(self.scene(), "nodes", []):
+                from app.ui.node_editor.node_items import LoopNodeItem
+                if isinstance(loop, LoopNodeItem):
+                    body = loop.get_body_nodes()
+                    if any(n in body for n in self.nodes):
+                        min_allowed_x = loop.pos().x() + loop.spine_width + 8.0
+                        min_allowed_y = loop.pos().y() + loop.header_height + 8.0
+                        if x < min_allowed_x:
+                            shift_x = min_allowed_x - x
+                            x = min_allowed_x
+                            for n in self.nodes:
+                                n.setPos(n.pos().x() + shift_x, n.pos().y())
+                                n.update_connected_wires()
+                        if y < min_allowed_y:
+                            shift_y = min_allowed_y - y
+                            y = min_allowed_y
+                            for n in self.nodes:
+                                n.setPos(n.pos().x(), n.pos().y() + shift_y)
+                                n.update_connected_wires()
+                        break
+
         self.prepareGeometryChange()
         self.setPos(x, y)
         self.setRect(0, 0, max(w, 200.0), max(h, 150.0))
         self.update()
         if self.scene() and hasattr(self.scene(), "scene_modified"):
             self.scene().scene_modified.emit()
+        if self.scene() and hasattr(self.scene(), "update_loop_bounds"):
+            self.scene().update_loop_bounds()
+
+    def ensure_contains_node(self, node: "BaseNodeItem", padding: float = 20.0):
+        """Dynamically expand group frame if a contained node moves near or beyond borders."""
+        if node not in self.nodes:
+            return
+        gx = self.pos().x()
+        gy = self.pos().y()
+        gw = self.rect().width()
+        gh = self.rect().height()
+
+        nx = node.pos().x()
+        ny = node.pos().y()
+        nw = node.boundingRect().width()
+        nh = node.boundingRect().height()
+
+        new_gx = min(gx, nx - padding)
+        new_gy = min(gy, ny - padding - self.header_height)
+        new_right = max(gx + gw, nx + nw + padding)
+        new_bottom = max(gy + gh, ny + nh + padding)
+
+        new_w = new_right - new_gx
+        new_h = new_bottom - new_gy
+
+        if new_gx != gx or new_gy != gy or abs(new_w - gw) > 0.5 or abs(new_h - gh) > 0.5:
+            self.prepareGeometryChange()
+            self.setPos(new_gx, new_gy)
+            self.setRect(0, 0, new_w, new_h)
+            self.update()
+            if self.scene() and hasattr(self.scene(), "update_loop_bounds"):
+                self.scene().update_loop_bounds()
 
     def get_resize_grip_rect(self) -> QRectF:
         """Returns corner bounding rect for mouse drag resizing."""
@@ -96,11 +151,11 @@ class NodeGroupItem(QGraphicsRectItem):
         if self.get_resize_grip_rect().contains(event.pos()):
             self.setCursor(Qt.CursorShape.SizeFDiagCursor)
         else:
-            self.setCursor(Qt.CursorShape.ArrowCursor)
+            self.unsetCursor()
         super().hoverMoveEvent(event)
 
     def hoverLeaveEvent(self, event):
-        self.setCursor(Qt.CursorShape.ArrowCursor)
+        self.unsetCursor()
         super().hoverLeaveEvent(event)
 
     def mousePressEvent(self, event):
@@ -124,8 +179,6 @@ class NodeGroupItem(QGraphicsRectItem):
             delta = event.scenePos() - self._resize_start_scene
             new_w = max(80.0, self._resize_start_rect.width() + delta.x())
             new_h = max(60.0, self._resize_start_rect.height() + delta.y())
-            self.prepareGeometryChange()
-            self.setRect(0, 0, new_w, new_h)
 
             # Proportional compress / expand of space between nodes horizontally & vertically
             start_w = max(1.0, self._resize_start_rect.width())
@@ -133,11 +186,76 @@ class NodeGroupItem(QGraphicsRectItem):
             s_x = new_w / start_w
             s_y = new_h / start_h
 
-            for node, (rx, ry) in getattr(self, "_resize_initial_node_rel_positions", {}).items():
-                nx = self.pos().x() + max(8.0, rx * s_x)
-                ny = self.pos().y() + self.header_height + max(8.0, (ry - self.header_height) * s_y)
-                node.setPos(nx, ny)
-                node.update_connected_wires()
+            rel_pos = getattr(self, "_resize_initial_node_rel_positions", {})
+
+            # 1. Non-overlapping horizontal positioning
+            sorted_x = sorted(self.nodes, key=lambda n: rel_pos.get(n, (0, 0))[0])
+            calc_nx = {}
+            if sorted_x:
+                first_node = sorted_x[0]
+                first_rx = max(16.0, rel_pos.get(first_node, (0, 0))[0] * s_x)
+                calc_nx[first_node] = self.pos().x() + first_rx
+                prev_node = first_node
+                prev_x = first_rx
+
+                for node in sorted_x[1:]:
+                    rx_curr = rel_pos.get(node, (0, 0))[0]
+                    rx_prev = rel_pos.get(prev_node, (0, 0))[0]
+                    init_dx = rx_curr - rx_prev
+                    prev_w = prev_node.boundingRect().width()
+
+                    if init_dx >= prev_w:
+                        init_gap = init_dx - prev_w
+                        compressed_gap = max(8.0, init_gap * s_x)
+                        new_dx = prev_w + compressed_gap
+                    else:
+                        new_dx = max(20.0, init_dx * s_x)
+
+                    actual_rx = prev_x + new_dx
+                    calc_nx[node] = self.pos().x() + actual_rx
+                    prev_node = node
+                    prev_x = actual_rx
+
+            # 2. Non-overlapping vertical positioning
+            sorted_y = sorted(self.nodes, key=lambda n: rel_pos.get(n, (0, 0))[1])
+            calc_ny = {}
+            if sorted_y:
+                first_node = sorted_y[0]
+                first_ry = max(self.header_height + 16.0, (rel_pos.get(first_node, (0, 0))[1] - self.header_height) * s_y + self.header_height)
+                calc_ny[first_node] = self.pos().y() + first_ry
+                prev_node = first_node
+                prev_y = first_ry
+
+                for node in sorted_y[1:]:
+                    ry_curr = rel_pos.get(node, (0, 0))[1]
+                    ry_prev = rel_pos.get(prev_node, (0, 0))[1]
+                    init_dy = ry_curr - ry_prev
+                    prev_h = prev_node.boundingRect().height()
+
+                    if init_dy >= prev_h:
+                        init_gap = init_dy - prev_h
+                        compressed_gap = max(8.0, init_gap * s_y)
+                        new_dy = prev_h + compressed_gap
+                    else:
+                        new_dy = max(20.0, init_dy * s_y)
+
+                    actual_ry = prev_y + new_dy
+                    calc_ny[node] = self.pos().y() + actual_ry
+                    prev_node = node
+                    prev_y = actual_ry
+
+            max_needed_w = max((calc_nx[n] - self.pos().x() + n.boundingRect().width() + 16.0 for n in self.nodes), default=new_w)
+            max_needed_h = max((calc_ny[n] - self.pos().y() + n.boundingRect().height() + 16.0 for n in self.nodes), default=new_h)
+            final_w = max(new_w, max_needed_w)
+            final_h = max(new_h, max_needed_h)
+
+            self.prepareGeometryChange()
+            self.setRect(0, 0, final_w, final_h)
+
+            for node in self.nodes:
+                if node in calc_nx and node in calc_ny:
+                    node.setPos(calc_nx[node], calc_ny[node])
+                    node.update_connected_wires()
 
             self.update()
             if self.scene() and hasattr(self.scene(), "update_loop_bounds"):
@@ -150,8 +268,11 @@ class NodeGroupItem(QGraphicsRectItem):
             self._last_drag_pos = event.scenePos()
 
             # Move all enclosed nodes in sync with the group frame!
+            # If a node is already selected in Qt's selection, Qt's base item move
+            # already moves it by delta. Only manually move nodes that are NOT selected!
             for node in self.nodes:
-                node.setPos(node.pos() + delta)
+                if not node.isSelected():
+                    node.setPos(node.pos() + delta)
 
         super().mouseMoveEvent(event)
 

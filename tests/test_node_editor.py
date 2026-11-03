@@ -2778,6 +2778,161 @@ class TestNodeEditor(unittest.TestCase):
         self.scene.clearSelection()
         self.assertEqual(len(self.scene.groups), 1)
 
+    def test_loop_shake_disconnect_preserves_internal_and_heals_external(self):
+        """Test that shaking repeat node severs only external wires, auto-heals predecessor to successor, and preserves internal mouth wires."""
+        from app.ui.node_editor.node_items import ActionNodeItem, LoopNodeItem
+
+        n_before = ActionNodeItem("click", {"x": 10, "y": 10})
+        loop = LoopNodeItem()
+        n_body = ActionNodeItem("delay", {"duration": 100})
+        n_after = ActionNodeItem("click", {"x": 50, "y": 50})
+
+        self.scene.add_node(n_before, QPointF(0, 0))
+        self.scene.add_node(loop, QPointF(200, 0))
+        self.scene.add_node(n_body, QPointF(260, 50))
+        self.scene.add_node(n_after, QPointF(550, 0))
+
+        # External wire: before -> loop.socket_in
+        c_in = self.scene.add_connection(n_before.output_sockets[0], loop.socket_in)
+        # Internal mouth wires: loop.socket_body -> body, body -> loop.socket_repeat
+        c_body = self.scene.add_connection(loop.socket_body, n_body.input_sockets[0])
+        c_rep = self.scene.add_connection(n_body.output_sockets[0], loop.socket_repeat)
+        # External wire: loop.socket_done -> after
+        c_done = self.scene.add_connection(loop.socket_done, n_after.input_sockets[0])
+
+        self.assertEqual(len(self.scene.connections), 4)
+
+        # Trigger shake disconnect on Loop
+        view = NodeView(self.scene)
+        view._trigger_shake_disconnect([loop])
+
+        # Internal connections to mouth nodes must remain 100% intact!
+        self.assertIn(c_body, self.scene.connections)
+        self.assertIn(c_rep, self.scene.connections)
+        self.assertEqual(len(loop.socket_body.connections), 1)
+        self.assertEqual(len(loop.socket_repeat.connections), 1)
+
+        # External wires to loop severed
+        self.assertEqual(len(loop.socket_in.connections), 0)
+        self.assertEqual(len(loop.socket_done.connections), 0)
+
+        # External predecessor healed directly to successor
+        healed = [c for c in self.scene.connections if c.start_socket == n_before.output_sockets[0] and c.end_socket == n_after.input_sockets[0]]
+        self.assertEqual(len(healed), 1)
+
+    def test_loop_wire_splice_insertion(self):
+        """Test that dropping a Loop node onto an existing wire splices into socket_in and socket_done."""
+        from app.ui.node_editor.node_items import ActionNodeItem, LoopNodeItem
+
+        n_before = ActionNodeItem("click", {"x": 10, "y": 10})
+        n_after = ActionNodeItem("click", {"x": 50, "y": 50})
+        loop = LoopNodeItem()
+
+        self.scene.add_node(n_before, QPointF(0, 0))
+        self.scene.add_node(n_after, QPointF(500, 0))
+        self.scene.add_node(loop, QPointF(200, 0))
+
+        wire = self.scene.add_connection(n_before.output_sockets[0], n_after.input_sockets[0])
+        self.assertEqual(len(self.scene.connections), 1)
+
+        view = NodeView(self.scene)
+        view._hovered_wire = wire
+        view._dragged_node = loop
+
+        ev = QMouseEvent(
+            QMouseEvent.Type.MouseButtonRelease,
+            QPointF(200, 0),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        view.mouseReleaseEvent(ev)
+
+        # Wire spliced: before -> loop.socket_in and loop.socket_done -> after
+        self.assertEqual(len(loop.socket_in.connections), 1)
+        self.assertEqual(loop.socket_in.connections[0].start_socket, n_before.output_sockets[0])
+        self.assertEqual(len(loop.socket_done.connections), 1)
+        self.assertEqual(loop.socket_done.connections[0].end_socket, n_after.input_sockets[0])
+
+    def test_group_ctrl_and_shift_drag_downstream_upstream(self):
+        """Test that _get_downstream_nodes and _get_upstream_nodes traverse through groups."""
+        from app.ui.node_editor.node_items import ActionNodeItem
+
+        n1 = ActionNodeItem("click", {"x": 10, "y": 10})
+        n2 = ActionNodeItem("click", {"x": 20, "y": 20})
+        n3 = ActionNodeItem("click", {"x": 30, "y": 30})
+        self.scene.add_node(n1)
+        self.scene.add_node(n2)
+        self.scene.add_node(n3)
+
+        self.scene.add_connection(n1.output_sockets[0], n2.input_sockets[0])
+        self.scene.add_connection(n2.output_sockets[0], n3.input_sockets[0])
+
+        group = self.scene.add_group(title="Test Group", nodes=[n1, n2])
+
+        view = NodeView(self.scene)
+        downstream = view._get_downstream_nodes(group)
+        self.assertIn(group, downstream)
+        self.assertIn(n1, downstream)
+        self.assertIn(n2, downstream)
+        self.assertIn(n3, downstream)
+
+        upstream = view._get_upstream_nodes(n3)
+        self.assertIn(group, upstream)
+        self.assertIn(n1, upstream)
+        self.assertIn(n2, upstream)
+        self.assertIn(n3, upstream)
+
+    def test_group_color_and_geometry_persistence(self):
+        """Test that group color, position, and dimensions persist across serialization and deserialization."""
+        from PyQt6.QtGui import QColor
+        from app.ui.node_editor.node_items import ActionNodeItem
+        from app.ui.node_editor.undo_manager import serialize_scene, deserialize_scene
+
+        n1 = ActionNodeItem("click", {"x": 10, "y": 10})
+        self.scene.add_node(n1)
+        group = self.scene.add_group(title="Custom Group", nodes=[n1])
+        group.set_color(QColor("#E11D48"))
+        group.setPos(120, 240)
+        group.setRect(0, 0, 480, 360)
+
+        data = serialize_scene(self.scene)
+        self.assertEqual(data["groups"][0]["color"], "#e11d48")
+        self.assertEqual(data["groups"][0]["pos"], (120.0, 240.0))
+        self.assertEqual(data["groups"][0]["rect"], (0.0, 0.0, 480.0, 360.0))
+
+        # Rebuild scene from data
+        new_scene = NodeScene()
+        deserialize_scene(new_scene, data)
+        self.assertEqual(len(new_scene.groups), 1)
+        restored_grp = new_scene.groups[0]
+        self.assertEqual(restored_grp.title, "Custom Group")
+        self.assertEqual(restored_grp.color.name().lower(), "#e11d48")
+        self.assertEqual(restored_grp.pos().x(), 120.0)
+        self.assertEqual(restored_grp.pos().y(), 240.0)
+        self.assertEqual(restored_grp.rect().width(), 480.0)
+        self.assertEqual(restored_grp.rect().height(), 360.0)
+
+    def test_group_ensure_contains_node_dynamic_expansion(self):
+        """Test that group dynamically expands when member node is moved beyond group bounds."""
+        from app.ui.node_editor.node_items import ActionNodeItem
+
+        n1 = ActionNodeItem("click", {"x": 10, "y": 10})
+        self.scene.add_node(n1, QPointF(100, 100))
+        group = self.scene.add_group(title="Dynamic Group", nodes=[n1])
+        group.fit_to_nodes(padding=20.0)
+
+        orig_w = group.rect().width()
+        orig_h = group.rect().height()
+
+        # Move node far to the right and down
+        n1.setPos(500, 400)
+
+        # Group should have expanded dynamically via itemChange / ensure_contains_node
+        self.assertGreater(group.rect().width(), orig_w)
+        self.assertGreater(group.rect().height(), orig_h)
+        self.assertTrue(group.sceneBoundingRect().contains(n1.sceneBoundingRect()))
+
 
 if __name__ == "__main__":
     unittest.main()

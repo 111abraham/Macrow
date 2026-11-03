@@ -85,6 +85,8 @@ class EyeDropperScreenOverlay(QWidget):
             | Qt.WindowType.Tool
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
+        self.setAttribute(Qt.WidgetAttribute.WA_OpaquePaintEvent, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground, True)
         self.setScreen(screen)
 
         self.dpr: float = screen.devicePixelRatio()
@@ -133,6 +135,10 @@ class EyeDropperScreenOverlay(QWidget):
         in_screen = self.screen_geo.contains(pt)
         is_phys = (px <= gx < px + pw and py <= gy < py + ph)
 
+        prev_has_cursor = self.has_cursor
+        prev_lx = self.local_x
+        prev_ly = self.local_y
+
         if in_screen:
             local_pos = pt - self.screen_geo.topLeft()
             self.local_x = local_pos.x()
@@ -147,6 +153,10 @@ class EyeDropperScreenOverlay(QWidget):
             return
 
         self.has_cursor = True
+
+        # If cursor position didn't change, avoid redundant repaint
+        if prev_has_cursor and self.local_x == prev_lx and self.local_y == prev_ly:
+            return
 
         # Exact hardware pixel coordinates inside the unscaled screenshot
         img_x = int(round(self.local_x * self.dpr))

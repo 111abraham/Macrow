@@ -147,17 +147,25 @@ class NodeView(QGraphicsView):
             return False
         return isinstance(sock.node, LoopNodeItem)
 
-    def _get_downstream_nodes(self, start_node: BaseNodeItem) -> List[BaseNodeItem]:
+    def _get_downstream_nodes(self, start_item) -> List[Any]:
+        from app.ui.node_editor.node_group import NodeGroupItem
+        if isinstance(start_item, NodeGroupItem):
+            nodes_to_traverse = [n for n in start_item.nodes if isinstance(n, BaseNodeItem)]
+        elif isinstance(start_item, BaseNodeItem):
+            nodes_to_traverse = [start_item]
+        else:
+            return []
+
         visited = set()
-        queue = [start_node]
+        queue = list(nodes_to_traverse)
         result = []
 
         # Identify any enclosing repeat zones to exclude when dragging enclosed nodes
         enclosing_loops = set()
         if self.node_scene:
             for n in self.node_scene.nodes:
-                if isinstance(n, LoopNodeItem) and n is not start_node:
-                    if start_node in n.get_body_nodes() or n.sceneBoundingRect().contains(start_node.sceneBoundingRect().center()):
+                if isinstance(n, LoopNodeItem) and n not in nodes_to_traverse:
+                    if any(st in n.get_body_nodes() or n.sceneBoundingRect().contains(st.sceneBoundingRect().center()) for st in nodes_to_traverse):
                         enclosing_loops.add(n)
 
         while queue:
@@ -177,19 +185,42 @@ class NodeView(QGraphicsView):
                             continue
                         if target not in visited:
                             queue.append(target)
-        return [n for n in result if n not in enclosing_loops]
 
-    def _get_upstream_nodes(self, start_node: BaseNodeItem) -> List[BaseNodeItem]:
+        final_items = []
+        for n in result:
+            if n not in enclosing_loops and n not in final_items:
+                final_items.append(n)
+        if isinstance(start_item, NodeGroupItem) and start_item not in final_items:
+            final_items.append(start_item)
+        if self.node_scene:
+            for grp in self.node_scene.groups:
+                if grp is not start_item and any(n in final_items for n in grp.nodes):
+                    if grp not in final_items:
+                        final_items.append(grp)
+                    for gn in grp.nodes:
+                        if gn not in enclosing_loops and gn not in final_items:
+                            final_items.append(gn)
+        return final_items
+
+    def _get_upstream_nodes(self, start_item) -> List[Any]:
+        from app.ui.node_editor.node_group import NodeGroupItem
+        if isinstance(start_item, NodeGroupItem):
+            nodes_to_traverse = [n for n in start_item.nodes if isinstance(n, BaseNodeItem)]
+        elif isinstance(start_item, BaseNodeItem):
+            nodes_to_traverse = [start_item]
+        else:
+            return []
+
         visited = set()
-        queue = [start_node]
+        queue = list(nodes_to_traverse)
         result = []
 
         # Identify any enclosing repeat zones to exclude when dragging enclosed nodes
         enclosing_loops = set()
         if self.node_scene:
             for n in self.node_scene.nodes:
-                if isinstance(n, LoopNodeItem) and n is not start_node:
-                    if start_node in n.get_body_nodes() or n.sceneBoundingRect().contains(start_node.sceneBoundingRect().center()):
+                if isinstance(n, LoopNodeItem) and n not in nodes_to_traverse:
+                    if any(st in n.get_body_nodes() or n.sceneBoundingRect().contains(st.sceneBoundingRect().center()) for st in nodes_to_traverse):
                         enclosing_loops.add(n)
 
         while queue:
@@ -209,7 +240,22 @@ class NodeView(QGraphicsView):
                             continue
                         if target not in visited:
                             queue.append(target)
-        return [n for n in result if n not in enclosing_loops]
+
+        final_items = []
+        for n in result:
+            if n not in enclosing_loops and n not in final_items:
+                final_items.append(n)
+        if isinstance(start_item, NodeGroupItem) and start_item not in final_items:
+            final_items.append(start_item)
+        if self.node_scene:
+            for grp in self.node_scene.groups:
+                if grp is not start_item and any(n in final_items for n in grp.nodes):
+                    if grp not in final_items:
+                        final_items.append(grp)
+                    for gn in grp.nodes:
+                        if gn not in enclosing_loops and gn not in final_items:
+                            final_items.append(gn)
+        return final_items
 
     def _find_nodes_between(self, node_a: BaseNodeItem, node_b: BaseNodeItem) -> Set[BaseNodeItem]:
         """Finds all nodes on the graph path between node_a and node_b for Shift+Click range selection."""
@@ -457,12 +503,14 @@ class NodeView(QGraphicsView):
         if not isinstance(nodes, list):
             nodes = [nodes]
 
+        from app.ui.node_editor.node_items import LoopNodeItem
         node_set = set(nodes)
 
         # External incoming sockets: start sockets from outside nodes leading into this group
         incoming = []
         for n in nodes:
-            for sock in n.input_sockets:
+            socks = [n.socket_in] if isinstance(n, LoopNodeItem) else n.input_sockets
+            for sock in socks:
                 for c in sock.connections:
                     if c.start_socket and c.start_socket.node and c.start_socket.node not in node_set:
                         if c.start_socket not in incoming:
@@ -471,16 +519,18 @@ class NodeView(QGraphicsView):
         # External outgoing sockets: end sockets on outside nodes receiving from this group
         outgoing = []
         for n in nodes:
-            for sock in n.output_sockets:
+            socks = [n.socket_done] if isinstance(n, LoopNodeItem) else n.output_sockets
+            for sock in socks:
                 for c in sock.connections:
                     if c.end_socket and c.end_socket.node and c.end_socket.node not in node_set:
                         if c.end_socket not in outgoing:
                             outgoing.append(c.end_socket)
 
-        # Disconnect all existing connections on shaken nodes
+        # Disconnect external connections on shaken nodes (protecting Loop internal mouth sockets)
         to_remove = []
         for n in nodes:
-            for sock in n.input_sockets + n.output_sockets:
+            socks = [n.socket_in, n.socket_done] if isinstance(n, LoopNodeItem) else (n.input_sockets + n.output_sockets)
+            for sock in socks:
                 for conn in list(sock.connections):
                     if conn not in to_remove:
                         to_remove.append(conn)
@@ -616,6 +666,12 @@ class NodeView(QGraphicsView):
                     self.node_scene.clearSelection()
                     self.node_scene.node_selected.emit(None)
 
+        # Shift + Drag marquee selection (empty canvas click with Shift)
+        if (event.modifiers() & Qt.KeyboardModifier.ShiftModifier) and not target_item:
+            self._shift_marquee_preserved = set(self.node_scene.selectedItems())
+        else:
+            self._shift_marquee_preserved = set()
+
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event: QMouseEvent):
@@ -663,32 +719,34 @@ class NodeView(QGraphicsView):
         if self._ctrl_candidate_item and not self._is_ctrl_branch_drag and self._ctrl_press_pos:
             if (event.pos() - self._ctrl_press_pos).manhattanLength() > 5:
                 self._is_ctrl_branch_drag = True
-                if isinstance(self._ctrl_candidate_item, BaseNodeItem):
-                    self._branch_drag_nodes = self._get_downstream_nodes(self._ctrl_candidate_item)
-                    self._branch_drag_prev_scene_pos = self.mapToScene(event.pos())
-                    self.node_scene.clearSelection()
-                    for n in self._branch_drag_nodes:
-                        n.setSelected(True)
+                self._branch_drag_nodes = self._get_downstream_nodes(self._ctrl_candidate_item)
+                self._branch_drag_prev_scene_pos = self.mapToScene(event.pos())
+                self.node_scene.clearSelection()
+                for n in self._branch_drag_nodes:
+                    n.setSelected(True)
 
         # Check if Shift candidate gesture transitioned to a Shift + Drag!
         if self._shift_candidate_item and not self._is_shift_branch_drag and self._shift_press_pos:
             if (event.pos() - self._shift_press_pos).manhattanLength() > 5:
                 self._is_shift_branch_drag = True
-                if isinstance(self._shift_candidate_item, BaseNodeItem):
-                    self._branch_drag_nodes = self._get_upstream_nodes(self._shift_candidate_item)
-                    self._branch_drag_prev_scene_pos = self.mapToScene(event.pos())
-                    self.node_scene.clearSelection()
-                    for n in self._branch_drag_nodes:
-                        n.setSelected(True)
+                self._branch_drag_nodes = self._get_upstream_nodes(self._shift_candidate_item)
+                self._branch_drag_prev_scene_pos = self.mapToScene(event.pos())
+                self.node_scene.clearSelection()
+                for n in self._branch_drag_nodes:
+                    n.setSelected(True)
 
         # Houdini Ctrl / Shift branch dragging
         if self._branch_drag_nodes and self._branch_drag_prev_scene_pos:
             cur_scene_pos = self.mapToScene(event.pos())
             delta = cur_scene_pos - self._branch_drag_prev_scene_pos
             self._branch_drag_prev_scene_pos = cur_scene_pos
-            for n in self._branch_drag_nodes:
-                n.setPos(n.pos() + delta)
-                n.update_connected_wires()
+            from app.ui.node_editor.node_group import NodeGroupItem
+            for item in self._branch_drag_nodes:
+                if isinstance(item, NodeGroupItem):
+                    item.setPos(item.pos() + delta)
+                elif isinstance(item, BaseNodeItem):
+                    item.setPos(item.pos() + delta)
+                    item.update_connected_wires()
             event.accept()
             return
 
@@ -765,8 +823,13 @@ class NodeView(QGraphicsView):
 
             # Wire hover detection for inserting node into a wire:
             # Check if this node is unconnected on its primary in/out sockets
-            has_in_conn = any(len(s.connections) > 0 for s in self._dragged_node.input_sockets)
-            has_out_conn = any(len(s.connections) > 0 for s in self._dragged_node.output_sockets)
+            from app.ui.node_editor.node_items import LoopNodeItem
+            if isinstance(self._dragged_node, LoopNodeItem):
+                has_in_conn = len(self._dragged_node.socket_in.connections) > 0
+                has_out_conn = len(self._dragged_node.socket_done.connections) > 0
+            else:
+                has_in_conn = any(len(s.connections) > 0 for s in self._dragged_node.input_sockets)
+                has_out_conn = any(len(s.connections) > 0 for s in self._dragged_node.output_sockets)
             if not has_in_conn and not has_out_conn:
                 candidate = self._find_wire_under_node(self._dragged_node)
                 if candidate != self._hovered_wire:
@@ -865,10 +928,21 @@ class NodeView(QGraphicsView):
             dst_sock = wire.end_socket
             dst_node = dst_sock.node if dst_sock else None
 
-            if src_sock and dst_sock and self._dragged_node.input_sockets and self._dragged_node.output_sockets:
+            from app.ui.node_editor.node_items import LoopNodeItem
+            if isinstance(self._dragged_node, LoopNodeItem):
+                target_in = self._dragged_node.socket_in
+                target_out = self._dragged_node.socket_done
+            elif self._dragged_node.input_sockets and self._dragged_node.output_sockets:
+                target_in = self._dragged_node.input_sockets[0]
+                target_out = self._dragged_node.output_sockets[0]
+            else:
+                target_in = None
+                target_out = None
+
+            if src_sock and dst_sock and target_in and target_out:
                 self.node_scene.remove_connection(wire)
-                self.node_scene.add_connection(src_sock, self._dragged_node.input_sockets[0])
-                self.node_scene.add_connection(self._dragged_node.output_sockets[0], dst_sock)
+                self.node_scene.add_connection(src_sock, target_in)
+                self.node_scene.add_connection(target_out, dst_sock)
 
                 # Push destination node and all downstream nodes right to avoid overlap
                 if dst_node:
@@ -876,8 +950,9 @@ class NodeView(QGraphicsView):
                     shift_x = max(self._dragged_node.width + 50.0, node_right - dst_node.pos().x())
                     downstream = self._get_downstream_nodes(dst_node)
                     for d_node in downstream:
-                        d_node.setPos(d_node.pos().x() + shift_x, d_node.pos().y())
-                        d_node.update_connected_wires()
+                        if isinstance(d_node, BaseNodeItem):
+                            d_node.setPos(d_node.pos().x() + shift_x, d_node.pos().y())
+                            d_node.update_connected_wires()
 
                 self.node_scene.scene_modified.emit()
 
@@ -935,6 +1010,12 @@ class NodeView(QGraphicsView):
 
         super().mouseReleaseEvent(event)
         self.node_scene.update_loop_bounds()
+
+        # Union Shift-drag marquee preserved items into selection
+        if getattr(self, "_shift_marquee_preserved", None):
+            for it in self._shift_marquee_preserved:
+                it.setSelected(True)
+            self._shift_marquee_preserved.clear()
 
         # Ensure all selected items update their connected wires after multi-drag
         for sel_item in self.node_scene.selectedItems():
