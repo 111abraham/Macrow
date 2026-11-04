@@ -145,13 +145,12 @@ class MacrowPanel(QWidget):
         screen = QGuiApplication.primaryScreen()
         if screen:
             avail = screen.availableGeometry()
-            default_w = min(480, max(440, int(avail.width() * 0.28)))
-            default_h = min(620, max(560, int(avail.height() * 0.60)))
+            avail_h = avail.height()
+            default_h = max(260, min(440, avail_h - 100))
         else:
-            default_w = 460
-            default_h = 580
+            default_h = 440
 
-        self.resize(default_w, default_h)
+        self.resize(320, default_h)
         self._unminimized_height = default_h
         self._normal_geom = self.geometry()
 
@@ -584,27 +583,17 @@ class MacrowPanel(QWidget):
                 primary = QGuiApplication.primaryScreen()
                 if primary:
                     avail = primary.availableGeometry()
-                    target_x = avail.x() + int(avail.width() * 0.62) - self.width() // 2
-                    target_y = avail.y() + int(avail.height() * 0.48)
-                    target_x = max(avail.x() + 20, min(target_x, avail.right() - self.width() - 20))
-                    target_y = max(avail.y() + 20, min(target_y, avail.bottom() - self.height() - 20))
-                    self.move(target_x, target_y)
-        else:
-            primary = QGuiApplication.primaryScreen()
-            if primary:
-                avail = primary.availableGeometry()
-                target_x = avail.x() + int(avail.width() * 0.62) - self.width() // 2
-                target_y = avail.y() + int(avail.height() * 0.48)
-                target_x = max(avail.x() + 20, min(target_x, avail.right() - self.width() - 20))
-                target_y = max(avail.y() + 20, min(target_y, avail.bottom() - self.height() - 20))
-                self.move(target_x, target_y)
+                    self.move(
+                        avail.x() + (avail.width() - self.width()) // 2,
+                        avail.y() + (avail.height() - self.height()) // 2,
+                    )
 
         if inst.get("width") and inst.get("height"):
             screen = QGuiApplication.primaryScreen()
             max_h = screen.availableGeometry().height() - 40 if screen else 900
             max_w = screen.availableGeometry().width() - 40 if screen else 1200
-            w = max(440, min(max_w, int(inst["width"])))
-            h = max(500, min(max_h, int(inst["height"])))
+            w = max(280, min(max_w, int(inst["width"])))
+            h = max(160, min(max_h, int(inst["height"])))
             self.resize(w, h)
             self._unminimized_height = h
 

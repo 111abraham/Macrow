@@ -112,8 +112,6 @@ class BaseNodeItem(QGraphicsItem):
             self.update_connected_wires()
             if self.scene() and hasattr(self.scene(), "update_loop_bounds"):
                 self.scene().update_loop_bounds()
-            if getattr(self, "group", None):
-                self.group.ensure_contains_node(self)
         return super().itemChange(change, value)
 
     def get_summary_text(self) -> str:
@@ -1000,11 +998,11 @@ class LoopNodeItem(BaseNodeItem):
         if self.get_resize_grip_rect().contains(event.pos()):
             self.setCursor(Qt.CursorShape.SizeFDiagCursor)
         else:
-            self.unsetCursor()
+            self.setCursor(Qt.CursorShape.ArrowCursor)
         super().hoverMoveEvent(event)
 
     def hoverLeaveEvent(self, event):
-        self.unsetCursor()
+        self.setCursor(Qt.CursorShape.ArrowCursor)
         super().hoverLeaveEvent(event)
 
     def mousePressEvent(self, event):
@@ -1036,86 +1034,22 @@ class LoopNodeItem(BaseNodeItem):
             delta = event.scenePos() - self._resize_start_scene
             new_w = max(200.0, self._resize_start_w + delta.x())
             new_h = max(110.0, self._resize_start_h + delta.y())
+            self.prepareGeometryChange()
+            self.clamp_width = new_w
+            self.clamp_height = new_h
+            self.width = new_w
+            self.height = new_h
+            self._layout_sockets()
 
             # Proportional compress / expand of space between enclosed nodes horizontally & vertically
             s_x = new_w / max(1.0, self._resize_start_w)
             s_y = new_h / max(1.0, self._resize_start_h)
-            rel_pos = getattr(self, "_resize_initial_node_rel_positions", {})
-            items = list(rel_pos.keys())
-
-            # 1. Non-overlapping horizontal positioning
-            sorted_x = sorted(items, key=lambda it: rel_pos.get(it, (0, 0))[0])
-            calc_nx = {}
-            if sorted_x:
-                first_it = sorted_x[0]
-                first_rx = max(self.spine_width + 16.0, self.spine_width + (rel_pos.get(first_it, (0, 0))[0] - self.spine_width) * s_x)
-                calc_nx[first_it] = self.pos().x() + first_rx
-                prev_it = first_it
-                prev_x = first_rx
-
-                for it in sorted_x[1:]:
-                    rx_curr = rel_pos.get(it, (0, 0))[0]
-                    rx_prev = rel_pos.get(prev_it, (0, 0))[0]
-                    init_dx = rx_curr - rx_prev
-                    prev_w = prev_it.rect().width() if hasattr(prev_it, "rect") else (prev_it.boundingRect().width() if hasattr(prev_it, "boundingRect") else 120.0)
-
-                    if init_dx >= prev_w:
-                        init_gap = init_dx - prev_w
-                        compressed_gap = max(8.0, init_gap * s_x)
-                        new_dx = prev_w + compressed_gap
-                    else:
-                        new_dx = max(20.0, init_dx * s_x)
-
-                    actual_rx = prev_x + new_dx
-                    calc_nx[it] = self.pos().x() + actual_rx
-                    prev_it = it
-                    prev_x = actual_rx
-
-            # 2. Non-overlapping vertical positioning
-            sorted_y = sorted(items, key=lambda it: rel_pos.get(it, (0, 0))[1])
-            calc_ny = {}
-            if sorted_y:
-                first_it = sorted_y[0]
-                first_ry = max(self.header_height + 16.0, self.header_height + (rel_pos.get(first_it, (0, 0))[1] - self.header_height) * s_y)
-                calc_ny[first_it] = self.pos().y() + first_ry
-                prev_it = first_it
-                prev_y = first_ry
-
-                for it in sorted_y[1:]:
-                    ry_curr = rel_pos.get(it, (0, 0))[1]
-                    ry_prev = rel_pos.get(prev_it, (0, 0))[1]
-                    init_dy = ry_curr - ry_prev
-                    prev_h = prev_it.rect().height() if hasattr(prev_it, "rect") else (prev_it.boundingRect().height() if hasattr(prev_it, "boundingRect") else 80.0)
-
-                    if init_dy >= prev_h:
-                        init_gap = init_dy - prev_h
-                        compressed_gap = max(8.0, init_gap * s_y)
-                        new_dy = prev_h + compressed_gap
-                    else:
-                        new_dy = max(20.0, init_dy * s_y)
-
-                    actual_ry = prev_y + new_dy
-                    calc_ny[it] = self.pos().y() + actual_ry
-                    prev_it = it
-                    prev_y = actual_ry
-
-            max_needed_w = max((calc_nx[it] - self.pos().x() + (it.rect().width() if hasattr(it, "rect") else it.boundingRect().width()) + 30.0 for it in items), default=new_w)
-            max_needed_h = max((calc_ny[it] - self.pos().y() + (it.rect().height() if hasattr(it, "rect") else it.boundingRect().height()) + 30.0 for it in items), default=new_h)
-            final_w = max(new_w, max_needed_w)
-            final_h = max(new_h, max_needed_h)
-
-            self.prepareGeometryChange()
-            self.clamp_width = final_w
-            self.clamp_height = final_h
-            self.width = final_w
-            self.height = final_h
-            self._layout_sockets()
-
-            for it in items:
-                if it in calc_nx and it in calc_ny:
-                    it.setPos(calc_nx[it], calc_ny[it])
-                    if hasattr(it, "update_connected_wires"):
-                        it.update_connected_wires()
+            for item, (rx, ry) in getattr(self, "_resize_initial_node_rel_positions", {}).items():
+                nx = self.pos().x() + self.spine_width + max(0.0, (rx - self.spine_width)) * s_x
+                ny = self.pos().y() + self.header_height + max(0.0, (ry - self.header_height)) * s_y
+                item.setPos(nx, ny)
+                if hasattr(item, "update_connected_wires"):
+                    item.update_connected_wires()
 
             self.update()
             event.accept()

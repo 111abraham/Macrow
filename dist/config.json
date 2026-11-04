@@ -10822,255 +10822,8 @@
       "duration": 6630
     },
     "heart": {
-      "steps": [
-        {
-          "type": "move",
-          "x": 1175,
-          "y": 1081,
-          "dt": 0,
-          "direct_jump": false,
-          "id": "87318946_p0",
-          "next": "87318946_p1"
-        },
-        {
-          "type": "move",
-          "x": 394,
-          "y": 1002,
-          "dt": 40,
-          "direct_jump": false,
-          "id": "87318946_p1",
-          "next": "87318946_p2"
-        },
-        {
-          "type": "move",
-          "x": -462,
-          "y": 873,
-          "dt": 87,
-          "direct_jump": false,
-          "id": "87318946_p2",
-          "next": "87318946_p3"
-        },
-        {
-          "type": "move",
-          "x": -779,
-          "y": 818,
-          "dt": 127,
-          "direct_jump": false,
-          "id": "87318946_p3",
-          "next": "87318946_p4"
-        },
-        {
-          "type": "move",
-          "x": -836,
-          "y": 794,
-          "dt": 175,
-          "direct_jump": false,
-          "id": "87318946_p4",
-          "next": "87318946_p5"
-        },
-        {
-          "type": "move",
-          "x": -868,
-          "y": 774,
-          "dt": 215,
-          "direct_jump": false,
-          "id": "87318946_p5",
-          "next": "87318946_p6"
-        },
-        {
-          "type": "move",
-          "x": -920,
-          "y": 735,
-          "dt": 263,
-          "direct_jump": false,
-          "id": "87318946_p6",
-          "next": "87318946_p7"
-        },
-        {
-          "type": "move",
-          "x": -993,
-          "y": 679,
-          "dt": 303,
-          "direct_jump": false,
-          "id": "87318946_p7",
-          "next": "87318946_p8"
-        },
-        {
-          "type": "move",
-          "x": -1062,
-          "y": 640,
-          "dt": 351,
-          "direct_jump": false,
-          "id": "87318946_p8",
-          "next": "87318946_p9"
-        },
-        {
-          "type": "move",
-          "x": -1123,
-          "y": 616,
-          "dt": 399,
-          "direct_jump": false,
-          "id": "87318946_p9",
-          "next": "87318946_p10"
-        },
-        {
-          "type": "move",
-          "x": -1178,
-          "y": 607,
-          "dt": 455,
-          "direct_jump": false,
-          "id": "87318946_p10",
-          "next": "87318946_p11"
-        },
-        {
-          "type": "move",
-          "x": -1183,
-          "y": 606,
-          "dt": 615,
-          "direct_jump": false,
-          "id": "87318946_p11",
-          "next": "87318946_p12"
-        },
-        {
-          "type": "move",
-          "x": -1234,
-          "y": 584,
-          "dt": 663,
-          "direct_jump": false,
-          "id": "87318946_p12",
-          "next": "87318946_p13"
-        },
-        {
-          "type": "move",
-          "x": -1251,
-          "y": 576,
-          "dt": 703,
-          "direct_jump": false,
-          "id": "87318946_p13",
-          "path_points": [
-            {
-              "type": "move",
-              "x": 1175,
-              "y": 1081,
-              "dt": 543,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": 394,
-              "y": 1002,
-              "dt": 583,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": -462,
-              "y": 873,
-              "dt": 630,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": -779,
-              "y": 818,
-              "dt": 670,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": -836,
-              "y": 794,
-              "dt": 718,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": -868,
-              "y": 774,
-              "dt": 758,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": -920,
-              "y": 735,
-              "dt": 806,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": -993,
-              "y": 679,
-              "dt": 846,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": -1062,
-              "y": 640,
-              "dt": 894,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": -1123,
-              "y": 616,
-              "dt": 942,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": -1178,
-              "y": 607,
-              "dt": 998,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": -1183,
-              "y": 606,
-              "dt": 1158,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": -1234,
-              "y": 584,
-              "dt": 1206,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": -1251,
-              "y": 576,
-              "dt": 1246,
-              "direct_jump": false
-            }
-          ],
-          "next": "e90ead27"
-        },
-        {
-          "id": "e90ead27",
-          "type": "loop_count",
-          "count": 5,
-          "infinite": true,
-          "var_name": "i",
-          "body_next": "6212c4be",
-          "next": null,
-          "dt": 713
-        },
-        {
-          "id": "6212c4be",
-          "type": "click",
-          "next": "e90ead27",
-          "x": -1251,
-          "y": 576,
-          "button": "left",
-          "modifier": "none",
-          "dt": 813
-        }
-      ],
-      "duration": 813,
+      "steps": [],
+      "duration": 0,
       "graph_data": {
         "nodes": [
           {
@@ -11084,198 +10837,539 @@
             ],
             "bypassed": false,
             "properties": {}
-          },
-          {
-            "id": "87318946",
-            "class_name": "ActionNodeItem",
-            "node_type": "move",
-            "title": "🏹 Mouse Move",
-            "pos": [
-              240.0,
-              200.0
-            ],
-            "bypassed": false,
-            "properties": {
-              "type": "move",
-              "x": -1251,
-              "y": 576,
-              "dt": 1246,
-              "direct_jump": false,
-              "path_points": [
-                {
-                  "type": "move",
-                  "x": 1175,
-                  "y": 1081,
-                  "dt": 543,
-                  "direct_jump": false
-                },
-                {
-                  "type": "move",
-                  "x": 394,
-                  "y": 1002,
-                  "dt": 583,
-                  "direct_jump": false
-                },
-                {
-                  "type": "move",
-                  "x": -462,
-                  "y": 873,
-                  "dt": 630,
-                  "direct_jump": false
-                },
-                {
-                  "type": "move",
-                  "x": -779,
-                  "y": 818,
-                  "dt": 670,
-                  "direct_jump": false
-                },
-                {
-                  "type": "move",
-                  "x": -836,
-                  "y": 794,
-                  "dt": 718,
-                  "direct_jump": false
-                },
-                {
-                  "type": "move",
-                  "x": -868,
-                  "y": 774,
-                  "dt": 758,
-                  "direct_jump": false
-                },
-                {
-                  "type": "move",
-                  "x": -920,
-                  "y": 735,
-                  "dt": 806,
-                  "direct_jump": false
-                },
-                {
-                  "type": "move",
-                  "x": -993,
-                  "y": 679,
-                  "dt": 846,
-                  "direct_jump": false
-                },
-                {
-                  "type": "move",
-                  "x": -1062,
-                  "y": 640,
-                  "dt": 894,
-                  "direct_jump": false
-                },
-                {
-                  "type": "move",
-                  "x": -1123,
-                  "y": 616,
-                  "dt": 942,
-                  "direct_jump": false
-                },
-                {
-                  "type": "move",
-                  "x": -1178,
-                  "y": 607,
-                  "dt": 998,
-                  "direct_jump": false
-                },
-                {
-                  "type": "move",
-                  "x": -1183,
-                  "y": 606,
-                  "dt": 1158,
-                  "direct_jump": false
-                },
-                {
-                  "type": "move",
-                  "x": -1234,
-                  "y": 584,
-                  "dt": 1206,
-                  "direct_jump": false
-                },
-                {
-                  "type": "move",
-                  "x": -1251,
-                  "y": 576,
-                  "dt": 1246,
-                  "direct_jump": false
-                }
-              ],
-              "action_type": "move"
-            }
-          },
-          {
-            "id": "6212c4be",
-            "class_name": "ActionNodeItem",
-            "node_type": "click",
-            "title": "🖱 Mouse Click",
-            "pos": [
-              712.7111473571535,
-              187.01258983638309
-            ],
-            "bypassed": false,
-            "properties": {
-              "type": "click",
-              "x": -1251,
-              "y": 576,
-              "button": "left",
-              "dt": 1519,
-              "action_type": "click"
-            }
-          },
-          {
-            "id": "e90ead27",
-            "class_name": "LoopNodeItem",
-            "node_type": "loop_count",
-            "title": "🔁 Repeat Zone (Loop)",
-            "pos": [
-              562.3548600846118,
-              135.0690657016158
-            ],
-            "bypassed": false,
-            "properties": {
-              "action_type": "loop_count",
-              "infinite": true,
-              "count": 5,
-              "var_name": "i"
-            }
           }
         ],
-        "connections": [
+        "connections": [],
+        "groups": [
           {
-            "from_node": "42c9b2c1",
-            "from_socket_idx": 0,
-            "to_node": "87318946",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "87318946",
-            "from_socket_idx": 0,
-            "to_node": "e90ead27",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "e90ead27",
-            "from_socket_idx": 0,
-            "to_node": "6212c4be",
-            "to_socket_idx": 0
+            "title": "hi",
+            "color": "#06f10e",
+            "pos": [
+              412.6162665826805,
+              -120.1355838133849
+            ],
+            "rect": [
+              0.0,
+              0.0,
+              1176.9699172789956,
+              747.0
+            ],
+            "node_ids": []
           }
         ],
-        "groups": [],
         "custom_variables": []
       }
+    },
+    "delettt": {
+      "steps": [
+        {
+          "type": "move",
+          "x": 1595,
+          "y": 814,
+          "dt": 127,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 1178,
+          "y": 632,
+          "dt": 173,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 746,
+          "y": 403,
+          "dt": 221,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 602,
+          "y": 325,
+          "dt": 261,
+          "direct_jump": false
+        },
+        {
+          "type": "down",
+          "x": 580,
+          "y": 309,
+          "button": "right",
+          "dt": 422
+        },
+        {
+          "type": "up",
+          "x": 580,
+          "y": 309,
+          "button": "right",
+          "dt": 509,
+          "is_click": true,
+          "is_dblclick": false
+        },
+        {
+          "type": "move",
+          "x": 579,
+          "y": 312,
+          "dt": 518,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 638,
+          "y": 394,
+          "dt": 565,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 677,
+          "y": 427,
+          "dt": 605,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 679,
+          "y": 429,
+          "dt": 677,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 686,
+          "y": 429,
+          "dt": 717,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 698,
+          "y": 436,
+          "dt": 765,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 708,
+          "y": 439,
+          "dt": 806,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 711,
+          "y": 440,
+          "dt": 965,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 716,
+          "y": 440,
+          "dt": 1013,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 719,
+          "y": 436,
+          "dt": 1060,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 722,
+          "y": 432,
+          "dt": 1100,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 722,
+          "y": 431,
+          "dt": 1196,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 722,
+          "y": 421,
+          "dt": 1244,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 711,
+          "y": 402,
+          "dt": 1292,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 663,
+          "y": 344,
+          "dt": 1340,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 662,
+          "y": 341,
+          "dt": 1436,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 662,
+          "y": 350,
+          "dt": 1484,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 671,
+          "y": 376,
+          "dt": 1524,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 674,
+          "y": 392,
+          "dt": 1572,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 677,
+          "y": 397,
+          "dt": 1620,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 677,
+          "y": 399,
+          "dt": 1732,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 677,
+          "y": 409,
+          "dt": 1772,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 677,
+          "y": 412,
+          "dt": 1828,
+          "direct_jump": false
+        },
+        {
+          "type": "down",
+          "x": 677,
+          "y": 414,
+          "button": "left",
+          "dt": 1900
+        },
+        {
+          "type": "up",
+          "x": 677,
+          "y": 414,
+          "button": "left",
+          "dt": 1980,
+          "is_click": true,
+          "is_dblclick": false
+        },
+        {
+          "type": "move",
+          "x": 678,
+          "y": 414,
+          "dt": 2037,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 674,
+          "y": 367,
+          "dt": 2085,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 658,
+          "y": 336,
+          "dt": 2133,
+          "direct_jump": false
+        },
+        {
+          "type": "down",
+          "x": 658,
+          "y": 335,
+          "button": "right",
+          "dt": 2181
+        },
+        {
+          "type": "up",
+          "x": 658,
+          "y": 335,
+          "button": "right",
+          "dt": 2285,
+          "is_click": true,
+          "is_dblclick": false
+        },
+        {
+          "type": "move",
+          "x": 658,
+          "y": 340,
+          "dt": 2293,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 683,
+          "y": 404,
+          "dt": 2340,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 699,
+          "y": 422,
+          "dt": 2492,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 710,
+          "y": 435,
+          "dt": 2532,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 720,
+          "y": 444,
+          "dt": 2596,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 721,
+          "y": 444,
+          "dt": 2644,
+          "direct_jump": false
+        },
+        {
+          "type": "down",
+          "x": 723,
+          "y": 447,
+          "button": "left",
+          "dt": 2844
+        },
+        {
+          "type": "move",
+          "x": 725,
+          "y": 447,
+          "dt": 2924,
+          "buttons": [
+            "left"
+          ],
+          "direct_jump": false
+        },
+        {
+          "type": "up",
+          "x": 725,
+          "y": 447,
+          "button": "left",
+          "dt": 2925,
+          "is_click": true,
+          "is_dblclick": false
+        },
+        {
+          "type": "move",
+          "x": 729,
+          "y": 447,
+          "dt": 2965,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 739,
+          "y": 447,
+          "dt": 3013,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 781,
+          "y": 454,
+          "dt": 3053,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 892,
+          "y": 463,
+          "dt": 3101,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 1141,
+          "y": 492,
+          "dt": 3141,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 1426,
+          "y": 531,
+          "dt": 3189,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 1612,
+          "y": 888,
+          "dt": 3805,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 1515,
+          "y": 860,
+          "dt": 3853,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 1437,
+          "y": 835,
+          "dt": 3900,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 1365,
+          "y": 810,
+          "dt": 3940,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 1293,
+          "y": 798,
+          "dt": 3980,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 1247,
+          "y": 790,
+          "dt": 4020,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 1183,
+          "y": 785,
+          "dt": 4068,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 1161,
+          "y": 785,
+          "dt": 4116,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 1130,
+          "y": 785,
+          "dt": 4164,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 1119,
+          "y": 786,
+          "dt": 4204,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 1118,
+          "y": 787,
+          "dt": 4324,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 1122,
+          "y": 792,
+          "dt": 4372,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 1138,
+          "y": 803,
+          "dt": 4599,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 1158,
+          "y": 810,
+          "dt": 4645,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 1182,
+          "y": 817,
+          "dt": 4693,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 1260,
+          "y": 827,
+          "dt": 4741,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 1407,
+          "y": 848,
+          "dt": 4781,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 1522,
+          "y": 868,
+          "dt": 4821,
+          "direct_jump": false
+        }
+      ],
+      "duration": 4821
     }
   },
   "instances": {
     "1": {
-      "x": 1246,
-      "y": 405,
+      "x": 3163,
+      "y": 142,
       "minimized": false,
-      "selected_macro": "heart",
+      "selected_macro": "delettt",
       "speed": 1.01,
       "repeat": false,
-      "width": 477,
-      "height": 589
+      "width": 523,
+      "height": 638
     }
   },
   "hotkeys": {
