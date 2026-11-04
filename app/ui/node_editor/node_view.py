@@ -617,6 +617,23 @@ class NodeView(QGraphicsView):
                     event.accept()
                     return
 
+                sel = self.node_scene.selectedItems()
+                is_multi_sel = (target_item.isSelected() and len(sel) > 1)
+
+                if is_multi_sel:
+                    # Target is part of an existing multi-selection:
+                    # Defer potential single click deselect/isolate to mouseRelease, and allow dragging the entire selection!
+                    self._pending_single_selection = target_item
+                    self._press_view_pos = event.pos()
+                    if target_node:
+                        self._dragged_node = target_node
+                        self._shake_samples = [(time.time(), target_node.pos().x(), target_node.pos().y())]
+                        self._shake_triggered = False
+                    self.node_scene._current_selected_node = target_item
+                    self.node_scene.node_selected.emit(target_item)
+                    super().mousePressEvent(event)
+                    return
+
                 # Ctrl + Click (toggle selection) or Ctrl + Drag (downstream branch)
                 if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
                     self._ctrl_candidate_item = target_item
@@ -643,22 +660,10 @@ class NodeView(QGraphicsView):
                     self._shake_samples = [(now, target_node.pos().x(), target_node.pos().y())]
                     self._shake_triggered = False
 
-                # Handle multi-selection movement:
-                # If target_item is ALREADY selected and part of a multi-selection, do NOT deselect others!
-                # Keep all selected items so dragging moves the whole group together.
-                sel = self.node_scene.selectedItems()
-                if not (event.modifiers() & (Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier)):
-                    if target_item.isSelected() and len(sel) > 1:
-                        # Defer potential single selection to mouseRelease in case user is just clicking, not dragging
-                        self._pending_single_selection = target_item
-                    elif not target_item.isSelected():
-                        self.node_scene.clearSelection()
-                        target_item.setSelected(True)
-                        self._pending_single_selection = None
-                    else:
-                        self._pending_single_selection = None
-                else:
-                    self._pending_single_selection = None
+                if not target_item.isSelected():
+                    self.node_scene.clearSelection()
+                    target_item.setSelected(True)
+                self._pending_single_selection = None
 
                 self.node_scene._current_selected_node = target_item
                 self.node_scene.node_selected.emit(target_item)
@@ -875,31 +880,73 @@ class NodeView(QGraphicsView):
             anchor = self._a_align_node
             anchor_y = anchor.pos().y()
             anchor_x = anchor.pos().x()
-            anchor_w = anchor.width
+            anchor_w = anchor.clamp_width if hasattr(anchor, "clamp_width") else getattr(anchor, "width", 150.0)
+
+            # Check if anchor is inside a loop's body nodes
+            enclosing_loop = None
+            if self.node_scene:
+                for ln in self.node_scene.nodes:
+                    if isinstance(ln, LoopNodeItem) and anchor in ln.get_body_nodes():
+                        enclosing_loop = ln
+                        break
+
+            affected_groups = set()
+            if getattr(anchor, "group", None):
+                affected_groups.add(anchor.group)
 
             if dx > 25.0:
                 # Right drag: Align downstream connected nodes
                 downstream = self._get_downstream_nodes(anchor)
-                others = [n for n in downstream if n != anchor]
+                others = [n for n in downstream if n != anchor and isinstance(n, BaseNodeItem)]
+
+                if enclosing_loop:
+                    body_set = set(enclosing_loop.get_body_nodes())
+                    others = [n for n in others if n in body_set]
+                else:
+                    others = [n for n in others if not isinstance(n, LoopNodeItem)]
+
                 others.sort(key=lambda n: n.pos().x())
                 curr_x = anchor_x + anchor_w + 50.0
                 for n in others:
                     n.setPos(curr_x, anchor_y)
-                    n.update_connected_wires()
-                    curr_x += n.width + 50.0
+                    if hasattr(n, "update_connected_wires"):
+                        n.update_connected_wires()
+                    nw = n.clamp_width if hasattr(n, "clamp_width") else getattr(n, "width", 150.0)
+                    curr_x += nw + 50.0
+                    if getattr(n, "group", None):
+                        affected_groups.add(n.group)
+
+                for grp in affected_groups:
+                    grp.fit_to_nodes()
+
                 self.node_scene.scene_modified.emit()
                 self.node_scene.update_loop_bounds()
             elif dx < -25.0:
                 # Left drag: Align upstream connected nodes
                 upstream = self._get_upstream_nodes(anchor)
-                others = [n for n in upstream if n != anchor]
+                others = [n for n in upstream if n != anchor and isinstance(n, BaseNodeItem)]
+
+                if enclosing_loop:
+                    body_set = set(enclosing_loop.get_body_nodes())
+                    others = [n for n in others if n in body_set]
+                else:
+                    others = [n for n in others if not isinstance(n, LoopNodeItem)]
+
                 others.sort(key=lambda n: n.pos().x(), reverse=True)
                 curr_right = anchor_x - 50.0
                 for n in others:
-                    target_x = curr_right - n.width
+                    nw = n.clamp_width if hasattr(n, "clamp_width") else getattr(n, "width", 150.0)
+                    target_x = curr_right - nw
                     n.setPos(target_x, anchor_y)
-                    n.update_connected_wires()
+                    if hasattr(n, "update_connected_wires"):
+                        n.update_connected_wires()
                     curr_right = target_x - 50.0
+                    if getattr(n, "group", None):
+                        affected_groups.add(n.group)
+
+                for grp in affected_groups:
+                    grp.fit_to_nodes()
+
                 self.node_scene.scene_modified.emit()
                 self.node_scene.update_loop_bounds()
 
@@ -988,13 +1035,16 @@ class NodeView(QGraphicsView):
             self._shift_candidate_item = None
             self._is_shift_branch_drag = False
 
-        # If user clicked on a node within a multi-selection without dragging, isolate that selection now
+        # If user clicked on a node within a multi-selection without dragging, handle click toggle / isolation
         if self._pending_single_selection and self._press_view_pos:
             if (event.pos() - self._press_view_pos).manhattanLength() <= 4:
-                self.node_scene.clearSelection()
-                self._pending_single_selection.setSelected(True)
-                self.node_scene._current_selected_node = self._pending_single_selection
-                self.node_scene.node_selected.emit(self._pending_single_selection)
+                if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+                    self._pending_single_selection.setSelected(False)
+                elif not (event.modifiers() & Qt.KeyboardModifier.ShiftModifier):
+                    self.node_scene.clearSelection()
+                    self._pending_single_selection.setSelected(True)
+                    self.node_scene._current_selected_node = self._pending_single_selection
+                    self.node_scene.node_selected.emit(self._pending_single_selection)
             self._pending_single_selection = None
         self._press_view_pos = None
 

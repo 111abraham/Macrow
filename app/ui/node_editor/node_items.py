@@ -1088,13 +1088,13 @@ class LoopNodeItem(BaseNodeItem):
         if self.scene():
             for b_node in body_nodes:
                 grp = getattr(b_node, "group", None)
-                if grp:
+                if grp and self not in grp.nodes:
                     has_content = True
                     max_x = max(max_x, grp.pos().x() + grp.rect().width())
                     max_y = max(max_y, grp.pos().y() + grp.rect().height())
             loop_rect = self.sceneBoundingRect()
             for grp in getattr(self.scene(), "groups", []):
-                if loop_rect.contains(grp.sceneBoundingRect().center()):
+                if self not in grp.nodes and loop_rect.contains(grp.sceneBoundingRect().center()):
                     has_content = True
                     max_x = max(max_x, grp.pos().x() + grp.rect().width())
                     max_y = max(max_y, grp.pos().y() + grp.rect().height())
@@ -1163,44 +1163,56 @@ class LoopNodeItem(BaseNodeItem):
             new_pos = value
             old_pos = self.pos()
             delta = new_pos - old_pos
-            if not getattr(self, "_in_body_sync", False):
+            if not getattr(self, "_in_body_sync", False) and (delta.x() != 0 or delta.y() != 0):
                 self._in_body_sync = True
-                moved_nodes = set(self.get_body_nodes())
-                for b_node in list(moved_nodes):
-                    # Only move nodes that are not already being moved by Qt's selection drag
-                    if not b_node.isSelected():
-                        b_node.setPos(b_node.pos() + delta)
-                        b_node.update_connected_wires()
+                try:
+                    moved_nodes = set(self.get_body_nodes())
+                    for b_node in list(moved_nodes):
+                        # Only move nodes that are not already being moved by Qt's selection drag
+                        if not b_node.isSelected():
+                            b_node.setPos(b_node.pos() + delta)
+                            b_node.update_connected_wires()
 
-                # Also move any group nodes that contain body nodes or sit inside the repeat zone
-                moved_groups = set()
-                loop_scene_rect = self.sceneBoundingRect()
-                for b_node in list(moved_nodes):
-                    grp = getattr(b_node, "group", None)
-                    if grp and grp not in moved_groups and not grp.isSelected():
-                        grp.setPos(grp.pos() + delta)
-                        moved_groups.add(grp)
-                        for gn in grp.nodes:
-                            if gn not in moved_nodes and not gn.isSelected():
-                                gn.setPos(gn.pos() + delta)
-                                gn.update_connected_wires()
-                                moved_nodes.add(gn)
+                    # Also move any group nodes that contain body nodes or sit inside the repeat zone
+                    moved_groups = set()
+                    loop_scene_rect = self.sceneBoundingRect()
+                    for b_node in list(moved_nodes):
+                        grp = getattr(b_node, "group", None)
+                        if grp and grp not in moved_groups and not grp.isSelected() and not getattr(grp, "_in_node_sync", False):
+                            if self not in grp.nodes:
+                                grp._in_node_sync = True
+                                try:
+                                    grp.setPos(grp.pos() + delta)
+                                finally:
+                                    grp._in_node_sync = False
+                                moved_groups.add(grp)
+                                for gn in grp.nodes:
+                                    if gn not in moved_nodes and not gn.isSelected():
+                                        gn.setPos(gn.pos() + delta)
+                                        gn.update_connected_wires()
+                                        moved_nodes.add(gn)
 
-                scene_groups = getattr(self.scene(), "groups", [])
-                for grp in scene_groups:
-                    if grp not in moved_groups and not grp.isSelected():
-                        if loop_scene_rect.contains(grp.sceneBoundingRect().center()):
-                            grp.setPos(grp.pos() + delta)
-                            moved_groups.add(grp)
-                            for gn in grp.nodes:
-                                if gn not in moved_nodes and not gn.isSelected():
-                                    gn.setPos(gn.pos() + delta)
-                                    gn.update_connected_wires()
-                                    moved_nodes.add(gn)
-
-                self._in_body_sync = False
+                    scene_groups = getattr(self.scene(), "groups", [])
+                    for grp in scene_groups:
+                        if grp not in moved_groups and not grp.isSelected() and not getattr(grp, "_in_node_sync", False):
+                            if self not in grp.nodes and loop_scene_rect.contains(grp.sceneBoundingRect().center()):
+                                grp._in_node_sync = True
+                                try:
+                                    grp.setPos(grp.pos() + delta)
+                                finally:
+                                    grp._in_node_sync = False
+                                moved_groups.add(grp)
+                                for gn in grp.nodes:
+                                    if gn not in moved_nodes and not gn.isSelected():
+                                        gn.setPos(gn.pos() + delta)
+                                        gn.update_connected_wires()
+                                        moved_nodes.add(gn)
+                finally:
+                    self._in_body_sync = False
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
             self.update_connected_wires()
+            if getattr(self, "group", None) and not getattr(self.group, "_in_node_sync", False) and not getattr(self.group, "_is_resizing", False):
+                self.group.fit_to_nodes()
         return super().itemChange(change, value)
 
     def get_summary_text(self) -> str:

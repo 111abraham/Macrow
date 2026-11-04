@@ -72,18 +72,22 @@ class NodeGroupItem(QGraphicsRectItem):
 
         min_x = min(n.pos().x() for n in self.nodes)
         min_y = min(n.pos().y() for n in self.nodes)
-        max_x = max(n.pos().x() + n.boundingRect().width() for n in self.nodes)
-        max_y = max(n.pos().y() + n.boundingRect().height() for n in self.nodes)
+        max_x = max(n.pos().x() + (n.clamp_width if hasattr(n, "clamp_width") else n.boundingRect().width()) for n in self.nodes)
+        max_y = max(n.pos().y() + (n.clamp_height if hasattr(n, "clamp_height") else n.boundingRect().height()) for n in self.nodes)
 
         x = min_x - padding
         y = min_y - padding - self.header_height
         w = (max_x - min_x) + padding * 2
         h = (max_y - min_y) + padding * 2 + self.header_height
 
-        self.prepareGeometryChange()
-        self.setPos(x, y)
-        self.setRect(0, 0, max(w, 200.0), max(h, 150.0))
-        self.update()
+        self._in_node_sync = True
+        try:
+            self.prepareGeometryChange()
+            self.setPos(x, y)
+            self.setRect(0, 0, max(w, 200.0), max(h, 150.0))
+            self.update()
+        finally:
+            self._in_node_sync = False
         if self.scene() and hasattr(self.scene(), "scene_modified"):
             self.scene().scene_modified.emit()
 
@@ -103,15 +107,44 @@ class NodeGroupItem(QGraphicsRectItem):
         self.unsetCursor()
         super().hoverLeaveEvent(event)
 
+    def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
+        if change == QGraphicsItem.GraphicsItemChange.ItemPositionChange and self.scene():
+            new_pos = value
+            old_pos = self.pos()
+            delta = new_pos - old_pos
+            if not getattr(self, "_in_node_sync", False) and not self._is_resizing and (delta.x() != 0 or delta.y() != 0):
+                self._in_node_sync = True
+                try:
+                    # Identify body nodes of any LoopNodeItem in this group so LoopNodeItem moves them
+                    nested_body_nodes = set()
+                    for n in self.nodes:
+                        from app.ui.node_editor.node_items import LoopNodeItem
+                        if isinstance(n, LoopNodeItem):
+                            nested_body_nodes.update(n.get_body_nodes())
+
+                    for node in list(self.nodes):
+                        if not node.isSelected() and node not in nested_body_nodes:
+                            node.setPos(node.pos() + delta)
+                            if hasattr(node, "update_connected_wires"):
+                                node.update_connected_wires()
+                finally:
+                    self._in_node_sync = False
+        return super().itemChange(change, value)
+
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
             if self.get_resize_grip_rect().contains(event.pos()):
                 self._is_resizing = True
                 self._resize_start_scene = event.scenePos()
                 self._resize_start_rect = self.rect()
+                nested_body_nodes = set()
+                for n in self.nodes:
+                    from app.ui.node_editor.node_items import LoopNodeItem
+                    if isinstance(n, LoopNodeItem):
+                        nested_body_nodes.update(n.get_body_nodes())
                 self._resize_initial_node_rel_positions = {
                     n: (n.pos().x() - self.pos().x(), n.pos().y() - self.pos().y())
-                    for n in self.nodes
+                    for n in self.nodes if n not in nested_body_nodes
                 }
                 event.accept()
                 return
@@ -146,15 +179,7 @@ class NodeGroupItem(QGraphicsRectItem):
             return
 
         if self._last_drag_pos and (event.buttons() & Qt.MouseButton.LeftButton):
-            delta = event.scenePos() - self._last_drag_pos
             self._last_drag_pos = event.scenePos()
-
-            # Move all enclosed nodes in sync with the group frame!
-            # If a member node is already selected in the scene, Qt's base item move
-            # already moves it by delta. Only manually move nodes that are NOT selected.
-            for node in self.nodes:
-                if not node.isSelected():
-                    node.setPos(node.pos() + delta)
 
         try:
             super().mouseMoveEvent(event)

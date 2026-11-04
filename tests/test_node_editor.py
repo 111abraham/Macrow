@@ -2985,6 +2985,110 @@ class TestNodeEditor(unittest.TestCase):
         self.assertIn(n1, up)
         self.assertIn(grp1, up)
 
+    def test_multi_group_selection_and_drag(self):
+        """Test that selecting multiple groups and dragging moves all groups and their member nodes in sync."""
+        from app.ui.node_editor.node_items import ActionNodeItem
+
+        n1 = ActionNodeItem("click", {"x": 10, "y": 10})
+        n2 = ActionNodeItem("click", {"x": 50, "y": 50})
+        self.scene.add_node(n1, QPointF(10, 10))
+        self.scene.add_node(n2, QPointF(50, 50))
+        grp1 = self.scene.add_group(title="Group 1", nodes=[n1, n2])
+
+        n3 = ActionNodeItem("click", {"x": 300, "y": 10})
+        n4 = ActionNodeItem("click", {"x": 350, "y": 50})
+        self.scene.add_node(n3, QPointF(300, 10))
+        self.scene.add_node(n4, QPointF(350, 50))
+        grp2 = self.scene.add_group(title="Group 2", nodes=[n3, n4])
+
+        grp1.setSelected(True)
+        grp2.setSelected(True)
+
+        delta = QPointF(50, 40)
+        # Move both selected groups via Qt itemChange / position change
+        grp1.setPos(grp1.pos() + delta)
+        grp2.setPos(grp2.pos() + delta)
+
+        # Assert all member nodes moved by exactly the delta
+        self.assertEqual(n1.pos(), QPointF(60, 50))
+        self.assertEqual(n2.pos(), QPointF(100, 90))
+        self.assertEqual(n3.pos(), QPointF(350, 50))
+        self.assertEqual(n4.pos(), QPointF(400, 90))
+
+    def test_align_inside_repeat_node_and_group(self):
+        """Test that A+Drag alignment inside repeat node or group aligns properly without crashing."""
+        from app.ui.node_editor.node_items import ActionNodeItem, LoopNodeItem
+
+        loop = LoopNodeItem(properties={"count": 5})
+        self.scene.add_node(loop, QPointF(0, 0))
+
+        b1 = ActionNodeItem("click", {"x": 50, "y": 100})
+        b2 = ActionNodeItem("delay", {"duration": 100})
+        b3 = ActionNodeItem("click", {"x": 250, "y": 180})
+        self.scene.add_node(b1, QPointF(50, 100))
+        self.scene.add_node(b2, QPointF(150, 140))
+        self.scene.add_node(b3, QPointF(250, 180))
+
+        # Wire loop -> b1 -> b2 -> b3 -> repeat
+        self.scene.add_connection(loop.socket_body, b1.input_sockets[0])
+        self.scene.add_connection(b1.output_sockets[0], b2.input_sockets[0])
+        self.scene.add_connection(b2.output_sockets[0], b3.input_sockets[0])
+        self.scene.add_connection(b3.output_sockets[0], loop.socket_repeat)
+
+        grp = self.scene.add_group("Loop Group", nodes=[b1, b2, b3])
+
+        # Simulate A + Drag on b1 to align downstream nodes horizontally
+        self.view._a_key_held = True
+        self.view._a_align_node = b1
+        self.view._a_align_start_scene_pos = QPointF(50, 100)
+
+        # Drag 100px to the right to trigger downstream horizontal alignment
+        ev_rel = QMouseEvent(
+            QMouseEvent.Type.MouseButtonRelease,
+            QPointF(150, 100),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        self.view.mouseReleaseEvent(ev_rel)
+
+        # Ensure b2 and b3 are aligned on the Y line of b1
+        self.assertEqual(b2.pos().y(), b1.pos().y())
+        self.assertEqual(b3.pos().y(), b1.pos().y())
+        # Ensure b2 is to the right of b1, and b3 is to the right of b2
+        self.assertGreater(b2.pos().x(), b1.pos().x())
+        self.assertGreater(b3.pos().x(), b2.pos().x())
+        # Group and loop bounds must have updated
+        self.assertTrue(grp.rect().isValid())
+
+    def test_repeat_node_inside_group_movement_and_bounds(self):
+        """Test that repeat node inside group moves in sync without double movement, and group fits properly."""
+        from app.ui.node_editor.node_items import ActionNodeItem, LoopNodeItem
+
+        loop = LoopNodeItem(properties={"count": 3})
+        body_node = ActionNodeItem("click", {"x": 50, "y": 50})
+        self.scene.add_node(loop, QPointF(100, 100))
+        self.scene.add_node(body_node, QPointF(150, 150))
+        self.scene.add_connection(loop.socket_body, body_node.input_sockets[0])
+        self.scene.add_connection(body_node.output_sockets[0], loop.socket_repeat)
+
+        # Enclosing group containing the loop and its body node
+        grp = self.scene.add_group("Parent Group", nodes=[loop, body_node])
+        init_loop_pos = loop.pos()
+        init_body_pos = body_node.pos()
+
+        # Drag parent group by (60, 40)
+        delta = QPointF(60, 40)
+        grp.setPos(grp.pos() + delta)
+
+        # Loop and body node must move by EXACTLY delta (no double-movement)
+        self.assertEqual(loop.pos(), init_loop_pos + delta)
+        self.assertEqual(body_node.pos(), init_body_pos + delta)
+
+        # Moving the loop independently inside the group should expand/fit the group
+        loop.setPos(loop.pos() + QPointF(100, 50))
+        self.assertTrue(grp.rect().contains(grp.mapFromScene(loop.sceneBoundingRect().bottomRight())))
+
 
 if __name__ == "__main__":
     unittest.main()
