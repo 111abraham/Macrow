@@ -42,8 +42,8 @@ class NodeGroupItem(QGraphicsRectItem):
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
-        # Position in front of Loop repeat bracket (z=0.1) but behind regular nodes (z=1.0)
-        self.setZValue(0.15)
+        # Position behind Loop repeat bracket (z=0.1) and regular nodes (z=1.0)
+        self.setZValue(0.05)
         self.setAcceptHoverEvents(True)
 
         self.setRect(0, 0, 300, 200)
@@ -96,11 +96,11 @@ class NodeGroupItem(QGraphicsRectItem):
         if self.get_resize_grip_rect().contains(event.pos()):
             self.setCursor(Qt.CursorShape.SizeFDiagCursor)
         else:
-            self.setCursor(Qt.CursorShape.ArrowCursor)
+            self.unsetCursor()
         super().hoverMoveEvent(event)
 
     def hoverLeaveEvent(self, event):
-        self.setCursor(Qt.CursorShape.ArrowCursor)
+        self.unsetCursor()
         super().hoverLeaveEvent(event)
 
     def mousePressEvent(self, event):
@@ -150,10 +150,16 @@ class NodeGroupItem(QGraphicsRectItem):
             self._last_drag_pos = event.scenePos()
 
             # Move all enclosed nodes in sync with the group frame!
+            # If a member node is already selected in the scene, Qt's base item move
+            # already moves it by delta. Only manually move nodes that are NOT selected.
             for node in self.nodes:
-                node.setPos(node.pos() + delta)
+                if not node.isSelected():
+                    node.setPos(node.pos() + delta)
 
-        super().mouseMoveEvent(event)
+        try:
+            super().mouseMoveEvent(event)
+        except (TypeError, AttributeError):
+            pass
 
     def mouseReleaseEvent(self, event):
         if self._is_resizing:

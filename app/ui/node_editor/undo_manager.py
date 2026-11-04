@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 from typing import List, Dict, Any, Optional
 from PyQt6.QtCore import QObject, pyqtSignal, QPointF
+from PyQt6.QtGui import QColor
 
 from app.ui.node_editor.node_scene import NodeScene
 from app.ui.node_editor.node_items import (
@@ -74,6 +75,9 @@ def serialize_scene(scene: NodeScene) -> Dict[str, Any]:
     for grp in scene.groups:
         groups_data.append({
             "title": grp.title,
+            "color": grp.color.name(),
+            "rect": [grp.rect().x(), grp.rect().y(), grp.rect().width(), grp.rect().height()],
+            "pos": [grp.pos().x(), grp.pos().y()],
             "node_ids": [getattr(n, "id", None) or hex(id(n)) for n in grp.nodes],
         })
 
@@ -130,7 +134,13 @@ def deserialize_scene(scene: NodeScene, data: Dict[str, Any]):
     # 3. Recreate Groups
     for gd in data.get("groups", []):
         grp_nodes = [id_to_node[nid] for nid in gd.get("node_ids", []) if nid in id_to_node]
-        scene.add_group(title=gd.get("title", "Group"), nodes=grp_nodes)
+        grp_color = QColor(gd["color"]) if "color" in gd else None
+        grp = scene.add_group(title=gd.get("title", "Group"), nodes=grp_nodes, color=grp_color)
+        if "rect" in gd and "pos" in gd:
+            r = gd["rect"]
+            p = gd["pos"]
+            grp.setPos(p[0], p[1])
+            grp.setRect(r[0], r[1], r[2], r[3])
 
     # 4. Restore Macro Custom Variables
     scene.custom_variables = set(data.get("custom_variables", []))

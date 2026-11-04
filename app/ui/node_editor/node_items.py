@@ -998,11 +998,11 @@ class LoopNodeItem(BaseNodeItem):
         if self.get_resize_grip_rect().contains(event.pos()):
             self.setCursor(Qt.CursorShape.SizeFDiagCursor)
         else:
-            self.setCursor(Qt.CursorShape.ArrowCursor)
+            self.unsetCursor()
         super().hoverMoveEvent(event)
 
     def hoverLeaveEvent(self, event):
-        self.setCursor(Qt.CursorShape.ArrowCursor)
+        self.unsetCursor()
         super().hoverLeaveEvent(event)
 
     def mousePressEvent(self, event):

@@ -146,11 +146,13 @@ class MacrowPanel(QWidget):
         if screen:
             avail = screen.availableGeometry()
             avail_h = avail.height()
-            default_h = max(260, min(440, avail_h - 100))
+            default_h = max(260, min(640, avail_h - 80))
+            default_w = min(500, avail.width() - 80)
         else:
-            default_h = 440
+            default_h = 640
+            default_w = 500
 
-        self.resize(320, default_h)
+        self.resize(default_w, default_h)
         self._unminimized_height = default_h
         self._normal_geom = self.geometry()
 
@@ -566,6 +568,21 @@ class MacrowPanel(QWidget):
 
         # Restore Instance settings
         inst = self.cfg.get_instance_settings(self.instance_id)
+        screen = QGuiApplication.primaryScreen()
+        max_h = screen.availableGeometry().height() - 40 if screen else 900
+        max_w = screen.availableGeometry().width() - 40 if screen else 1200
+        default_w = min(500, max_w)
+        default_h = min(640, max_h)
+
+        if inst.get("width") and inst.get("height"):
+            w = max(280, min(max_w, int(inst["width"])))
+            h = max(160, min(max_h, int(inst["height"])))
+        else:
+            w = default_w
+            h = default_h
+        self.resize(w, h)
+        self._unminimized_height = h
+
         if inst.get("x") is not None and inst.get("y") is not None:
             saved_x = int(inst["x"])
             saved_y = int(inst["y"])
@@ -583,19 +600,18 @@ class MacrowPanel(QWidget):
                 primary = QGuiApplication.primaryScreen()
                 if primary:
                     avail = primary.availableGeometry()
-                    self.move(
-                        avail.x() + (avail.width() - self.width()) // 2,
-                        avail.y() + (avail.height() - self.height()) // 2,
-                    )
-
-        if inst.get("width") and inst.get("height"):
-            screen = QGuiApplication.primaryScreen()
-            max_h = screen.availableGeometry().height() - 40 if screen else 900
-            max_w = screen.availableGeometry().width() - 40 if screen else 1200
-            w = max(280, min(max_w, int(inst["width"])))
-            h = max(160, min(max_h, int(inst["height"])))
-            self.resize(w, h)
-            self._unminimized_height = h
+                    center_right_x = avail.x() + int(avail.width() * 0.55)
+                    target_x = max(avail.x() + 10, min(center_right_x, avail.x() + avail.width() - self.width() - 20))
+                    target_y = max(avail.y() + 40, avail.y() + avail.height() - self.height() - 60)
+                    self.move(target_x, target_y)
+        else:
+            primary = QGuiApplication.primaryScreen()
+            if primary:
+                avail = primary.availableGeometry()
+                center_right_x = avail.x() + int(avail.width() * 0.55)
+                target_x = max(avail.x() + 10, min(center_right_x, avail.x() + avail.width() - self.width() - 20))
+                target_y = max(avail.y() + 40, avail.y() + avail.height() - self.height() - 60)
+                self.move(target_x, target_y)
 
         if inst.get("speed"):
             spd_val = int(inst["speed"] * 100)
@@ -1242,6 +1258,14 @@ class MacrowPanel(QWidget):
             super().wheelEvent(event)
 
     def closeEvent(self, event):
+        if not self.isMinimized():
+            self.cfg.update_instance_settings(
+                self.instance_id,
+                x=self.x(),
+                y=self.y(),
+                width=self.width(),
+                height=self.height(),
+            )
         self.stop_playback()
         self.recorder.stop()
         self.indicator.hide_dot()

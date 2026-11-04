@@ -11362,14 +11362,14 @@
   },
   "instances": {
     "1": {
-      "x": 3163,
-      "y": 142,
+      "x": 999,
+      "y": 669,
       "minimized": false,
-      "selected_macro": "delettt",
+      "selected_macro": "Macro 2",
       "speed": 1.01,
       "repeat": false,
-      "width": 523,
-      "height": 638
+      "width": 596,
+      "height": 635
     }
   },
   "hotkeys": {

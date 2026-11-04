@@ -27,13 +27,17 @@ from app.core.player import MacroPlayer
 from PyQt6.QtGui import QMouseEvent, QKeyEvent
 
 class MockMouseEvent:
-    def __init__(self, button=Qt.MouseButton.LeftButton, pos=QPointF(0, 0), scene_pos=QPointF(0, 0)):
+    def __init__(self, button=Qt.MouseButton.LeftButton, buttons=None, pos=QPointF(0, 0), scene_pos=QPointF(0, 0)):
         self._button = button
+        self._buttons = buttons if buttons is not None else button
         self._pos = pos
         self._scene_pos = scene_pos
 
     def button(self):
         return self._button
+
+    def buttons(self):
+        return self._buttons
 
     def pos(self):
         return self._pos
@@ -48,6 +52,7 @@ class MockMouseEvent:
 class TestNodeEditor(unittest.TestCase):
     def setUp(self):
         self.scene = NodeScene()
+        self.view = NodeView(self.scene)
 
     def test_start_node_and_action_node(self):
         start = StartNodeItem()
@@ -2777,6 +2782,208 @@ class TestNodeEditor(unittest.TestCase):
         # Clicking away clears selection without leaving zombie groups
         self.scene.clearSelection()
         self.assertEqual(len(self.scene.groups), 1)
+
+    def test_node_group_z_value_behind_loop(self):
+        """Test that NodeGroupItem zValue is below LoopNodeItem and regular nodes."""
+        from app.ui.node_editor.node_group import NodeGroupItem
+        from app.ui.node_editor.node_items import LoopNodeItem, ActionNodeItem
+
+        grp = NodeGroupItem("Test Group")
+        loop = LoopNodeItem()
+        action = ActionNodeItem("click", {"x": 100, "y": 100})
+
+        self.assertLess(grp.zValue(), loop.zValue())
+        self.assertLess(loop.zValue(), action.zValue())
+
+    def test_group_member_drag_no_flyout(self):
+        """Test that dragging a group when a member node is selected does not move the member twice."""
+        from app.ui.node_editor.node_group import NodeGroupItem
+        from app.ui.node_editor.node_items import ActionNodeItem
+
+        n1 = ActionNodeItem("click", {"x": 50, "y": 50})
+        self.scene.add_node(n1, QPointF(50, 50))
+        group = self.scene.add_group(nodes=[n1])
+
+        # If n1 is selected in scene:
+        n1.setSelected(True)
+        init_pos = n1.pos()
+
+        # Simulate dragging group by delta (20, 30)
+        group._last_drag_pos = QPointF(100, 100)
+        ev_move = MockMouseEvent(
+            button=Qt.MouseButton.LeftButton,
+            buttons=Qt.MouseButton.LeftButton,
+            pos=QPointF(120, 130),
+            scene_pos=QPointF(120, 130),
+        )
+        group.mouseMoveEvent(ev_move)
+
+        # Because n1 was selected, group.mouseMoveEvent should NOT add an extra delta
+        # (Qt's base move handles selected items)
+        self.assertEqual(n1.pos(), init_pos)
+
+    def test_group_color_and_geometry_serialization(self):
+        """Test that group color, rect, and position are preserved through serialize/deserialize."""
+        from app.ui.node_editor.undo_manager import serialize_scene, deserialize_scene
+        from app.ui.node_editor.node_items import ActionNodeItem
+        from PyQt6.QtGui import QColor
+
+        n1 = ActionNodeItem("click", {"x": 50, "y": 50})
+        self.scene.add_node(n1, QPointF(50, 50))
+        custom_color = QColor(245, 158, 11)  # Amber
+        grp = self.scene.add_group(title="Custom Group", nodes=[n1], color=custom_color)
+        grp.setPos(120, 80)
+        grp.setRect(0, 0, 450, 320)
+
+        data = serialize_scene(self.scene)
+        self.assertEqual(len(data["groups"]), 1)
+        self.assertEqual(data["groups"][0]["color"], custom_color.name())
+        self.assertEqual(data["groups"][0]["pos"], [120, 80])
+        self.assertEqual(data["groups"][0]["rect"], [0, 0, 450, 320])
+
+        # Deserialize into empty scene
+        new_scene = NodeScene()
+        deserialize_scene(new_scene, data)
+        self.assertEqual(len(new_scene.groups), 1)
+        restored_grp = new_scene.groups[0]
+        self.assertEqual(restored_grp.title, "Custom Group")
+        self.assertEqual(restored_grp.color.name(), custom_color.name())
+        self.assertEqual(restored_grp.pos(), QPointF(120, 80))
+        self.assertEqual(restored_grp.rect().width(), 450)
+        self.assertEqual(restored_grp.rect().height(), 320)
+
+    def test_cross_macro_clipboard_with_groups(self):
+        """Test copying nodes and groups preserves groups across scenes."""
+        from app.ui.node_editor.node_items import ActionNodeItem
+        from PyQt6.QtGui import QColor
+
+        n1 = ActionNodeItem("click", {"x": 100, "y": 100})
+        n2 = ActionNodeItem("click", {"x": 200, "y": 100})
+        self.scene.add_node(n1, QPointF(100, 100))
+        self.scene.add_node(n2, QPointF(200, 100))
+        grp = self.scene.add_group(title="Exported", nodes=[n1, n2], color=QColor("#ec4899"))
+
+        n1.setSelected(True)
+        n2.setSelected(True)
+        grp.setSelected(True)
+
+        copied_count = self.scene.copy_selected()
+        self.assertEqual(copied_count, 2)
+
+        # Paste into another scene
+        scene2 = NodeScene()
+        pasted_nodes = scene2.paste_clipboard(offset_step=QPointF(50, 50))
+        self.assertEqual(len(pasted_nodes), 2)
+        self.assertEqual(len(scene2.groups), 1)
+        self.assertEqual(scene2.groups[0].title, "Exported")
+        self.assertEqual(scene2.groups[0].color.name(), "#ec4899")
+
+    def test_shake_disconnect_loop_preserves_internal_nodes(self):
+        """Shaking repeat node disconnects external in/done sockets, heals external wire, keeps body intact."""
+        from app.ui.node_editor.node_items import ActionNodeItem, LoopNodeItem
+
+        start = ActionNodeItem("click", {"x": 10, "y": 10})
+        loop = LoopNodeItem(properties={"count": 5})
+        body_node = ActionNodeItem("click", {"x": 50, "y": 50})
+        after = ActionNodeItem("click", {"x": 100, "y": 100})
+
+        self.scene.add_node(start, QPointF(0, 100))
+        self.scene.add_node(loop, QPointF(200, 100))
+        self.scene.add_node(body_node, QPointF(250, 150))
+        self.scene.add_node(after, QPointF(500, 100))
+
+        # Wire: start -> loop.socket_in; loop.socket_body -> body_node; loop.socket_done -> after
+        conn_in = self.scene.add_connection(start.output_sockets[0], loop.socket_in)
+        conn_body = self.scene.add_connection(loop.socket_body, body_node.input_sockets[0])
+        conn_done = self.scene.add_connection(loop.socket_done, after.input_sockets[0])
+
+        self.assertEqual(len(self.scene.connections), 3)
+
+        # Trigger shake disconnect on loop
+        self.view._trigger_shake_disconnect([loop])
+
+        # loop.socket_body wire must still be connected!
+        self.assertIn(conn_body, self.scene.connections)
+        self.assertEqual(len(loop.socket_body.connections), 1)
+
+        # External wires must be disconnected from loop
+        self.assertEqual(len(loop.socket_in.connections), 0)
+        self.assertEqual(len(loop.socket_done.connections), 0)
+
+        # A healed connection between start and after must exist!
+        healed = [
+            c for c in self.scene.connections
+            if c.start_socket == start.output_sockets[0] and c.end_socket == after.input_sockets[0]
+        ]
+        self.assertEqual(len(healed), 1)
+
+    def test_loop_wire_splice_drop(self):
+        """Dragging an unconnected loop onto a wire splices into socket_in and socket_done."""
+        from app.ui.node_editor.node_items import ActionNodeItem, LoopNodeItem
+
+        n1 = ActionNodeItem("click", {"x": 0, "y": 0})
+        n2 = ActionNodeItem("click", {"x": 200, "y": 0})
+        loop = LoopNodeItem(properties={"count": 3})
+
+        self.scene.add_node(n1, QPointF(0, 100))
+        self.scene.add_node(n2, QPointF(400, 100))
+        self.scene.add_node(loop, QPointF(150, 90))
+
+        wire = self.scene.add_connection(n1.output_sockets[0], n2.input_sockets[0])
+
+        self.view._hovered_wire = wire
+        self.view._dragged_node = loop
+
+        # Release mouse to commit splice
+        ev_rel = QMouseEvent(
+            QMouseEvent.Type.MouseButtonRelease,
+            QPointF(150, 90),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        self.view.mouseReleaseEvent(ev_rel)
+
+        # wire is spliced: n1 -> loop.socket_in, and loop.socket_done -> n2
+        self.assertNotIn(wire, self.scene.connections)
+        self.assertEqual(len(loop.socket_in.connections), 1)
+        self.assertEqual(loop.socket_in.connections[0].start_socket, n1.output_sockets[0])
+        self.assertEqual(len(loop.socket_done.connections), 1)
+        self.assertEqual(loop.socket_done.connections[0].end_socket, n2.input_sockets[0])
+
+    def test_ctrl_and_shift_drag_downstream_upstream_on_group(self):
+        """Test that _get_downstream_nodes and _get_upstream_nodes handle NodeGroupItem."""
+        from app.ui.node_editor.node_items import ActionNodeItem
+
+        n1 = ActionNodeItem("click", {"x": 10, "y": 10})
+        n2 = ActionNodeItem("click", {"x": 20, "y": 20})
+        n3 = ActionNodeItem("click", {"x": 30, "y": 30})
+
+        self.scene.add_node(n1, QPointF(0, 0))
+        self.scene.add_node(n2, QPointF(200, 0))
+        self.scene.add_node(n3, QPointF(400, 0))
+
+        self.scene.add_connection(n1.output_sockets[0], n2.input_sockets[0])
+        self.scene.add_connection(n2.output_sockets[0], n3.input_sockets[0])
+
+        grp1 = self.scene.add_group("G1", nodes=[n1])
+        grp2 = self.scene.add_group("G2", nodes=[n3])
+
+        # Downstream from grp1 should include grp1, n1, n2, n3, and grp2
+        down = self.view._get_downstream_nodes(grp1)
+        self.assertIn(grp1, down)
+        self.assertIn(n1, down)
+        self.assertIn(n2, down)
+        self.assertIn(n3, down)
+        self.assertIn(grp2, down)
+
+        # Upstream from grp2 should include grp2, n3, n2, n1, and grp1
+        up = self.view._get_upstream_nodes(grp2)
+        self.assertIn(grp2, up)
+        self.assertIn(n3, up)
+        self.assertIn(n2, up)
+        self.assertIn(n1, up)
+        self.assertIn(grp1, up)
 
 
 if __name__ == "__main__":

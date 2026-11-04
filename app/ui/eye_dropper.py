@@ -135,18 +135,23 @@ class EyeDropperScreenOverlay(QWidget):
 
         if in_screen:
             local_pos = pt - self.screen_geo.topLeft()
-            self.local_x = local_pos.x()
-            self.local_y = local_pos.y()
+            new_lx = local_pos.x()
+            new_ly = local_pos.y()
         elif is_phys:
-            self.local_x = int(round((gx - px) / self.dpr))
-            self.local_y = int(round((gy - py) / self.dpr))
+            new_lx = int(round((gx - px) / self.dpr))
+            new_ly = int(round((gy - py) / self.dpr))
         else:
             if self.has_cursor:
                 self.has_cursor = False
                 self.update()
             return
 
+        if self.has_cursor and self.local_x == new_lx and self.local_y == new_ly:
+            return
+
         self.has_cursor = True
+        self.local_x = new_lx
+        self.local_y = new_ly
 
         # Exact hardware pixel coordinates inside the unscaled screenshot
         img_x = int(round(self.local_x * self.dpr))
@@ -352,6 +357,7 @@ class CoordinateEyeDropper(QDialog):
 
         self._is_committed = False
         self._start_time = time.time()
+        self._last_tracked_pos: Optional[QPoint] = None
         self.cur_x, self.cur_y = get_real_cursor_pos()
         self.cur_hex = "#FFFFFF"
         self.cur_rgb = (255, 255, 255)
@@ -401,9 +407,12 @@ class CoordinateEyeDropper(QDialog):
             pass
 
         cur_pos = QCursor.pos()
+        if self._last_tracked_pos == cur_pos:
+            return
         self.on_mouse_moved_global(cur_pos)
 
     def on_mouse_moved_global(self, pos):
+        self._last_tracked_pos = pos
         for ov in self.overlays:
             ov.update_cursor_at(pos)
 

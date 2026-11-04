@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import uuid
 from typing import List, Optional, Dict, Any
 from PyQt6.QtCore import Qt, QPointF, pyqtSignal
@@ -147,8 +148,13 @@ class NodeScene(QGraphicsScene):
         self.update_loop_bounds()
         self.scene_modified.emit()
 
-    def add_group(self, title: str = "Group", nodes: Optional[List[BaseNodeItem]] = None) -> NodeGroupItem:
-        group = NodeGroupItem(title=title)
+    def add_group(
+        self,
+        title: str = "Group",
+        nodes: Optional[List[BaseNodeItem]] = None,
+        color: Optional[QColor] = None,
+    ) -> NodeGroupItem:
+        group = NodeGroupItem(title=title, color=color)
         self.addItem(group)
         self.groups.append(group)
         if nodes:
@@ -321,6 +327,13 @@ class NodeScene(QGraphicsScene):
             item for item in self.selectedItems()
             if isinstance(item, BaseNodeItem) and not isinstance(item, StartNodeItem)
         ]
+        # Also include nodes belonging to any selected groups
+        for grp in self.groups:
+            if grp.isSelected():
+                for n in grp.nodes:
+                    if n not in selected_nodes and not isinstance(n, StartNodeItem):
+                        selected_nodes.append(n)
+
         if not selected_nodes:
             return 0
 
@@ -349,27 +362,67 @@ class NodeScene(QGraphicsScene):
                     "to_socket_idx": e_idx,
                 })
 
+        groups_data = []
+        for grp in self.groups:
+            if grp.isSelected() or (grp.nodes and all(n in selected_nodes for n in grp.nodes)):
+                groups_data.append({
+                    "title": grp.title,
+                    "color": grp.color.name(),
+                    "rect": [grp.rect().x(), grp.rect().y(), grp.rect().width(), grp.rect().height()],
+                    "pos": [grp.pos().x(), grp.pos().y()],
+                    "node_ids": [getattr(n, "id", None) or hex(id(n)) for n in grp.nodes],
+                })
+
         NodeScene._clipboard = {
             "nodes": nodes_data,
             "connections": conns_data,
+            "groups": groups_data,
             "offset_count": 1,
         }
+        try:
+            from PyQt6.QtWidgets import QApplication
+            app = QApplication.instance()
+            if app:
+                cb = app.clipboard()
+                if cb:
+                    cb.setText(json.dumps(NodeScene._clipboard))
+        except Exception:
+            pass
+
         return len(nodes_data)
 
     def paste_clipboard(self, offset_step: Optional[QPointF] = None) -> List[BaseNodeItem]:
         """Pastes clipboard contents with offset into the scene."""
-        if not NodeScene._clipboard or not NodeScene._clipboard.get("nodes"):
+        clip = None
+        try:
+            from PyQt6.QtWidgets import QApplication
+            app = QApplication.instance()
+            if app:
+                cb = app.clipboard()
+                if cb:
+                    raw_text = cb.text()
+                    if raw_text and raw_text.strip().startswith("{") and '"nodes"' in raw_text:
+                        clip = json.loads(raw_text)
+        except Exception:
+            clip = None
+
+        if not clip or not clip.get("nodes"):
+            clip = NodeScene._clipboard
+
+        if not clip or not clip.get("nodes"):
             return []
 
         from app.ui.node_editor.undo_manager import NODE_CLASS_MAP
 
-        clip = NodeScene._clipboard
         nodes_data = clip.get("nodes", [])
         conns_data = clip.get("connections", [])
+        groups_data = clip.get("groups", [])
         offset_multiplier = clip.get("offset_count", 1)
 
         offset = offset_step if offset_step is not None else QPointF(40.0 * offset_multiplier, 40.0 * offset_multiplier)
         clip["offset_count"] = offset_multiplier + 1
+        if NodeScene._clipboard:
+            NodeScene._clipboard["offset_count"] = clip["offset_count"]
 
         self.clearSelection()
         id_map: Dict[str, BaseNodeItem] = {}
@@ -410,6 +463,19 @@ class NodeScene(QGraphicsScene):
                 e_idx = cd.get("to_socket_idx", 0)
                 if s_idx < len(src.output_sockets) and e_idx < len(dst.input_sockets):
                     self.add_connection(src.output_sockets[s_idx], dst.input_sockets[e_idx])
+
+        # Recreate groups between newly pasted nodes
+        for gd in groups_data:
+            grp_nodes = [id_map[nid] for nid in gd.get("node_ids", []) if nid in id_map]
+            if grp_nodes:
+                grp_col = QColor(gd["color"]) if "color" in gd else None
+                new_grp = self.add_group(title=gd.get("title", "Group"), nodes=grp_nodes, color=grp_col)
+                if "rect" in gd and "pos" in gd:
+                    p = gd["pos"]
+                    r = gd["rect"]
+                    new_grp.setPos(p[0] + offset.x(), p[1] + offset.y())
+                    new_grp.setRect(r[0], r[1], r[2], r[3])
+                new_grp.setSelected(True)
 
         self.scene_modified.emit()
         return new_nodes
