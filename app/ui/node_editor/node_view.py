@@ -148,7 +148,7 @@ class NodeView(QGraphicsView):
             return False
         return isinstance(sock.node, LoopNodeItem)
 
-    def _get_downstream_nodes(self, start_item: QGraphicsItem) -> List[QGraphicsItem]:
+    def _get_downstream_nodes(self, start_item: QGraphicsItem, main_line_only: bool = False) -> List[QGraphicsItem]:
         visited = set()
         if isinstance(start_item, NodeGroupItem):
             queue = list(start_item.nodes)
@@ -170,27 +170,40 @@ class NodeView(QGraphicsView):
                     elif isinstance(start_item, NodeGroupItem) and (any(m in body for m in start_item.nodes) or n.sceneBoundingRect().contains(start_item.sceneBoundingRect().center())):
                         enclosing_loops.add(n)
 
+        loop_body_nodes = set()
+        if main_line_only and self.node_scene:
+            for n in self.node_scene.nodes:
+                if isinstance(n, LoopNodeItem) and n is not start_item:
+                    loop_body_nodes.update(n.get_body_nodes())
+
         while queue:
             curr = queue.pop(0)
             if curr in visited:
                 continue
             visited.add(curr)
-            if curr not in enclosing_loops:
+            if curr not in enclosing_loops and curr not in loop_body_nodes:
                 result.append(curr)
 
-            for sock in curr.output_sockets:
+            if main_line_only and isinstance(curr, LoopNodeItem):
+                out_sockets = [curr.socket_done] if hasattr(curr, "socket_done") else []
+            else:
+                out_sockets = curr.output_sockets
+
+            for sock in out_sockets:
                 for conn in sock.connections:
                     end_sock = conn.end_socket
                     if end_sock and end_sock.node:
                         target = end_sock.node
                         if target in enclosing_loops:
                             continue
+                        if main_line_only and target in loop_body_nodes:
+                            continue
                         if target not in visited:
                             queue.append(target)
 
         # Include start group itself and any other groups that contain downstream nodes
-        items = [n for n in result if n not in enclosing_loops]
-        if self.node_scene:
+        items = [n for n in result if n not in enclosing_loops and n not in loop_body_nodes]
+        if not main_line_only and self.node_scene:
             for grp in getattr(self.node_scene, "groups", []):
                 if grp is start_item or any(n in result for n in grp.nodes):
                     if grp not in items:
@@ -200,7 +213,7 @@ class NodeView(QGraphicsView):
                             items.append(n)
         return items
 
-    def _get_upstream_nodes(self, start_item: QGraphicsItem) -> List[QGraphicsItem]:
+    def _get_upstream_nodes(self, start_item: QGraphicsItem, main_line_only: bool = False) -> List[QGraphicsItem]:
         visited = set()
         if isinstance(start_item, NodeGroupItem):
             queue = list(start_item.nodes)
@@ -222,27 +235,40 @@ class NodeView(QGraphicsView):
                     elif isinstance(start_item, NodeGroupItem) and (any(m in body for m in start_item.nodes) or n.sceneBoundingRect().contains(start_item.sceneBoundingRect().center())):
                         enclosing_loops.add(n)
 
+        loop_body_nodes = set()
+        if main_line_only and self.node_scene:
+            for n in self.node_scene.nodes:
+                if isinstance(n, LoopNodeItem) and n is not start_item:
+                    loop_body_nodes.update(n.get_body_nodes())
+
         while queue:
             curr = queue.pop(0)
             if curr in visited:
                 continue
             visited.add(curr)
-            if curr not in enclosing_loops:
+            if curr not in enclosing_loops and curr not in loop_body_nodes:
                 result.append(curr)
 
-            for sock in curr.input_sockets:
+            if main_line_only and isinstance(curr, LoopNodeItem):
+                in_sockets = [curr.socket_in] if hasattr(curr, "socket_in") else []
+            else:
+                in_sockets = curr.input_sockets
+
+            for sock in in_sockets:
                 for conn in sock.connections:
                     start_sock = conn.start_socket
                     if start_sock and start_sock.node:
                         target = start_sock.node
                         if target in enclosing_loops:
                             continue
+                        if main_line_only and target in loop_body_nodes:
+                            continue
                         if target not in visited:
                             queue.append(target)
 
         # Include start group itself and any other groups that contain upstream nodes
-        items = [n for n in result if n not in enclosing_loops]
-        if self.node_scene:
+        items = [n for n in result if n not in enclosing_loops and n not in loop_body_nodes]
+        if not main_line_only and self.node_scene:
             for grp in getattr(self.node_scene, "groups", []):
                 if grp is start_item or any(n in result for n in grp.nodes):
                     if grp not in items:
@@ -370,7 +396,7 @@ class NodeView(QGraphicsView):
                         return conn
         return None
 
-    def _show_quick_add_menu(self, global_pos: QPoint, scene_pos: QPointF):
+    def _show_quick_add_menu(self, global_pos: QPoint, scene_pos: QPointF, auto_connect_socket: Optional[NodeSocketItem] = None):
         menu = QMenu(self)
         menu.setStyleSheet("""
             QMenu {
@@ -408,6 +434,15 @@ class NodeView(QGraphicsView):
             self.node_scene.clearSelection()
             self.node_scene.add_node(node_instance, scene_pos)
             node_instance.setSelected(True)
+            if auto_connect_socket:
+                if auto_connect_socket.socket_type == "output":
+                    if node_instance.input_sockets:
+                        self.node_scene.add_connection(auto_connect_socket, node_instance.input_sockets[0])
+                elif auto_connect_socket.socket_type == "input":
+                    if node_instance.output_sockets:
+                        self.node_scene.add_connection(node_instance.output_sockets[0], auto_connect_socket)
+            self._last_pulled_socket = None
+            self._last_pulled_time = 0.0
             self.node_scene.scene_modified.emit()
 
         menu.addSection("MOUSE ACTIONS")
@@ -971,14 +1006,13 @@ class NodeView(QGraphicsView):
 
             if dx > 25.0:
                 # Right drag: Align downstream connected nodes
-                downstream = self._get_downstream_nodes(anchor)
-                others = [n for n in downstream if n != anchor and isinstance(n, BaseNodeItem)]
-
                 if enclosing_loop:
+                    downstream = self._get_downstream_nodes(anchor)
                     body_set = set(enclosing_loop.get_body_nodes())
-                    others = [n for n in others if n in body_set]
+                    others = [n for n in downstream if n != anchor and isinstance(n, BaseNodeItem) and n in body_set]
                 else:
-                    others = [n for n in others if not isinstance(n, LoopNodeItem)]
+                    downstream = self._get_downstream_nodes(anchor, main_line_only=True)
+                    others = [n for n in downstream if n != anchor and isinstance(n, BaseNodeItem)]
 
                 others.sort(key=lambda n: n.pos().x())
                 curr_x = anchor_x + anchor_w + 50.0
@@ -998,14 +1032,13 @@ class NodeView(QGraphicsView):
                 self.node_scene.update_loop_bounds()
             elif dx < -25.0:
                 # Left drag: Align upstream connected nodes
-                upstream = self._get_upstream_nodes(anchor)
-                others = [n for n in upstream if n != anchor and isinstance(n, BaseNodeItem)]
-
                 if enclosing_loop:
+                    upstream = self._get_upstream_nodes(anchor)
                     body_set = set(enclosing_loop.get_body_nodes())
-                    others = [n for n in others if n in body_set]
+                    others = [n for n in upstream if n != anchor and isinstance(n, BaseNodeItem) and n in body_set]
                 else:
-                    others = [n for n in others if not isinstance(n, LoopNodeItem)]
+                    upstream = self._get_upstream_nodes(anchor, main_line_only=True)
+                    others = [n for n in upstream if n != anchor and isinstance(n, BaseNodeItem)]
 
                 others.sort(key=lambda n: n.pos().x(), reverse=True)
                 curr_right = anchor_x - 50.0
@@ -1049,83 +1082,94 @@ class NodeView(QGraphicsView):
             src_sock = wire.start_socket
             dst_sock = wire.end_socket
             dst_node = dst_sock.node if dst_sock else None
+            src_node = src_sock.node if src_sock else None
 
             if src_sock and dst_sock:
-                spliced = False
-                if isinstance(self._dragged_node, LoopNodeItem):
-                    self.node_scene.remove_connection(wire)
-                    self.node_scene.add_connection(src_sock, self._dragged_node.socket_in)
-                    self.node_scene.add_connection(self._dragged_node.socket_done, dst_sock)
-                    spliced = True
-                elif isinstance(self._dragged_node, NodeGroupItem) and self._dragged_node.nodes:
-                    grp_nodes = set(self._dragged_node.nodes)
-                    in_candidates = []
-                    for gn in self._dragged_node.nodes:
-                        in_s = gn.socket_in if isinstance(gn, LoopNodeItem) else (gn.input_sockets[0] if gn.input_sockets else None)
-                        if in_s:
-                            has_int_in = any(c.start_socket and c.start_socket.node in grp_nodes for c in in_s.connections)
-                            in_candidates.append((has_int_in, gn.pos().x(), in_s))
-                    in_candidates.sort(key=lambda x: (x[0], x[1]))
+                self.node_scene.begin_batch_modification()
+                try:
+                    # Snap dragged node Y to the wire line if roughly horizontal
+                    if src_node and dst_node:
+                        src_y = src_node.pos().y()
+                        dst_y = dst_node.pos().y()
+                        if abs(src_y - dst_y) < 30.0:
+                            self._dragged_node.setPos(self._dragged_node.pos().x(), (src_y + dst_y) / 2.0)
 
-                    out_candidates = []
-                    for gn in self._dragged_node.nodes:
-                        out_s = gn.socket_done if isinstance(gn, LoopNodeItem) else (gn.output_sockets[0] if gn.output_sockets else None)
-                        if out_s:
-                            has_int_out = any(c.end_socket and c.end_socket.node in grp_nodes for c in out_s.connections)
-                            out_candidates.append((has_int_out, -gn.pos().x(), out_s))
-                    out_candidates.sort(key=lambda x: (x[0], x[1]))
-
-                    if in_candidates and out_candidates:
-                        entry_sock = in_candidates[0][2]
-                        exit_sock = out_candidates[0][2]
+                    spliced = False
+                    if isinstance(self._dragged_node, LoopNodeItem):
                         self.node_scene.remove_connection(wire)
-                        self.node_scene.add_connection(src_sock, entry_sock)
-                        self.node_scene.add_connection(exit_sock, dst_sock)
+                        self.node_scene.add_connection(src_sock, self._dragged_node.socket_in)
+                        self.node_scene.add_connection(self._dragged_node.socket_done, dst_sock)
                         spliced = True
-                elif isinstance(self._dragged_node, BaseNodeItem) and self._dragged_node.input_sockets and self._dragged_node.output_sockets:
-                    self.node_scene.remove_connection(wire)
-                    self.node_scene.add_connection(src_sock, self._dragged_node.input_sockets[0])
-                    self.node_scene.add_connection(self._dragged_node.output_sockets[0], dst_sock)
-                    spliced = True
+                    elif isinstance(self._dragged_node, NodeGroupItem) and self._dragged_node.nodes:
+                        grp_nodes = set(self._dragged_node.nodes)
+                        in_candidates = []
+                        for gn in self._dragged_node.nodes:
+                            in_s = gn.socket_in if isinstance(gn, LoopNodeItem) else (gn.input_sockets[0] if gn.input_sockets else None)
+                            if in_s:
+                                has_int_in = any(c.start_socket and c.start_socket.node in grp_nodes for c in in_s.connections)
+                                in_candidates.append((has_int_in, gn.pos().x(), in_s))
+                        in_candidates.sort(key=lambda x: (x[0], x[1]))
 
-                # Push destination node and all downstream nodes right to avoid overlap
-                if spliced and dst_node:
-                    if isinstance(self._dragged_node, NodeGroupItem):
-                        dragged_w = self._dragged_node.rect().width()
-                    elif isinstance(self._dragged_node, LoopNodeItem):
-                        dragged_w = self._dragged_node.clamp_width
-                    else:
-                        dragged_w = getattr(self._dragged_node, "width", 150.0)
+                        out_candidates = []
+                        for gn in self._dragged_node.nodes:
+                            out_s = gn.socket_done if isinstance(gn, LoopNodeItem) else (gn.output_sockets[0] if gn.output_sockets else None)
+                            if out_s:
+                                has_int_out = any(c.end_socket and c.end_socket.node in grp_nodes for c in out_s.connections)
+                                out_candidates.append((has_int_out, -gn.pos().x(), out_s))
+                        out_candidates.sort(key=lambda x: (x[0], x[1]))
 
-                    node_right = self._dragged_node.pos().x() + dragged_w + 50.0
-                    shift_x = max(dragged_w + 50.0, node_right - dst_node.pos().x())
+                        if in_candidates and out_candidates:
+                            entry_sock = in_candidates[0][2]
+                            exit_sock = out_candidates[0][2]
+                            self.node_scene.remove_connection(wire)
+                            self.node_scene.add_connection(src_sock, entry_sock)
+                            self.node_scene.add_connection(exit_sock, dst_sock)
+                            spliced = True
+                    elif isinstance(self._dragged_node, BaseNodeItem) and self._dragged_node.input_sockets and self._dragged_node.output_sockets:
+                        self.node_scene.remove_connection(wire)
+                        self.node_scene.add_connection(src_sock, self._dragged_node.input_sockets[0])
+                        self.node_scene.add_connection(self._dragged_node.output_sockets[0], dst_sock)
+                        spliced = True
 
-                    downstream = self._get_downstream_nodes(dst_node)
+                    # Push destination node and downstream nodes right only if physical overlap occurs
+                    if spliced and dst_node:
+                        if isinstance(self._dragged_node, NodeGroupItem):
+                            dragged_w = self._dragged_node.rect().width()
+                        elif isinstance(self._dragged_node, LoopNodeItem):
+                            dragged_w = self._dragged_node.clamp_width
+                        else:
+                            dragged_w = getattr(self._dragged_node, "width", 150.0)
 
-                    # Collect body nodes of all LoopNodeItems in downstream so they aren't moved twice
-                    loop_body_nodes = set()
-                    for d in downstream:
-                        if isinstance(d, LoopNodeItem):
-                            loop_body_nodes.update(d.get_body_nodes())
+                        node_right = self._dragged_node.pos().x() + dragged_w + 50.0
+                        shift_x = node_right - dst_node.pos().x()
 
-                    # Collect member nodes of all NodeGroupItems in downstream
-                    group_member_nodes = set()
-                    for d in downstream:
-                        if isinstance(d, NodeGroupItem):
-                            group_member_nodes.update(d.nodes)
+                        if shift_x > 0:
+                            downstream = self._get_downstream_nodes(dst_node)
 
-                    for d_node in downstream:
-                        # Skip body nodes of loops and member nodes of groups to prevent double movement!
-                        if d_node in loop_body_nodes:
-                            continue
-                        if d_node in group_member_nodes and not isinstance(d_node, LoopNodeItem):
-                            continue
-                        d_node.setPos(d_node.pos().x() + shift_x, d_node.pos().y())
-                        if hasattr(d_node, "update_connected_wires"):
-                            d_node.update_connected_wires()
+                            # Collect body nodes of all LoopNodeItems in downstream so they aren't moved twice
+                            loop_body_nodes = set()
+                            for d in downstream:
+                                if isinstance(d, LoopNodeItem):
+                                    loop_body_nodes.update(d.get_body_nodes())
 
-                self.node_scene.scene_modified.emit()
-                self.node_scene.update_loop_bounds()
+                            # Collect member nodes of all NodeGroupItems in downstream
+                            group_member_nodes = set()
+                            for d in downstream:
+                                if isinstance(d, NodeGroupItem):
+                                    group_member_nodes.update(d.nodes)
+
+                            for d_node in downstream:
+                                # Skip body nodes of loops and member nodes of groups to prevent double movement!
+                                if d_node in loop_body_nodes:
+                                    continue
+                                if d_node in group_member_nodes and not isinstance(d_node, LoopNodeItem):
+                                    continue
+                                d_node.setPos(d_node.pos().x() + shift_x, d_node.pos().y())
+                                if hasattr(d_node, "update_connected_wires"):
+                                    d_node.update_connected_wires()
+                finally:
+                    self.node_scene.end_batch_modification()
+                    self.node_scene.update_loop_bounds()
 
         if self._hovered_wire:
             self._hovered_wire.is_drop_target = False
@@ -1208,12 +1252,28 @@ class NodeView(QGraphicsView):
             event.accept()
             return
 
-        # Tab: Quick Add Node popup menu under cursor
+        # Tab: Quick Add Node popup menu under cursor (Houdini auto-plug if wire pulled)
         if event.key() == Qt.Key.Key_Tab:
             global_pos = QCursor.pos()
             view_pos = self.mapFromGlobal(global_pos)
             scene_pos = self.mapToScene(view_pos)
-            self._show_quick_add_menu(global_pos, scene_pos)
+            auto_sock = None
+            if getattr(self, "_dragging_connection", None):
+                auto_sock = self._dragging_connection.start_socket
+                self.node_scene.removeItem(self._dragging_connection)
+                self._dragging_connection.clean_up()
+                self._dragging_connection = None
+                if hasattr(self.node_scene, "_dragging_connection"):
+                    self.node_scene._dragging_connection = None
+            elif hasattr(self.node_scene, "_dragging_connection") and self.node_scene._dragging_connection:
+                auto_sock = self.node_scene._dragging_connection.start_socket
+                self.node_scene.removeItem(self.node_scene._dragging_connection)
+                self.node_scene._dragging_connection.clean_up()
+                self.node_scene._dragging_connection = None
+            elif getattr(self, "_last_pulled_socket", None) and (time.time() - getattr(self, "_last_pulled_time", 0.0) < 4.0):
+                auto_sock = self._last_pulled_socket
+
+            self._show_quick_add_menu(global_pos, scene_pos, auto_connect_socket=auto_sock)
             event.accept()
             return
 

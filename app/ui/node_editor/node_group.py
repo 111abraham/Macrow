@@ -110,6 +110,28 @@ class NodeGroupItem(QGraphicsRectItem):
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionChange and self.scene():
             new_pos = value
+            from app.ui.node_editor.node_items import LoopNodeItem
+            # If group is inside an enclosing LoopNodeItem (and loop is not selected and not in sync), clamp inside loop cavity
+            if not getattr(self, "_in_node_sync", False) and not self._is_resizing:
+                enclosing_loop = None
+                for it in self.scene().items():
+                    if isinstance(it, LoopNodeItem) and it not in self.nodes and not it.isSelected():
+                        body_nodes = set(it.get_body_nodes())
+                        if any(n in body_nodes for n in self.nodes) or it.sceneBoundingRect().contains(self.sceneBoundingRect().center()):
+                            enclosing_loop = it
+                            break
+                if enclosing_loop:
+                    lx = enclosing_loop.pos().x()
+                    ly = enclosing_loop.pos().y()
+                    min_x = lx + enclosing_loop.spine_width + 8.0
+                    min_y = ly + enclosing_loop.header_height + 8.0
+                    max_x = max(min_x, lx + enclosing_loop.clamp_width - self.rect().width() - 8.0)
+                    max_y = max(min_y, ly + enclosing_loop.clamp_height - enclosing_loop.shelf_height - self.rect().height() - 8.0)
+                    new_pos = QPointF(
+                        min(max(new_pos.x(), min_x), max_x),
+                        min(max(new_pos.y(), min_y), max_y)
+                    )
+
             old_pos = self.pos()
             delta = new_pos - old_pos
             if not getattr(self, "_in_node_sync", False) and not self._is_resizing and (delta.x() != 0 or delta.y() != 0):
@@ -118,7 +140,6 @@ class NodeGroupItem(QGraphicsRectItem):
                     # Identify body nodes of any LoopNodeItem in this group so LoopNodeItem moves them
                     nested_body_nodes = set()
                     for n in self.nodes:
-                        from app.ui.node_editor.node_items import LoopNodeItem
                         if isinstance(n, LoopNodeItem):
                             nested_body_nodes.update(n.get_body_nodes())
 
@@ -129,6 +150,7 @@ class NodeGroupItem(QGraphicsRectItem):
                                 node.update_connected_wires()
                 finally:
                     self._in_node_sync = False
+            return super().itemChange(change, new_pos)
         return super().itemChange(change, value)
 
     def mousePressEvent(self, event):

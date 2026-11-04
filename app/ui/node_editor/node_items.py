@@ -110,31 +110,42 @@ class BaseNodeItem(QGraphicsItem):
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionChange and self.scene():
             new_pos = value
             # Containment clamping: nodes cannot leave loop or group boundaries unless shaken free
-            if not getattr(self, "_in_node_sync", False) and not getattr(self, "_in_body_sync", False):
-                # 1. Enclosed inside a LoopNodeItem:
-                enclosing_loop = None
-                for n in getattr(self.scene(), "nodes", []):
-                    if isinstance(n, LoopNodeItem) and n is not self:
+            # Skip if LoopNodeItem (handles its own clamping) or if a loop is currently moving its body nodes
+            if not isinstance(self, LoopNodeItem) and not getattr(self, "_in_node_sync", False) and not getattr(self, "_in_body_sync", False):
+                scene_loops = [n for n in getattr(self.scene(), "nodes", []) if isinstance(n, LoopNodeItem)]
+                if not any(getattr(ln, "_in_body_sync", False) for ln in scene_loops):
+                    # 1. Enclosed inside a LoopNodeItem:
+                    enclosing_loop = None
+                    for n in scene_loops:
                         if self in n.get_body_nodes():
                             enclosing_loop = n
                             break
 
-                if enclosing_loop and not getattr(enclosing_loop, "_in_body_sync", False) and not enclosing_loop.isSelected():
-                    lx = enclosing_loop.pos().x()
-                    ly = enclosing_loop.pos().y()
-                    min_x = lx + enclosing_loop.spine_width + 8.0
-                    min_y = ly + enclosing_loop.header_height + 8.0
-                    new_pos = QPointF(max(new_pos.x(), min_x), max(new_pos.y(), min_y))
+                    if enclosing_loop and not getattr(enclosing_loop, "_in_body_sync", False) and not enclosing_loop.isSelected():
+                        lx = enclosing_loop.pos().x()
+                        ly = enclosing_loop.pos().y()
+                        min_x = lx + enclosing_loop.spine_width + 8.0
+                        min_y = ly + enclosing_loop.header_height + 8.0
+                        new_pos = QPointF(max(new_pos.x(), min_x), max(new_pos.y(), min_y))
 
-                # 2. Enclosed inside a NodeGroupItem:
-                grp = getattr(self, "group", None)
-                if grp and not getattr(grp, "_in_node_sync", False) and not getattr(grp, "_is_resizing", False) and not grp.isSelected():
-                    gx = grp.pos().x()
-                    gy = grp.pos().y()
-                    hdr_h = getattr(grp, "header_height", 32.0)
-                    min_x = gx + 8.0
-                    min_y = gy + hdr_h + 8.0
-                    new_pos = QPointF(max(new_pos.x(), min_x), max(new_pos.y(), min_y))
+                    # 2. Enclosed inside a NodeGroupItem:
+                    grp = getattr(self, "group", None)
+                    if grp and not getattr(grp, "_in_node_sync", False) and not getattr(grp, "_is_resizing", False) and not grp.isSelected():
+                        gx = grp.pos().x()
+                        gy = grp.pos().y()
+                        gw = grp.rect().width()
+                        gh = grp.rect().height()
+                        hdr_h = getattr(grp, "header_height", 32.0)
+                        item_w = getattr(self, "width", 150.0)
+                        item_h = getattr(self, "height", 80.0)
+                        min_x = gx + 8.0
+                        min_y = gy + hdr_h + 8.0
+                        max_x = max(min_x, gx + gw - item_w - 8.0)
+                        max_y = max(min_y, gy + gh - item_h - 8.0)
+                        new_pos = QPointF(
+                            min(max(new_pos.x(), min_x), max_x),
+                            min(max(new_pos.y(), min_y), max_y)
+                        )
             return super().itemChange(change, new_pos)
 
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:

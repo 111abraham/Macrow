@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import json
+import time
 import uuid
 from typing import List, Optional, Dict, Any
 from PyQt6.QtCore import Qt, QPointF, pyqtSignal
@@ -45,8 +46,20 @@ class NodeScene(QGraphicsScene):
         self._unplugged_from_socket: Optional[NodeSocketItem] = None
         self._current_snap_socket: Optional[NodeSocketItem] = None
         self._current_selected_node: Optional[BaseNodeItem] = None
+        self._batch_modifications: bool = False
 
         self.selectionChanged.connect(self._on_selection_changed)
+
+    def begin_batch_modification(self):
+        self._batch_modifications = True
+
+    def end_batch_modification(self):
+        self._batch_modifications = False
+        self.scene_modified.emit()
+
+    def _notify_scene_modified(self):
+        if not getattr(self, "_batch_modifications", False):
+            self.scene_modified.emit()
 
     def _on_selection_changed(self):
         sel = [item for item in self.selectedItems() if isinstance(item, BaseNodeItem)]
@@ -137,7 +150,7 @@ class NodeScene(QGraphicsScene):
         self.addItem(conn)
         self.connections.append(conn)
         self.update_loop_bounds()
-        self.scene_modified.emit()
+        self._notify_scene_modified()
         return conn
 
     def remove_connection(self, conn: NodeConnection):
@@ -146,7 +159,7 @@ class NodeScene(QGraphicsScene):
         conn.clean_up()
         self.removeItem(conn)
         self.update_loop_bounds()
-        self.scene_modified.emit()
+        self._notify_scene_modified()
 
     def add_group(
         self,
@@ -313,6 +326,10 @@ class NodeScene(QGraphicsScene):
                     # Discard temporary dragging line
                     self.removeItem(conn)
                     conn.clean_up()
+                    if self.views():
+                        view = self.views()[0]
+                        view._last_pulled_socket = start_sock
+                        view._last_pulled_time = time.time()
 
             event.accept()
             return

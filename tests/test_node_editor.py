@@ -3221,6 +3221,183 @@ class TestNodeEditor(unittest.TestCase):
         normal_node.setPos(QPointF(100, 100))
         self.assertEqual(normal_node.pos(), QPointF(100, 100))
 
+    def test_tab_auto_plug_from_pulled_socket(self):
+        """Test Houdini-style Tab auto-plug when pulling a wire and picking a node."""
+        from app.ui.node_editor.node_items import ActionNodeItem
+        from unittest.mock import patch
+        from PyQt6.QtWidgets import QMenu
+        from PyQt6.QtCore import QPoint
+
+        node_a = ActionNodeItem("click", {"x": 10, "y": 10})
+        self.scene.add_node(node_a, QPointF(100, 100))
+
+        # 1. Output socket auto-plug
+        with patch.object(QMenu, "exec", lambda m, pos=None: [a for a in m.actions() if not a.isSeparator()][0].trigger()):
+            self.view._show_quick_add_menu(
+                QPoint(100, 100),
+                QPointF(350, 100),
+                auto_connect_socket=node_a.output_sockets[0]
+            )
+
+        created_nodes = [n for n in self.scene.nodes if n is not node_a]
+        self.assertEqual(len(created_nodes), 1)
+        new_node = created_nodes[0]
+        self.assertTrue(any(c.start_socket == node_a.output_sockets[0] and c.end_socket == new_node.input_sockets[0] for c in self.scene.connections))
+
+        # 2. Input socket auto-plug
+        with patch.object(QMenu, "exec", lambda m, pos=None: [a for a in m.actions() if not a.isSeparator()][0].trigger()):
+            self.view._show_quick_add_menu(
+                QPoint(100, 100),
+                QPointF(50, 100),
+                auto_connect_socket=node_a.input_sockets[0]
+            )
+        created_nodes2 = [n for n in self.scene.nodes if n not in (node_a, new_node)]
+        self.assertEqual(len(created_nodes2), 1)
+        new_node2 = created_nodes2[0]
+        self.assertTrue(any(c.start_socket == new_node2.output_sockets[0] and c.end_socket == node_a.input_sockets[0] for c in self.scene.connections))
+
+    def test_group_node_four_wall_containment(self):
+        """Test that nodes cannot leak out of left, top, right, or bottom walls of a group."""
+        from app.ui.node_editor.node_items import ActionNodeItem
+
+        node = ActionNodeItem("click", {"x": 10, "y": 10})
+        self.scene.add_node(node, QPointF(200, 200))
+        grp = self.scene.add_group("Strict Box", nodes=[node])
+        grp.setPos(150, 150)
+        grp.setRect(0, 0, 300, 200)
+
+        # Try dragging past right wall
+        node.setPos(QPointF(1000, 200))
+        max_allowed_x = grp.pos().x() + grp.rect().width() - node.width - 8.0
+        self.assertLessEqual(node.pos().x(), max_allowed_x + 0.1)
+
+        # Try dragging past bottom wall
+        node.setPos(QPointF(200, 1000))
+        max_allowed_y = grp.pos().y() + grp.rect().height() - node.height - 8.0
+        self.assertLessEqual(node.pos().y(), max_allowed_y + 0.1)
+
+        # Try dragging past left wall
+        node.setPos(QPointF(-100, 200))
+        min_allowed_x = grp.pos().x() + 8.0
+        self.assertGreaterEqual(node.pos().x(), min_allowed_x - 0.1)
+
+        # Try dragging past top wall
+        node.setPos(QPointF(200, -100))
+        min_allowed_y = grp.pos().y() + grp.header_height + 8.0
+        self.assertGreaterEqual(node.pos().y(), min_allowed_y - 0.1)
+
+    def test_group_inside_repeat_node_cavity_containment(self):
+        """Test that a group node inside a repeat node cannot leak out of top or left cavity walls."""
+        from app.ui.node_editor.node_items import LoopNodeItem, ActionNodeItem
+
+        loop = LoopNodeItem(properties={"count": 3})
+        self.scene.add_node(loop, QPointF(100, 100))
+
+        grp_node = ActionNodeItem("click", {"x": 10, "y": 10})
+        self.scene.add_node(grp_node, QPointF(160, 160))
+        self.scene.add_connection(loop.socket_body, grp_node.input_sockets[0])
+        self.scene.add_connection(grp_node.output_sockets[0], loop.socket_repeat)
+
+        grp = self.scene.add_group("Inner Box", nodes=[grp_node])
+        grp.setPos(150, 140)
+        grp.setRect(0, 0, 250, 150)
+
+        # Try dragging grp past left spine of loop
+        grp.setPos(QPointF(20, 140))
+        min_allowed_x = loop.pos().x() + loop.spine_width + 8.0
+        self.assertGreaterEqual(grp.pos().x(), min_allowed_x - 0.1)
+
+        # Try dragging grp above loop header
+        grp.setPos(QPointF(150, 20))
+        min_allowed_y = loop.pos().y() + loop.header_height + 8.0
+        self.assertGreaterEqual(grp.pos().y(), min_allowed_y - 0.1)
+
+    def test_a_drag_alignment_with_repeat_nodes_on_line(self):
+        """Test that A+Drag aligns along the line through repeat nodes without altering inner body layout."""
+        from app.ui.node_editor.node_items import ActionNodeItem, LoopNodeItem
+
+        node1 = ActionNodeItem("click")
+        loop = LoopNodeItem(properties={"count": 3})
+        body_node = ActionNodeItem("delay", {"duration": 100})
+        node2 = ActionNodeItem("click")
+
+        self.scene.add_node(node1, QPointF(50, 200))
+        self.scene.add_node(loop, QPointF(300, 350))
+        self.scene.add_node(body_node, QPointF(350, 420))
+        self.scene.add_node(node2, QPointF(700, 100))
+
+        # Main line: node1 -> loop -> node2
+        self.scene.add_connection(node1.output_sockets[0], loop.socket_in)
+        self.scene.add_connection(loop.socket_done, node2.input_sockets[0])
+        # Loop body: loop.socket_body -> body_node -> loop.socket_repeat
+        self.scene.add_connection(loop.socket_body, body_node.input_sockets[0])
+        self.scene.add_connection(body_node.output_sockets[0], loop.socket_repeat)
+
+        rel_body_x = body_node.pos().x() - loop.pos().x()
+        rel_body_y = body_node.pos().y() - loop.pos().y()
+
+        # Simulate A+Drag right starting from node1
+        self.view._a_align_node = node1
+        self.view._a_align_start_scene_pos = QPointF(50, 200)
+
+        release_pos = self.view.mapFromScene(QPointF(100, 200))
+        ev_align = QMouseEvent(
+            QMouseEvent.Type.MouseButtonRelease,
+            QPointF(release_pos),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        self.view.mouseReleaseEvent(ev_align)
+
+        # Loop should now be aligned on the Y axis of node1 (y=200)
+        self.assertEqual(loop.pos().y(), 200.0)
+        # Node2 should be downstream of loop
+        self.assertGreater(node2.pos().x(), loop.pos().x() + loop.clamp_width)
+        self.assertEqual(node2.pos().y(), 200.0)
+        # Internal body node relative offset inside loop must be preserved!
+        new_rel_body_x = body_node.pos().x() - loop.pos().x()
+        new_rel_body_y = body_node.pos().y() - loop.pos().y()
+        self.assertAlmostEqual(rel_body_x, new_rel_body_x, delta=1.0)
+        self.assertAlmostEqual(rel_body_y, new_rel_body_y, delta=1.0)
+
+    def test_wire_splicing_atomic_undo_and_no_unwanted_push(self):
+        """Test dropping a node on a wire splices cleanly with atomic undo and no push if space exists."""
+        from app.ui.node_editor.node_items import ActionNodeItem
+
+        node_a = ActionNodeItem("click")
+        node_b = ActionNodeItem("click")
+        node_mid = ActionNodeItem("delay", {"duration": 50})
+
+        self.scene.add_node(node_a, QPointF(100, 100))
+        self.scene.add_node(node_b, QPointF(800, 100))  # Far away: 700px gap
+        conn = self.scene.add_connection(node_a.output_sockets[0], node_b.input_sockets[0])
+
+        self.scene.add_node(node_mid, QPointF(350, 105))  # Ample space: mid right is ~500 < 800
+
+        init_b_pos = QPointF(node_b.pos())
+
+        # Simulate drop splice
+        self.view._hovered_wire = conn
+        self.view._dragged_node = node_mid
+
+        ev_splice = QMouseEvent(
+            QMouseEvent.Type.MouseButtonRelease,
+            QPointF(0, 0),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        self.view.mouseReleaseEvent(ev_splice)
+
+        # Connections spliced
+        self.assertTrue(any(c.start_socket == node_a.output_sockets[0] and c.end_socket == node_mid.input_sockets[0] for c in self.scene.connections))
+        self.assertTrue(any(c.start_socket == node_mid.output_sockets[0] and c.end_socket == node_b.input_sockets[0] for c in self.scene.connections))
+        # Node B should NOT have been shoved because 350 + width + 50 < 800
+        self.assertEqual(node_b.pos(), init_b_pos)
+        # Node mid Y was snapped to horizontal line (100)
+        self.assertEqual(node_mid.pos().y(), 100.0)
+
 
 if __name__ == "__main__":
     unittest.main()

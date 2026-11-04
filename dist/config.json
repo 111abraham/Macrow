@@ -629,9 +629,9 @@
           "timeout": 5.0,
           "break_loop_on_found": false,
           "save_coords": true,
-          "var_x": "found_x",
-          "var_y": "found_y",
-          "found_next": "d3d8ee77",
+          "var_x": "xtab_x",
+          "var_y": "xtab_y",
+          "found_next": "742729fc",
           "miss_next": "7ea125b2",
           "dt": 11550
         },
@@ -641,6 +641,23 @@
           "next": "2ed2c9b1",
           "duration": 500,
           "dt": 12050
+        },
+        {
+          "id": "742729fc",
+          "type": "move",
+          "next": "d3d8ee77",
+          "x": "$xtab_x+500",
+          "y": "$xtab_y",
+          "button": "left",
+          "direct_jump": true,
+          "dt": 12100
+        },
+        {
+          "id": "7ea125b2",
+          "type": "delay",
+          "next": "170cfea3",
+          "duration": 500,
+          "dt": 12600
         },
         {
           "id": "d3d8ee77",
@@ -656,14 +673,7 @@
           "var_y": "Xaddimage_y",
           "found_next": "3c962448",
           "miss_next": "8a13f635",
-          "dt": 12200
-        },
-        {
-          "id": "7ea125b2",
-          "type": "delay",
-          "next": "170cfea3",
-          "duration": 500,
-          "dt": 12700
+          "dt": 12750
         },
         {
           "id": "3c962448",
@@ -673,21 +683,21 @@
           "y": "$Xaddimage_y",
           "button": "left",
           "modifier": "none",
-          "dt": 12800
+          "dt": 12850
         },
         {
           "id": "8a13f635",
           "type": "delay",
           "next": "55edd3b0",
           "duration": 500,
-          "dt": 13300
+          "dt": 13350
         },
         {
           "id": "d99f6b9f",
           "type": "delay",
           "next": "40475dba",
           "duration": 100,
-          "dt": 13400
+          "dt": 13450
         },
         {
           "id": "55edd3b0",
@@ -703,7 +713,7 @@
           "var_y": "found_y",
           "found_next": "c18c7900",
           "miss_next": "7f783cf8",
-          "dt": 13550
+          "dt": 13600
         },
         {
           "id": "40475dba",
@@ -713,28 +723,28 @@
           "y": "$Xaddimage_y-100",
           "button": "left",
           "direct_jump": true,
-          "dt": 13600
+          "dt": 13650
         },
         {
           "id": "c18c7900",
           "type": "delay",
           "next": "d3d8ee77",
           "duration": 250,
-          "dt": 13850
+          "dt": 13900
         },
         {
           "id": "7f783cf8",
           "type": "delay",
           "next": "d3d8ee77",
           "duration": 2000,
-          "dt": 15850
+          "dt": 15900
         },
         {
           "id": "0d57d380",
           "type": "delay",
           "next": "66338b0a",
           "duration": 2000,
-          "dt": 17850
+          "dt": 17900
         },
         {
           "id": "66338b0a",
@@ -750,21 +760,21 @@
           "var_y": "Xopenimage_y",
           "found_next": "8611aab0",
           "miss_next": "6afcbe99",
-          "dt": 18000
+          "dt": 18050
         },
         {
           "id": "8611aab0",
           "type": "delay",
           "next": "5a2795cf",
           "duration": 250,
-          "dt": 18250
+          "dt": 18300
         },
         {
           "id": "6afcbe99",
           "type": "delay",
           "next": "a245d8be",
           "duration": 100,
-          "dt": 18350
+          "dt": 18400
         },
         {
           "id": "5a2795cf",
@@ -772,7 +782,7 @@
           "combo": "Shift+Tab",
           "cad_action": "taskmgr",
           "next": "8415826a",
-          "dt": 18450
+          "dt": 18500
         },
         {
           "id": "a245d8be",
@@ -788,21 +798,21 @@
           "var_y": "refreshx_y",
           "found_next": "0dd25462",
           "miss_next": "d3d8ee77",
-          "dt": 18600
+          "dt": 18650
         },
         {
           "id": "8415826a",
           "type": "delay",
           "next": "7d6a6bd5",
           "duration": 100,
-          "dt": 18700
+          "dt": 18750
         },
         {
           "id": "0dd25462",
           "type": "delay",
           "next": "d3d8ee77",
           "duration": 3000,
-          "dt": 21700
+          "dt": 21750
         },
         {
           "id": "7d6a6bd5",
@@ -810,14 +820,14 @@
           "next": "5a234b07",
           "key": "Down Arrow",
           "vk": 40,
-          "dt": 21750
+          "dt": 21800
         },
         {
           "id": "5a234b07",
           "type": "delay",
           "next": "4329ecc4",
           "duration": 100,
-          "dt": 21850
+          "dt": 21900
         },
         {
           "id": "4329ecc4",
@@ -825,10 +835,10 @@
           "next": null,
           "key": "Enter",
           "vk": 13,
-          "dt": 21900
+          "dt": 21950
         }
       ],
-      "duration": 21900,
+      "duration": 21950,
       "graph_data": {
         "nodes": [
           {
@@ -1629,8 +1639,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              13666.80501684836,
-              -1049.5222021523746
+              13697.100786228842,
+              -1040.1609030091793
             ],
             "bypassed": false,
             "properties": {
@@ -1644,8 +1654,8 @@
             "node_type": "wait_image",
             "title": "⏱ Wait For Image",
             "pos": [
-              12402.845399561727,
-              -1433.8680846426523
+              12388.348676136078,
+              -1414.9494846886544
             ],
             "bypassed": false,
             "properties": {
@@ -1657,8 +1667,8 @@
               "button": "left",
               "break_loop_on_found": false,
               "save_coords": true,
-              "var_x": "found_x",
-              "var_y": "found_y"
+              "var_x": "xtab_x",
+              "var_y": "xtab_y"
             }
           },
           {
@@ -1667,8 +1677,8 @@
             "node_type": "hotkey",
             "title": "⌨ Key Combination",
             "pos": [
-              14838.024441149606,
-              -1390.7751715428074
+              14909.826154960525,
+              -1372.9281374675447
             ],
             "bypassed": false,
             "properties": {
@@ -1682,8 +1692,8 @@
             "node_type": "key_press",
             "title": "⌨ Key Press (Tap)",
             "pos": [
-              15795.630839839203,
-              -1386.3857098709964
+              15927.61537646193,
+              -1347.460706623911
             ],
             "bypassed": false,
             "properties": {
@@ -1698,8 +1708,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              15560.262376850322,
-              -1386.3857098709964
+              15657.658925414456,
+              -1368.6478259323846
             ],
             "bypassed": false,
             "properties": {
@@ -1713,8 +1723,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              12426.86344445515,
-              -1242.7088131474788
+              12413.217878050968,
+              -1228.5436572751917
             ],
             "bypassed": false,
             "properties": {
@@ -1728,8 +1738,8 @@
             "node_type": "wait_image",
             "title": "⏱ Wait For Image",
             "pos": [
-              13388.961140558877,
-              -1172.1591096344687
+              13409.410614488368,
+              -1159.7482713425286
             ],
             "bypassed": false,
             "properties": {
@@ -1751,8 +1761,8 @@
             "node_type": "key_press",
             "title": "⌨ Key Press (Tap)",
             "pos": [
-              15324.893913861437,
-              -1386.3857098709964
+              15413.949420480061,
+              -1368.6478259323846
             ],
             "bypassed": false,
             "properties": {
@@ -1767,8 +1777,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              13364.325954422322,
-              -1412.1173100017018
+              13383.902400936453,
+              -1393.739573643704
             ],
             "bypassed": false,
             "properties": {
@@ -1782,8 +1792,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              13151.735070962208,
-              -1184.0007610398732
+              13163.777672654242,
+              -1171.2954634347623
             ],
             "bypassed": false,
             "properties": {
@@ -1797,8 +1807,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              12126.451528705638,
-              -1395.2064043964472
+              12102.1598954564,
+              -1377.2491814853618
             ],
             "bypassed": false,
             "properties": {
@@ -1812,8 +1822,8 @@
             "node_type": "hotkey",
             "title": "⌨ Key Combination",
             "pos": [
-              11433.662210786273,
-              -1432.8584879361374
+              11506.188947489609,
+              -1460.1425081247964
             ],
             "bypassed": false,
             "properties": {
@@ -1827,8 +1837,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              13668.643532739825,
-              -1201.2235592696961
+              13699.004455871042,
+              -1188.0899925689996
             ],
             "bypassed": false,
             "properties": {
@@ -1842,8 +1852,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              14558.869468533485,
-              -1396.8884571155427
+              14620.778423959016,
+              -1378.8894075984015
             ],
             "bypassed": false,
             "properties": {
@@ -1857,8 +1867,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              15072.392937074379,
-              -1389.1620443784172
+              15152.500255767067,
+              -1371.3551229783739
             ],
             "bypassed": false,
             "properties": {
@@ -1872,8 +1882,8 @@
             "node_type": "click",
             "title": "🖱 Mouse Click",
             "pos": [
-              13139.076420918329,
-              -1398.878623541047
+              13150.67042244682,
+              -1380.8300857372906
             ],
             "bypassed": false,
             "properties": {
@@ -1888,8 +1898,8 @@
             "node_type": "wait_image",
             "title": "⏱ Wait For Image",
             "pos": [
-              14171.58987268768,
-              -1419.5917512502224
+              14219.774324360375,
+              -1401.0281524004972
             ],
             "bypassed": false,
             "properties": {
@@ -1911,8 +1921,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              14457.779482081354,
-              -1284.982446646014
+              14516.105987222081,
+              -1269.7660974342969
             ],
             "bypassed": false,
             "properties": {
@@ -2033,8 +2043,8 @@
             "node_type": "wait_image",
             "title": "⏱ Wait For Image",
             "pos": [
-              12889.635995934354,
-              -1378.2008226173798
+              12892.390270078486,
+              -1360.6664674093959
             ],
             "bypassed": false,
             "properties": {
@@ -2056,8 +2066,8 @@
             "node_type": "move",
             "title": "🏹 Mouse Move",
             "pos": [
-              13612.802169594506,
-              -1414.5224993153092
+              13641.18417360302,
+              -1396.0849545430046
             ],
             "bypassed": false,
             "properties": {
@@ -2072,8 +2082,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              13878.531732431118,
-              -1406.596216115276
+              13916.330722052897,
+              -1388.3557695201746
             ],
             "bypassed": false,
             "properties": {
@@ -2087,8 +2097,8 @@
             "node_type": "wait_image",
             "title": "⏱ Wait For Image",
             "pos": [
-              14696.765790326313,
-              -1109.9050286272852
+              14763.561547448213,
+              -1099.0422255973094
             ],
             "bypassed": false,
             "properties": {
@@ -2110,8 +2120,8 @@
             "node_type": "delay",
             "title": "⏳ Delay Wait",
             "pos": [
-              14977.844492172073,
-              -1166.6838442986727
+              15054.60118124005,
+              -1154.4091561782764
             ],
             "bypassed": false,
             "properties": {
@@ -2278,6 +2288,22 @@
               "infinite": false,
               "count": 3,
               "var_name": "i"
+            }
+          },
+          {
+            "id": "742729fc",
+            "class_name": "ActionNodeItem",
+            "node_type": "move",
+            "title": "🏹 Mouse Move",
+            "pos": [
+              12651.079885614967,
+              -1379.0534729503888
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "move",
+              "x": "$xtab_x+500",
+              "y": "$xtab_y"
             }
           }
         ],
@@ -2583,12 +2609,6 @@
             "to_socket_idx": 0
           },
           {
-            "from_node": "f5fad6d0",
-            "from_socket_idx": 0,
-            "to_node": "96383b9f",
-            "to_socket_idx": 0
-          },
-          {
             "from_node": "96383b9f",
             "from_socket_idx": 0,
             "to_node": "170cfea3",
@@ -2628,12 +2648,6 @@
             "from_node": "66338b0a",
             "from_socket_idx": 0,
             "to_node": "8611aab0",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "5136b67c",
-            "from_socket_idx": 0,
-            "to_node": "f5fad6d0",
             "to_socket_idx": 0
           },
           {
@@ -2758,12 +2772,6 @@
           },
           {
             "from_node": "0dd25462",
-            "from_socket_idx": 0,
-            "to_node": "d3d8ee77",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "170cfea3",
             "from_socket_idx": 0,
             "to_node": "d3d8ee77",
             "to_socket_idx": 0
@@ -2911,6 +2919,30 @@
             "from_socket_idx": 0,
             "to_node": "10b5a4f8",
             "to_socket_idx": 0
+          },
+          {
+            "from_node": "5136b67c",
+            "from_socket_idx": 0,
+            "to_node": "f5fad6d0",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "f5fad6d0",
+            "from_socket_idx": 0,
+            "to_node": "96383b9f",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "170cfea3",
+            "from_socket_idx": 0,
+            "to_node": "742729fc",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "742729fc",
+            "from_socket_idx": 0,
+            "to_node": "d3d8ee77",
+            "to_socket_idx": 0
           }
         ],
         "groups": [
@@ -2920,12 +2952,12 @@
             "rect": [
               0.0,
               0.0,
-              4393.928292883906,
-              582.5101701323383
+              4095.4554810055306,
+              571.7885816794751
             ],
             "pos": [
-              11641.702546955297,
-              -1497.032372284713
+              12072.1598954564,
+              -1476.9494846886544
             ],
             "node_ids": [
               "5a2795cf",
@@ -2935,7 +2967,6 @@
               "0dd25462",
               "8415826a",
               "4329ecc4",
-              "f5fad6d0",
               "170cfea3",
               "7d6a6bd5",
               "8611aab0",
@@ -3011,8 +3042,8 @@
               775.7140784060363
             ],
             "pos": [
-              8392.767655375059,
-              -1507.9029382526514
+              8392.76765537506,
+              -1507.9029382526517
             ],
             "node_ids": [
               "6b1843f9",
@@ -3042,31 +3073,37 @@
           }
         ],
         "custom_variables": [
-          "$createpost_x+500",
           "$expandtab_x",
-          "$linkedinimageremove_x-50",
-          "$delete_x+44",
           "$linkedinaddimage_y",
-          "$metabusiness_x+600",
           "$Xaddimage_y",
-          "$Xaddimage_y-100",
-          "$Xaddimage_x",
-          "$linkedinaddimage_x-40",
-          "$metabusiness_x+300",
-          "$Xaddimage_x-",
-          "$delete_y",
-          "$Xaddimage_x-20",
-          "$Xaddimage_y-1",
-          "$Xaddimage_y-",
-          "$expandtab_y+500",
-          "$linkedinimageremove_y",
-          "$metabusiness_y+300",
-          "$found_x-100",
-          "$found_y-100",
+          "$delete_x+44",
           "$Xaddimage_x-2",
+          "$found_y-100",
+          "$xtab_x+",
+          "$xtab_x+5",
+          "$linkedinaddimage_x-40",
+          "$createpost_x+500",
+          "$Xaddimage_x-",
+          "$Xaddimage_y-",
+          "$found_x-100",
+          "$Xaddimage_y-1",
+          "$expandtab_y+500",
           "$metabusiness_y",
           "$createpost_y+300",
-          "$Xaddimage_y-10"
+          "$xtab_x+50",
+          "$delete_y",
+          "$metabusiness_y+300",
+          "$Xaddimage_y-10",
+          "$xtab_y",
+          "$Xaddimage_x-20",
+          "$linkedinimageremove_x-50",
+          "$Xaddimage_x",
+          "$metabusiness_x+300",
+          "$linkedinimageremove_y",
+          "$metabusiness_x+600",
+          "$xtab_x",
+          "$Xaddimage_y-100",
+          "$xtab_x+500"
         ]
       }
     },
@@ -11349,538 +11386,10 @@
               "direct_jump": false
             }
           ],
-          "next": "8e4ec5ee"
-        },
-        {
-          "type": "move",
-          "x": 452,
-          "y": 1086,
-          "dt": 49536,
-          "direct_jump": false,
-          "id": "8e4ec5ee_p0",
-          "next": "8e4ec5ee_p1"
-        },
-        {
-          "type": "move",
-          "x": 149,
-          "y": 1093,
-          "dt": 49576,
-          "direct_jump": false,
-          "id": "8e4ec5ee_p1",
-          "next": "8e4ec5ee_p2"
-        },
-        {
-          "type": "move",
-          "x": 7,
-          "y": 796,
-          "dt": 55688,
-          "direct_jump": false,
-          "id": "8e4ec5ee_p2",
-          "next": "8e4ec5ee_p3"
-        },
-        {
-          "type": "move",
-          "x": 409,
-          "y": 862,
-          "dt": 55728,
-          "direct_jump": false,
-          "id": "8e4ec5ee_p3",
-          "path_points": [
-            {
-              "type": "move",
-              "x": 452,
-              "y": 1086,
-              "dt": 438,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": 149,
-              "y": 1093,
-              "dt": 478,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": 7,
-              "y": 796,
-              "dt": 6590,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": 409,
-              "y": 862,
-              "dt": 6630,
-              "direct_jump": false
-            }
-          ],
-          "next": "b1229fb9"
-        },
-        {
-          "type": "move",
-          "x": 452,
-          "y": 1086,
-          "dt": 55728,
-          "direct_jump": false,
-          "id": "b1229fb9_p0",
-          "next": "b1229fb9_p1"
-        },
-        {
-          "type": "move",
-          "x": 149,
-          "y": 1093,
-          "dt": 55768,
-          "direct_jump": false,
-          "id": "b1229fb9_p1",
-          "next": "b1229fb9_p2"
-        },
-        {
-          "type": "move",
-          "x": 7,
-          "y": 796,
-          "dt": 61880,
-          "direct_jump": false,
-          "id": "b1229fb9_p2",
-          "next": "b1229fb9_p3"
-        },
-        {
-          "type": "move",
-          "x": 409,
-          "y": 862,
-          "dt": 61920,
-          "direct_jump": false,
-          "id": "b1229fb9_p3",
-          "path_points": [
-            {
-              "type": "move",
-              "x": 452,
-              "y": 1086,
-              "dt": 438,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": 149,
-              "y": 1093,
-              "dt": 478,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": 7,
-              "y": 796,
-              "dt": 6590,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": 409,
-              "y": 862,
-              "dt": 6630,
-              "direct_jump": false
-            }
-          ],
-          "next": "cd1544bd"
-        },
-        {
-          "type": "move",
-          "x": 452,
-          "y": 1086,
-          "dt": 61920,
-          "direct_jump": false,
-          "id": "cd1544bd_p0",
-          "next": "cd1544bd_p1"
-        },
-        {
-          "type": "move",
-          "x": 149,
-          "y": 1093,
-          "dt": 61960,
-          "direct_jump": false,
-          "id": "cd1544bd_p1",
-          "next": "cd1544bd_p2"
-        },
-        {
-          "type": "move",
-          "x": 7,
-          "y": 796,
-          "dt": 68072,
-          "direct_jump": false,
-          "id": "cd1544bd_p2",
-          "next": "cd1544bd_p3"
-        },
-        {
-          "type": "move",
-          "x": 409,
-          "y": 862,
-          "dt": 68112,
-          "direct_jump": false,
-          "id": "cd1544bd_p3",
-          "path_points": [
-            {
-              "type": "move",
-              "x": 452,
-              "y": 1086,
-              "dt": 438,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": 149,
-              "y": 1093,
-              "dt": 478,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": 7,
-              "y": 796,
-              "dt": 6590,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": 409,
-              "y": 862,
-              "dt": 6630,
-              "direct_jump": false
-            }
-          ],
-          "next": "b8c99346"
-        },
-        {
-          "type": "move",
-          "x": 452,
-          "y": 1086,
-          "dt": 68112,
-          "direct_jump": false,
-          "id": "b8c99346_p0",
-          "next": "b8c99346_p1"
-        },
-        {
-          "type": "move",
-          "x": 149,
-          "y": 1093,
-          "dt": 68152,
-          "direct_jump": false,
-          "id": "b8c99346_p1",
-          "next": "b8c99346_p2"
-        },
-        {
-          "type": "move",
-          "x": 7,
-          "y": 796,
-          "dt": 74264,
-          "direct_jump": false,
-          "id": "b8c99346_p2",
-          "next": "b8c99346_p3"
-        },
-        {
-          "type": "move",
-          "x": 409,
-          "y": 862,
-          "dt": 74304,
-          "direct_jump": false,
-          "id": "b8c99346_p3",
-          "path_points": [
-            {
-              "type": "move",
-              "x": 452,
-              "y": 1086,
-              "dt": 438,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": 149,
-              "y": 1093,
-              "dt": 478,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": 7,
-              "y": 796,
-              "dt": 6590,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": 409,
-              "y": 862,
-              "dt": 6630,
-              "direct_jump": false
-            }
-          ],
-          "next": "2b3289de"
-        },
-        {
-          "type": "move",
-          "x": 452,
-          "y": 1086,
-          "dt": 74304,
-          "direct_jump": false,
-          "id": "2b3289de_p0",
-          "next": "2b3289de_p1"
-        },
-        {
-          "type": "move",
-          "x": 149,
-          "y": 1093,
-          "dt": 74344,
-          "direct_jump": false,
-          "id": "2b3289de_p1",
-          "next": "2b3289de_p2"
-        },
-        {
-          "type": "move",
-          "x": 7,
-          "y": 796,
-          "dt": 80456,
-          "direct_jump": false,
-          "id": "2b3289de_p2",
-          "next": "2b3289de_p3"
-        },
-        {
-          "type": "move",
-          "x": 409,
-          "y": 862,
-          "dt": 80496,
-          "direct_jump": false,
-          "id": "2b3289de_p3",
-          "path_points": [
-            {
-              "type": "move",
-              "x": 452,
-              "y": 1086,
-              "dt": 438,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": 149,
-              "y": 1093,
-              "dt": 478,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": 7,
-              "y": 796,
-              "dt": 6590,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": 409,
-              "y": 862,
-              "dt": 6630,
-              "direct_jump": false
-            }
-          ],
-          "next": "32be6c9c"
-        },
-        {
-          "type": "move",
-          "x": 452,
-          "y": 1086,
-          "dt": 80496,
-          "direct_jump": false,
-          "id": "32be6c9c_p0",
-          "next": "32be6c9c_p1"
-        },
-        {
-          "type": "move",
-          "x": 149,
-          "y": 1093,
-          "dt": 80536,
-          "direct_jump": false,
-          "id": "32be6c9c_p1",
-          "next": "32be6c9c_p2"
-        },
-        {
-          "type": "move",
-          "x": 7,
-          "y": 796,
-          "dt": 86648,
-          "direct_jump": false,
-          "id": "32be6c9c_p2",
-          "next": "32be6c9c_p3"
-        },
-        {
-          "type": "move",
-          "x": 409,
-          "y": 862,
-          "dt": 86688,
-          "direct_jump": false,
-          "id": "32be6c9c_p3",
-          "path_points": [
-            {
-              "type": "move",
-              "x": 452,
-              "y": 1086,
-              "dt": 438,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": 149,
-              "y": 1093,
-              "dt": 478,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": 7,
-              "y": 796,
-              "dt": 6590,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": 409,
-              "y": 862,
-              "dt": 6630,
-              "direct_jump": false
-            }
-          ],
-          "next": "195b6c7a"
-        },
-        {
-          "type": "move",
-          "x": 452,
-          "y": 1086,
-          "dt": 86688,
-          "direct_jump": false,
-          "id": "195b6c7a_p0",
-          "next": "195b6c7a_p1"
-        },
-        {
-          "type": "move",
-          "x": 149,
-          "y": 1093,
-          "dt": 86728,
-          "direct_jump": false,
-          "id": "195b6c7a_p1",
-          "next": "195b6c7a_p2"
-        },
-        {
-          "type": "move",
-          "x": 7,
-          "y": 796,
-          "dt": 92840,
-          "direct_jump": false,
-          "id": "195b6c7a_p2",
-          "next": "195b6c7a_p3"
-        },
-        {
-          "type": "move",
-          "x": 409,
-          "y": 862,
-          "dt": 92880,
-          "direct_jump": false,
-          "id": "195b6c7a_p3",
-          "path_points": [
-            {
-              "type": "move",
-              "x": 452,
-              "y": 1086,
-              "dt": 438,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": 149,
-              "y": 1093,
-              "dt": 478,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": 7,
-              "y": 796,
-              "dt": 6590,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": 409,
-              "y": 862,
-              "dt": 6630,
-              "direct_jump": false
-            }
-          ],
-          "next": "e980dc5c"
-        },
-        {
-          "type": "move",
-          "x": 452,
-          "y": 1086,
-          "dt": 92880,
-          "direct_jump": false,
-          "id": "e980dc5c_p0",
-          "next": "e980dc5c_p1"
-        },
-        {
-          "type": "move",
-          "x": 149,
-          "y": 1093,
-          "dt": 92920,
-          "direct_jump": false,
-          "id": "e980dc5c_p1",
-          "next": "e980dc5c_p2"
-        },
-        {
-          "type": "move",
-          "x": 7,
-          "y": 796,
-          "dt": 99032,
-          "direct_jump": false,
-          "id": "e980dc5c_p2",
-          "next": "e980dc5c_p3"
-        },
-        {
-          "type": "move",
-          "x": 409,
-          "y": 862,
-          "dt": 99072,
-          "direct_jump": false,
-          "id": "e980dc5c_p3",
-          "path_points": [
-            {
-              "type": "move",
-              "x": 452,
-              "y": 1086,
-              "dt": 438,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": 149,
-              "y": 1093,
-              "dt": 478,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": 7,
-              "y": 796,
-              "dt": 6590,
-              "direct_jump": false
-            },
-            {
-              "type": "move",
-              "x": 409,
-              "y": 862,
-              "dt": 6630,
-              "direct_jump": false
-            }
-          ],
           "next": null
         }
       ],
-      "duration": 99072,
+      "duration": 49536,
       "graph_data": {
         "nodes": [
           {
@@ -11889,8 +11398,8 @@
             "node_type": "start",
             "title": "▶ Start",
             "pos": [
-              60.0,
-              200.0
+              1068.643454271471,
+              226.51171396530236
             ],
             "bypassed": false,
             "properties": {}
@@ -11901,8 +11410,8 @@
             "node_type": "move",
             "title": "🏹 Mouse Move",
             "pos": [
-              303.48492787325574,
-              192.87692793912242
+              1327.7993687158275,
+              188.13308878015943
             ],
             "bypassed": false,
             "properties": {
@@ -11950,8 +11459,8 @@
             "node_type": "move",
             "title": "🏹 Mouse Move",
             "pos": [
-              552.3264723659294,
-              197.05750567008062
+              1567.7993687158275,
+              188.13308878015943
             ],
             "bypassed": false,
             "properties": {
@@ -11999,8 +11508,8 @@
             "node_type": "move",
             "title": "🏹 Mouse Move",
             "pos": [
-              1017.7171471804714,
-              207.50894999747618
+              2047.7993687158275,
+              188.13308878015943
             ],
             "bypassed": false,
             "properties": {
@@ -12048,8 +11557,8 @@
             "node_type": "move",
             "title": "🏹 Mouse Move",
             "pos": [
-              768.8756026877977,
-              203.32837226651796
+              1807.7993687158275,
+              188.13308878015943
             ],
             "bypassed": false,
             "properties": {
@@ -12097,8 +11606,8 @@
             "node_type": "move",
             "title": "🏹 Mouse Move",
             "pos": [
-              2034.42791103743,
-              226.1858078950513
+              3261.9241679745437,
+              231.30904211344523
             ],
             "bypassed": false,
             "properties": {
@@ -12146,8 +11655,8 @@
             "node_type": "move",
             "title": "🏹 Mouse Move",
             "pos": [
-              1564.7803868446338,
-              214.76198922140748
+              2784.7236098271856,
+              236.1063702615881
             ],
             "bypassed": false,
             "properties": {
@@ -12195,8 +11704,8 @@
             "node_type": "move",
             "title": "🏹 Mouse Move",
             "pos": [
-              1313.6627310517504,
-              210.19246175194996
+              2542.0577605674,
+              221.7143858171595
             ],
             "bypassed": false,
             "properties": {
@@ -12244,8 +11753,8 @@
             "node_type": "move",
             "title": "🏹 Mouse Move",
             "pos": [
-              1783.310255244547,
-              221.6162804255938
+              3024.322832048614,
+              224.1130498912309
             ],
             "bypassed": false,
             "properties": {
@@ -12293,8 +11802,8 @@
             "node_type": "move",
             "title": "🏹 Mouse Move",
             "pos": [
-              4382.162162980472,
-              223.91360243558933
+              5180.449625302674,
+              603.4253467045033
             ],
             "bypassed": false,
             "properties": {
@@ -12342,8 +11851,8 @@
             "node_type": "move",
             "title": "🏹 Mouse Move",
             "pos": [
-              3211.141067796738,
-              216.96392234547812
+              6149.934856220562,
+              611.7685260925782
             ],
             "bypassed": false,
             "properties": {
@@ -12391,8 +11900,8 @@
             "node_type": "move",
             "title": "🏹 Mouse Move",
             "pos": [
-              2651.3739527881908,
-              205.5401036718343
+              5669.934856220562,
+              611.7685260925782
             ],
             "bypassed": false,
             "properties": {
@@ -12440,8 +11949,8 @@
             "node_type": "move",
             "title": "🏹 Mouse Move",
             "pos": [
-              2352.0699035387233,
-              200.97057620237678
+              5429.801263627706,
+              620.1117054806527
             ],
             "bypassed": false,
             "properties": {
@@ -12489,8 +11998,8 @@
             "node_type": "move",
             "title": "🏹 Mouse Move",
             "pos": [
-              3523.0909987224622,
-              207.92025629248798
+              6389.934856220562,
+              611.7685260925782
             ],
             "bypassed": false,
             "properties": {
@@ -12538,8 +12047,8 @@
             "node_type": "move",
             "title": "🏹 Mouse Move",
             "pos": [
-              3822.3950479719288,
-              212.4897837619455
+              6629.934856220562,
+              611.7685260925782
             ],
             "bypassed": false,
             "properties": {
@@ -12587,8 +12096,8 @@
             "node_type": "move",
             "title": "🏹 Mouse Move",
             "pos": [
-              4082.858113731005,
-              219.3440749661318
+              6869.934856220562,
+              611.7685260925782
             ],
             "bypassed": false,
             "properties": {
@@ -12636,8 +12145,8 @@
             "node_type": "move",
             "title": "🏹 Mouse Move",
             "pos": [
-              2911.8370185472695,
-              212.3943948760206
+              5909.934856220562,
+              611.7685260925782
             ],
             "bypassed": false,
             "properties": {
@@ -12685,8 +12194,8 @@
             "node_type": "move",
             "title": "🏹 Mouse Move",
             "pos": [
-              1524.496449918407,
-              -549.918577319943
+              3716.875413619696,
+              354.37777860498744
             ],
             "bypassed": false,
             "properties": {
@@ -12734,8 +12243,8 @@
             "node_type": "move",
             "title": "🏹 Mouse Move",
             "pos": [
-              2244.496449918407,
-              -549.918577319943
+              4436.875413619696,
+              354.37777860498744
             ],
             "bypassed": false,
             "properties": {
@@ -12783,8 +12292,8 @@
             "node_type": "move",
             "title": "🏹 Mouse Move",
             "pos": [
-              2004.496449918407,
-              -549.918577319943
+              4196.875413619696,
+              354.37777860498744
             ],
             "bypassed": false,
             "properties": {
@@ -12832,8 +12341,8 @@
             "node_type": "move",
             "title": "🏹 Mouse Move",
             "pos": [
-              1764.496449918407,
-              -549.918577319943
+              3956.875413619696,
+              354.37777860498744
             ],
             "bypassed": false,
             "properties": {
@@ -12874,6 +12383,113 @@
               ],
               "action_type": "move"
             }
+          },
+          {
+            "id": "8e1c698c",
+            "class_name": "ActionNodeItem",
+            "node_type": "click",
+            "title": "🖱 Mouse Click",
+            "pos": [
+              6002.1418905096625,
+              -635.9226966172183
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "click"
+            }
+          },
+          {
+            "id": "52db279b",
+            "class_name": "ActionNodeItem",
+            "node_type": "click",
+            "title": "🖱 Mouse Click",
+            "pos": [
+              6348.517427707615,
+              -480.02957069150386
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "click"
+            }
+          },
+          {
+            "id": "698f8d70",
+            "class_name": "LoopNodeItem",
+            "node_type": "loop_count",
+            "title": "🔁 Repeat Zone (Loop)",
+            "pos": [
+              4855.417534632337,
+              -585.1697443310791
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "loop_count",
+              "infinite": true,
+              "count": 5,
+              "var_name": "i"
+            }
+          },
+          {
+            "id": "2cc45702",
+            "class_name": "LoopNodeItem",
+            "node_type": "loop_count",
+            "title": "🔁 Repeat Zone (Loop)",
+            "pos": [
+              5841.724716309549,
+              -692.7806450874047
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "loop_count",
+              "infinite": true,
+              "count": 5,
+              "var_name": "i"
+            }
+          },
+          {
+            "id": "0227d0ff",
+            "class_name": "LoopNodeItem",
+            "node_type": "loop_count",
+            "title": "🔁 Repeat Zone (Loop)",
+            "pos": [
+              6786.308975423426,
+              -511.9531048091197
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "loop_count",
+              "infinite": true,
+              "count": 5,
+              "var_name": "i"
+            }
+          },
+          {
+            "id": "458f7657",
+            "class_name": "ActionNodeItem",
+            "node_type": "click",
+            "title": "🖱 Mouse Click",
+            "pos": [
+              6895.129270219354,
+              -127.53024154535399
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "click"
+            }
+          },
+          {
+            "id": "d6b9d1a1",
+            "class_name": "ActionNodeItem",
+            "node_type": "click",
+            "title": "🖱 Mouse Click",
+            "pos": [
+              7404.5717069161665,
+              -511.0197375195661
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "click"
+            }
           }
         ],
         "connections": [
@@ -12902,33 +12518,9 @@
             "to_socket_idx": 0
           },
           {
-            "from_node": "1dfd2e8e",
-            "from_socket_idx": 0,
-            "to_node": "0a39f4a1",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "32c01252",
-            "from_socket_idx": 0,
-            "to_node": "51e8a075",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "0a39f4a1",
-            "from_socket_idx": 0,
-            "to_node": "32c01252",
-            "to_socket_idx": 0
-          },
-          {
             "from_node": "8e4ec5ee",
             "from_socket_idx": 0,
             "to_node": "b1229fb9",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "cd1544bd",
-            "from_socket_idx": 0,
-            "to_node": "b8c99346",
             "to_socket_idx": 0
           },
           {
@@ -12944,27 +12536,9 @@
             "to_socket_idx": 0
           },
           {
-            "from_node": "195b6c7a",
-            "from_socket_idx": 0,
-            "to_node": "e980dc5c",
-            "to_socket_idx": 0
-          },
-          {
             "from_node": "32be6c9c",
             "from_socket_idx": 0,
             "to_node": "195b6c7a",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "51e8a075",
-            "from_socket_idx": 0,
-            "to_node": "8e4ec5ee",
-            "to_socket_idx": 0
-          },
-          {
-            "from_node": "18183168",
-            "from_socket_idx": 0,
-            "to_node": "1dfd2e8e",
             "to_socket_idx": 0
           },
           {
@@ -12990,6 +12564,60 @@
             "from_socket_idx": 0,
             "to_node": "d2aab83f",
             "to_socket_idx": 0
+          },
+          {
+            "from_node": "1dfd2e8e",
+            "from_socket_idx": 0,
+            "to_node": "0a39f4a1",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "0a39f4a1",
+            "from_socket_idx": 0,
+            "to_node": "32c01252",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "32c01252",
+            "from_socket_idx": 0,
+            "to_node": "51e8a075",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "18183168",
+            "from_socket_idx": 0,
+            "to_node": "1dfd2e8e",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "cd1544bd",
+            "from_socket_idx": 0,
+            "to_node": "b8c99346",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "e980dc5c",
+            "from_socket_idx": 0,
+            "to_node": "8e4ec5ee",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "2cc45702",
+            "from_socket_idx": 1,
+            "to_node": "52db279b",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "2cc45702",
+            "from_socket_idx": 0,
+            "to_node": "8e1c698c",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "698f8d70",
+            "from_socket_idx": 1,
+            "to_node": "2cc45702",
+            "to_socket_idx": 0
           }
         ],
         "groups": [
@@ -12999,12 +12627,12 @@
             "rect": [
               0.0,
               0.0,
-              947.2965858724276,
-              212.99334614310135
+              990.0,
+              197.0
             ],
             "pos": [
-              1288.492574842112,
-              148.19246175194996
+              2512.0577605674,
+              159.7143858171595
             ],
             "node_ids": [
               "51e8a075",
@@ -13019,12 +12647,12 @@
             "rect": [
               0.0,
               0.0,
-              938.7103617897512,
-              194.8637459080286
+              990.0000000000002,
+              197.0
             ],
             "pos": [
-              278.5429120418629,
-              133.4304725305425
+              1297.7993687158275,
+              126.13308878015943
             ],
             "node_ids": [
               "18183168",
@@ -13039,12 +12667,12 @@
             "rect": [
               0.0,
               0.0,
-              2300.092259441749,
-              219.94302623321255
+              1950.0,
+              197.0
             ],
             "pos": [
-              2322.0699035387233,
-              138.97057620237678
+              5150.449625302674,
+              541.4253467045033
             ],
             "node_ids": [
               "32be6c9c",
@@ -13055,6 +12683,27 @@
               "8e4ec5ee",
               "b8c99346",
               "2b3289de"
+            ]
+          },
+          {
+            "title": "Group 4",
+            "color": "#6366f1",
+            "rect": [
+              0.0,
+              0.0,
+              1832.8469906066175,
+              409.7510743959008
+            ],
+            "pos": [
+              5811.724716309549,
+              -754.7806450874047
+            ],
+            "node_ids": [
+              "2cc45702",
+              "52db279b",
+              "8e1c698c",
+              "d6b9d1a1",
+              "0227d0ff"
             ]
           }
         ],
@@ -13602,10 +13251,10 @@
   },
   "instances": {
     "1": {
-      "x": 81,
-      "y": 112,
+      "x": 1536,
+      "y": 383,
       "minimized": false,
-      "selected_macro": "testttttt",
+      "selected_macro": "Macro 2",
       "speed": 1.01,
       "repeat": false,
       "width": 500,
