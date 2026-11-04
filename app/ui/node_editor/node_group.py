@@ -91,6 +91,67 @@ class NodeGroupItem(QGraphicsRectItem):
         if self.scene() and hasattr(self.scene(), "scene_modified"):
             self.scene().scene_modified.emit()
 
+    def expand_to_contain_node(self, node: "BaseNodeItem", padding: float = 24.0):
+        """Expands the group's bounding rectangle if a node is dragged near or beyond its right/bottom bounds."""
+        if not self.scene():
+            return
+        gx = self.pos().x()
+        gy = self.pos().y()
+        gw = self.rect().width()
+        gh = self.rect().height()
+
+        item_w = node.clamp_width if hasattr(node, "clamp_width") else getattr(node, "width", 150.0)
+        item_h = node.clamp_height if hasattr(node, "clamp_height") else getattr(node, "height", 80.0)
+
+        needed_w = (node.pos().x() - gx) + item_w + padding
+        needed_h = (node.pos().y() - gy) + item_h + padding
+
+        new_w = max(gw, needed_w)
+        new_h = max(gh, needed_h)
+
+        if new_w > gw + 1.0 or new_h > gh + 1.0:
+            self._in_node_sync = True
+            try:
+                self.prepareGeometryChange()
+                self.setRect(0, 0, new_w, new_h)
+                self.update()
+            finally:
+                self._in_node_sync = False
+            if hasattr(self.scene(), "update_loop_bounds"):
+                self.scene().update_loop_bounds()
+
+    def sync_chain_nodes(self):
+        """Discovers and adopts any nodes that were inserted into the chain of grouped nodes."""
+        if not self.scene():
+            return
+        from app.ui.node_editor.node_items import BaseNodeItem, LoopNodeItem
+        grp_nodes = set(self.nodes)
+        adopted = []
+        for n in getattr(self.scene(), "nodes", []):
+            if n in grp_nodes or not isinstance(n, BaseNodeItem) or isinstance(n, LoopNodeItem):
+                continue
+            # Check 1: Spliced or connected between two nodes of this group
+            # (has an upstream link from a group node AND a downstream link to a group node)
+            has_in_from_grp = any(
+                c.start_socket and c.start_socket.node in grp_nodes
+                for sock in n.input_sockets for c in sock.connections
+            )
+            has_out_to_grp = any(
+                c.end_socket and c.end_socket.node in grp_nodes
+                for sock in n.output_sockets for c in sock.connections
+            )
+            if has_in_from_grp and has_out_to_grp:
+                adopted.append(n)
+                continue
+
+            # Check 2: Located inside this group's bounding rect AND connected to any node in the group
+            if (has_in_from_grp or has_out_to_grp) and self.sceneBoundingRect().contains(n.sceneBoundingRect().center()):
+                adopted.append(n)
+
+        for n in adopted:
+            self.add_node(n)
+            self.expand_to_contain_node(n)
+
     def get_resize_grip_rect(self) -> QRectF:
         """Returns corner bounding rect for mouse drag resizing."""
         r = self.rect()
@@ -110,6 +171,8 @@ class NodeGroupItem(QGraphicsRectItem):
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionChange and self.scene():
             new_pos = value
+            if not getattr(self, "_in_node_sync", False) and not self._is_resizing:
+                self.sync_chain_nodes()
             from app.ui.node_editor.node_items import LoopNodeItem
             # If group is inside an enclosing LoopNodeItem (and loop is not selected and not in sync), clamp inside loop cavity
             if not getattr(self, "_in_node_sync", False) and not self._is_resizing:
@@ -155,6 +218,7 @@ class NodeGroupItem(QGraphicsRectItem):
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
+            self.sync_chain_nodes()
             if self.get_resize_grip_rect().contains(event.pos()):
                 self._is_resizing = True
                 self._resize_start_scene = event.scenePos()

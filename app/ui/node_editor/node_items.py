@@ -133,24 +133,20 @@ class BaseNodeItem(QGraphicsItem):
                     if grp and not getattr(grp, "_in_node_sync", False) and not getattr(grp, "_is_resizing", False) and not grp.isSelected():
                         gx = grp.pos().x()
                         gy = grp.pos().y()
-                        gw = grp.rect().width()
-                        gh = grp.rect().height()
                         hdr_h = getattr(grp, "header_height", 32.0)
-                        item_w = getattr(self, "width", 150.0)
-                        item_h = getattr(self, "height", 80.0)
                         min_x = gx + 8.0
                         min_y = gy + hdr_h + 8.0
-                        max_x = max(min_x, gx + gw - item_w - 8.0)
-                        max_y = max(min_y, gy + gh - item_h - 8.0)
-                        new_pos = QPointF(
-                            min(max(new_pos.x(), min_x), max_x),
-                            min(max(new_pos.y(), min_y), max_y)
-                        )
+                        new_pos = QPointF(max(new_pos.x(), min_x), max(new_pos.y(), min_y))
+                        if hasattr(grp, "expand_to_contain_node"):
+                            grp.expand_to_contain_node(self)
             return super().itemChange(change, new_pos)
 
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
             # Update all connected wires when node moves
             self.update_connected_wires()
+            grp = getattr(self, "group", None)
+            if grp and hasattr(grp, "expand_to_contain_node") and not getattr(grp, "_in_node_sync", False):
+                grp.expand_to_contain_node(self)
             if self.scene() and hasattr(self.scene(), "update_loop_bounds"):
                 self.scene().update_loop_bounds()
         return super().itemChange(change, value)
@@ -1211,6 +1207,8 @@ class LoopNodeItem(BaseNodeItem):
                 min_x = gx + 8.0
                 min_y = gy + hdr_h + 8.0
                 new_pos = QPointF(max(new_pos.x(), min_x), max(new_pos.y(), min_y))
+                if hasattr(grp, "expand_to_contain_node"):
+                    grp.expand_to_contain_node(self)
 
             old_pos = self.pos()
             delta = new_pos - old_pos

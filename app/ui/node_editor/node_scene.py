@@ -150,6 +150,9 @@ class NodeScene(QGraphicsScene):
         self.addItem(conn)
         self.connections.append(conn)
         self.update_loop_bounds()
+        for g in list(self.groups):
+            if hasattr(g, "sync_chain_nodes"):
+                g.sync_chain_nodes()
         self._notify_scene_modified()
         return conn
 

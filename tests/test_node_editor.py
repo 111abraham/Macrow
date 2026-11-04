@@ -3257,7 +3257,7 @@ class TestNodeEditor(unittest.TestCase):
         self.assertTrue(any(c.start_socket == new_node2.output_sockets[0] and c.end_socket == node_a.input_sockets[0] for c in self.scene.connections))
 
     def test_group_node_four_wall_containment(self):
-        """Test that nodes cannot leak out of left, top, right, or bottom walls of a group."""
+        """Test that nodes cannot leak out of left or top walls, and dragging right or down expands the group."""
         from app.ui.node_editor.node_items import ActionNodeItem
 
         node = ActionNodeItem("click", {"x": 10, "y": 10})
@@ -3266,25 +3266,56 @@ class TestNodeEditor(unittest.TestCase):
         grp.setPos(150, 150)
         grp.setRect(0, 0, 300, 200)
 
-        # Try dragging past right wall
-        node.setPos(QPointF(1000, 200))
-        max_allowed_x = grp.pos().x() + grp.rect().width() - node.width - 8.0
-        self.assertLessEqual(node.pos().x(), max_allowed_x + 0.1)
+        # Dragging right expands the group rect width
+        orig_w = grp.rect().width()
+        node.setPos(QPointF(500, 200))
+        self.assertGreater(grp.rect().width(), orig_w)
+        self.assertGreaterEqual(grp.rect().width(), (500 - 150) + node.width)
 
-        # Try dragging past bottom wall
-        node.setPos(QPointF(200, 1000))
-        max_allowed_y = grp.pos().y() + grp.rect().height() - node.height - 8.0
-        self.assertLessEqual(node.pos().y(), max_allowed_y + 0.1)
+        # Dragging down expands the group rect height
+        orig_h = grp.rect().height()
+        node.setPos(QPointF(200, 500))
+        self.assertGreater(grp.rect().height(), orig_h)
+        self.assertGreaterEqual(grp.rect().height(), (500 - 150) + node.height)
 
-        # Try dragging past left wall
+        # Try dragging past left wall (strictly clamped)
         node.setPos(QPointF(-100, 200))
         min_allowed_x = grp.pos().x() + 8.0
         self.assertGreaterEqual(node.pos().x(), min_allowed_x - 0.1)
 
-        # Try dragging past top wall
+        # Try dragging past top wall (strictly clamped)
         node.setPos(QPointF(200, -100))
         min_allowed_y = grp.pos().y() + grp.header_height + 8.0
         self.assertGreaterEqual(node.pos().y(), min_allowed_y - 0.1)
+
+    def test_group_adopts_spliced_and_chained_nodes(self):
+        """Test that nodes inserted into the chain of grouped nodes are adopted into the group."""
+        from app.ui.node_editor.node_items import ActionNodeItem
+
+        node1 = ActionNodeItem("click", {"x": 10, "y": 10})
+        node2 = ActionNodeItem("click", {"x": 20, "y": 20})
+        self.scene.add_node(node1, QPointF(100, 100))
+        self.scene.add_node(node2, QPointF(400, 100))
+        grp = self.scene.add_group("Chain Group", nodes=[node1, node2])
+
+        # Create intermediate node between node1 and node2
+        node_mid = ActionNodeItem("delay", {"ms": 500})
+        self.scene.add_node(node_mid, QPointF(250, 100))
+        self.assertNotIn(node_mid, grp.nodes)
+
+        # Connect chain: node1 -> node_mid -> node2
+        self.scene.add_connection(node1.output_sockets[0], node_mid.input_sockets[0])
+        self.scene.add_connection(node_mid.output_sockets[0], node2.input_sockets[0])
+
+        # Intermediate node should be adopted into group
+        grp.sync_chain_nodes()
+        self.assertIn(node_mid, grp.nodes)
+        self.assertEqual(node_mid.group, grp)
+
+        # Moving the group should move all 3 nodes together
+        initial_mid_pos = node_mid.pos()
+        grp.setPos(grp.pos() + QPointF(50, 50))
+        self.assertEqual(node_mid.pos(), initial_mid_pos + QPointF(50, 50))
 
     def test_group_inside_repeat_node_cavity_containment(self):
         """Test that a group node inside a repeat node cannot leak out of top or left cavity walls."""

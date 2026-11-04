@@ -441,6 +441,11 @@ class NodeView(QGraphicsView):
                 elif auto_connect_socket.socket_type == "input":
                     if node_instance.output_sockets:
                         self.node_scene.add_connection(node_instance.output_sockets[0], auto_connect_socket)
+                sock_grp = getattr(auto_connect_socket.node, "group", None)
+                if sock_grp and hasattr(sock_grp, "add_node"):
+                    sock_grp.add_node(node_instance)
+                    if hasattr(sock_grp, "expand_to_contain_node"):
+                        sock_grp.expand_to_contain_node(node_instance)
             self._last_pulled_socket = None
             self._last_pulled_time = 0.0
             self.node_scene.scene_modified.emit()
@@ -1130,6 +1135,13 @@ class NodeView(QGraphicsView):
                         self.node_scene.add_connection(src_sock, self._dragged_node.input_sockets[0])
                         self.node_scene.add_connection(self._dragged_node.output_sockets[0], dst_sock)
                         spliced = True
+
+                    if spliced and self._dragged_node:
+                        target_grp = getattr(src_node, "group", None) or getattr(dst_node, "group", None)
+                        if target_grp and hasattr(target_grp, "add_node") and self._dragged_node not in target_grp.nodes:
+                            target_grp.add_node(self._dragged_node)
+                            if hasattr(target_grp, "expand_to_contain_node"):
+                                target_grp.expand_to_contain_node(self._dragged_node)
 
                     # Push destination node and downstream nodes right only if physical overlap occurs
                     if spliced and dst_node:
