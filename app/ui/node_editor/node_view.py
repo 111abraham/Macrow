@@ -353,7 +353,7 @@ class NodeView(QGraphicsView):
             )
             self.mouseMoveEvent(move_ev)
 
-    def _find_wire_under_node(self, node: BaseNodeItem) -> Optional[NodeConnection]:
+    def _find_wire_under_node(self, node: QGraphicsItem) -> Optional[NodeConnection]:
         node_rect = node.sceneBoundingRect()
         for conn in self.node_scene.connections:
             if conn.start_socket and conn.end_socket:
@@ -361,6 +361,10 @@ class NodeView(QGraphicsView):
                     if isinstance(node, LoopNodeItem):
                         body = node.get_body_nodes()
                         if conn.start_socket.node in body or conn.end_socket.node in body:
+                            continue
+                    if isinstance(node, NodeGroupItem):
+                        grp_nodes = set(node.nodes)
+                        if conn.start_socket.node in grp_nodes or conn.end_socket.node in grp_nodes:
                             continue
                     if conn.path().intersects(node_rect) or conn.shape().intersects(node_rect):
                         return conn
@@ -496,55 +500,109 @@ class NodeView(QGraphicsView):
         return False
 
     def _trigger_shake_disconnect(self, nodes):
-        """Disconnects all wires connected to node(s). If inline, heals connections between upstream and downstream."""
+        """Disconnects all wires connected to node(s) or group(s). If inline, heals connections between upstream and downstream."""
         if not nodes:
             return
         if not isinstance(nodes, list):
             nodes = [nodes]
 
-        node_set = set(nodes)
+        # 1. Handle NodeGroupItem(s) in shaken items:
+        # Separate group from external chain, heal external wire, but keep all internal nodes and connections intact!
+        groups = [n for n in nodes if isinstance(n, NodeGroupItem)]
+        for grp in groups:
+            grp_nodes = set(grp.nodes)
+            incoming = []
+            outgoing = []
+            to_remove = []
 
-        # External incoming sockets: start sockets from outside nodes leading into this group
-        incoming = []
-        for n in nodes:
-            in_socks = [n.socket_in] if isinstance(n, LoopNodeItem) else n.input_sockets
-            for sock in in_socks:
-                for c in sock.connections:
-                    if c.start_socket and c.start_socket.node and c.start_socket.node not in node_set:
-                        if c.start_socket not in incoming:
-                            incoming.append(c.start_socket)
+            for n in grp.nodes:
+                in_socks = [n.socket_in] if isinstance(n, LoopNodeItem) else n.input_sockets
+                for sock in in_socks:
+                    for c in list(sock.connections):
+                        if c.start_socket and c.start_socket.node and c.start_socket.node not in grp_nodes:
+                            if c.start_socket not in incoming:
+                                incoming.append(c.start_socket)
+                            if c not in to_remove:
+                                to_remove.append(c)
 
-        # External outgoing sockets: end sockets on outside nodes receiving from this group
-        outgoing = []
-        for n in nodes:
-            out_socks = [n.socket_done] if isinstance(n, LoopNodeItem) else n.output_sockets
-            for sock in out_socks:
-                for c in sock.connections:
-                    if c.end_socket and c.end_socket.node and c.end_socket.node not in node_set:
-                        if c.end_socket not in outgoing:
-                            outgoing.append(c.end_socket)
+                out_socks = [n.socket_done] if isinstance(n, LoopNodeItem) else n.output_sockets
+                for sock in out_socks:
+                    for c in list(sock.connections):
+                        if c.end_socket and c.end_socket.node and c.end_socket.node not in grp_nodes:
+                            if c.end_socket not in outgoing:
+                                outgoing.append(c.end_socket)
+                            if c not in to_remove:
+                                to_remove.append(c)
 
-        # Disconnect connections on shaken nodes:
-        # For LoopNodeItem, only disconnect external sockets (socket_in and socket_done)
-        # keeping socket_body and socket_repeat intact with enclosed body nodes
-        to_remove = []
-        for n in nodes:
-            if isinstance(n, LoopNodeItem):
-                target_socks = [n.socket_in, n.socket_done]
-            else:
-                target_socks = n.input_sockets + n.output_sockets
+            for c in to_remove:
+                self.node_scene.remove_connection(c)
 
-            for sock in target_socks:
-                for conn in list(sock.connections):
-                    if conn not in to_remove:
-                        to_remove.append(conn)
-        for conn in to_remove:
-            self.node_scene.remove_connection(conn)
+            # Heal inline connection between predecessor and successor outside the group
+            for in_sock, out_sock in zip(incoming, outgoing):
+                if in_sock and out_sock:
+                    self.node_scene.add_connection(in_sock, out_sock)
 
-        # Heal inline connection between predecessor and successor
-        for in_sock, out_sock in zip(incoming, outgoing):
-            if in_sock and out_sock:
-                self.node_scene.add_connection(in_sock, out_sock)
+            # If this group was inside another group, separate from parent group
+            for other_grp in getattr(self.node_scene, "groups", []):
+                if other_grp is not grp and grp in getattr(other_grp, "nodes", []):
+                    other_grp.remove_node(grp)
+
+        # 2. Handle BaseNodeItem(s) in shaken items
+        base_nodes = [n for n in nodes if isinstance(n, BaseNodeItem)]
+        if base_nodes:
+            node_set = set(base_nodes)
+
+            # External incoming sockets: start sockets from outside nodes leading into this group
+            incoming = []
+            for n in base_nodes:
+                in_socks = [n.socket_in] if isinstance(n, LoopNodeItem) else n.input_sockets
+                for sock in in_socks:
+                    for c in sock.connections:
+                        if c.start_socket and c.start_socket.node and c.start_socket.node not in node_set:
+                            if c.start_socket not in incoming:
+                                incoming.append(c.start_socket)
+
+            # External outgoing sockets: end sockets on outside nodes receiving from this group
+            outgoing = []
+            for n in base_nodes:
+                out_socks = [n.socket_done] if isinstance(n, LoopNodeItem) else n.output_sockets
+                for sock in out_socks:
+                    for c in sock.connections:
+                        if c.end_socket and c.end_socket.node and c.end_socket.node not in node_set:
+                            if c.end_socket not in outgoing:
+                                outgoing.append(c.end_socket)
+
+            # Disconnect connections on shaken nodes:
+            # For LoopNodeItem, only disconnect external sockets (socket_in and socket_done)
+            # keeping socket_body and socket_repeat intact with enclosed body nodes
+            to_remove = []
+            for n in base_nodes:
+                if isinstance(n, LoopNodeItem):
+                    target_socks = [n.socket_in, n.socket_done]
+                else:
+                    target_socks = n.input_sockets + n.output_sockets
+
+                for sock in target_socks:
+                    for conn in list(sock.connections):
+                        if conn not in to_remove:
+                            to_remove.append(conn)
+            for conn in to_remove:
+                self.node_scene.remove_connection(conn)
+
+            # Heal inline connection between predecessor and successor
+            for in_sock, out_sock in zip(incoming, outgoing):
+                if in_sock and out_sock:
+                    self.node_scene.add_connection(in_sock, out_sock)
+
+            # Shaking individual nodes frees them from any enclosing group container
+            for n in base_nodes:
+                grp = getattr(n, "group", None)
+                if grp:
+                    grp.remove_node(n)
+                    if not grp.nodes and grp.scene() and hasattr(grp.scene(), "remove_group"):
+                        grp.scene().remove_group(grp)
+                    else:
+                        grp.fit_to_nodes()
 
         self.node_scene.scene_modified.emit()
         self.node_scene.update_loop_bounds()
@@ -625,10 +683,10 @@ class NodeView(QGraphicsView):
                     # Defer potential single click deselect/isolate to mouseRelease, and allow dragging the entire selection!
                     self._pending_single_selection = target_item
                     self._press_view_pos = event.pos()
-                    if target_node:
-                        self._dragged_node = target_node
-                        self._shake_samples = [(time.time(), target_node.pos().x(), target_node.pos().y())]
-                        self._shake_triggered = False
+                    self._dragged_node = target_item
+                    scene_pos = self.mapToScene(event.pos())
+                    self._shake_samples = [(time.time(), scene_pos.x(), scene_pos.y())]
+                    self._shake_triggered = False
                     self.node_scene._current_selected_node = target_item
                     self.node_scene.node_selected.emit(target_item)
                     super().mousePressEvent(event)
@@ -652,13 +710,13 @@ class NodeView(QGraphicsView):
                     event.accept()
                     return
 
-                # Normal node drag: track for shake disconnect and wire auto-insert
-                if target_node:
-                    self._dragged_node = target_node
-                    self._press_view_pos = event.pos()
-                    now = time.time()
-                    self._shake_samples = [(now, target_node.pos().x(), target_node.pos().y())]
-                    self._shake_triggered = False
+                # Normal node or group drag: track for shake disconnect and wire auto-insert
+                self._dragged_node = target_item
+                self._press_view_pos = event.pos()
+                now = time.time()
+                scene_pos = self.mapToScene(event.pos())
+                self._shake_samples = [(now, scene_pos.x(), scene_pos.y())]
+                self._shake_triggered = False
 
                 if not target_item.isSelected():
                     self.node_scene.clearSelection()
@@ -797,12 +855,12 @@ class NodeView(QGraphicsView):
 
         super().mouseMoveEvent(event)
 
-        # Shake detection and wire drop target detection during node drag (single or multi-node)
+        # Shake detection and wire drop target detection during node or group drag
         if self._dragged_node and not self._is_cutting and not self._is_panning:
             now = time.time()
-            cur_pos = self._dragged_node.pos()
+            scene_pos = self.mapToScene(event.pos())
             self._shake_samples = [s for s in self._shake_samples if now - s[0] <= 0.45]
-            self._shake_samples.append((now, cur_pos.x(), cur_pos.y()))
+            self._shake_samples.append((now, scene_pos.x(), scene_pos.y()))
 
             # Shake detection: check for rapid horizontal oscillations (>= 3 reversals, >= 70px travel)
             if not self._shake_triggered and len(self._shake_samples) >= 5:
@@ -819,18 +877,35 @@ class NodeView(QGraphicsView):
                         prev_dir = cur_dir
 
                 if reversals >= 3 and total_travel >= 70.0:
-                    sel_nodes = [item for item in self.node_scene.selectedItems() if isinstance(item, BaseNodeItem)]
+                    sel_nodes = [item for item in self.node_scene.selectedItems() if isinstance(item, (BaseNodeItem, NodeGroupItem))]
                     if not sel_nodes or self._dragged_node not in sel_nodes:
                         sel_nodes = [self._dragged_node]
                     self._trigger_shake_disconnect(sel_nodes)
                     self._shake_triggered = True
 
-            # Wire hover detection for inserting node into a wire:
-            # Check if this node is unconnected on its primary in/out sockets
+            # Wire hover detection for inserting node or group into a wire:
+            can_insert = False
             if isinstance(self._dragged_node, LoopNodeItem):
                 can_insert = (len(self._dragged_node.socket_in.connections) == 0 and
                               len(self._dragged_node.socket_done.connections) == 0)
-            else:
+            elif isinstance(self._dragged_node, NodeGroupItem):
+                if self._dragged_node.nodes:
+                    grp_nodes = set(self._dragged_node.nodes)
+                    has_ext = False
+                    for gn in self._dragged_node.nodes:
+                        socks = [gn.socket_in, gn.socket_done] if isinstance(gn, LoopNodeItem) else (gn.input_sockets + gn.output_sockets)
+                        for s in socks:
+                            for c in s.connections:
+                                other = c.start_socket.node if c.end_socket == s else c.end_socket.node
+                                if other not in grp_nodes:
+                                    has_ext = True
+                                    break
+                            if has_ext:
+                                break
+                        if has_ext:
+                            break
+                    can_insert = not has_ext
+            elif isinstance(self._dragged_node, BaseNodeItem):
                 has_in_conn = any(len(s.connections) > 0 for s in self._dragged_node.input_sockets)
                 has_out_conn = any(len(s.connections) > 0 for s in self._dragged_node.output_sockets)
                 can_insert = (not has_in_conn and not has_out_conn)
@@ -976,26 +1051,81 @@ class NodeView(QGraphicsView):
             dst_node = dst_sock.node if dst_sock else None
 
             if src_sock and dst_sock:
+                spliced = False
                 if isinstance(self._dragged_node, LoopNodeItem):
                     self.node_scene.remove_connection(wire)
                     self.node_scene.add_connection(src_sock, self._dragged_node.socket_in)
                     self.node_scene.add_connection(self._dragged_node.socket_done, dst_sock)
-                elif self._dragged_node.input_sockets and self._dragged_node.output_sockets:
+                    spliced = True
+                elif isinstance(self._dragged_node, NodeGroupItem) and self._dragged_node.nodes:
+                    grp_nodes = set(self._dragged_node.nodes)
+                    in_candidates = []
+                    for gn in self._dragged_node.nodes:
+                        in_s = gn.socket_in if isinstance(gn, LoopNodeItem) else (gn.input_sockets[0] if gn.input_sockets else None)
+                        if in_s:
+                            has_int_in = any(c.start_socket and c.start_socket.node in grp_nodes for c in in_s.connections)
+                            in_candidates.append((has_int_in, gn.pos().x(), in_s))
+                    in_candidates.sort(key=lambda x: (x[0], x[1]))
+
+                    out_candidates = []
+                    for gn in self._dragged_node.nodes:
+                        out_s = gn.socket_done if isinstance(gn, LoopNodeItem) else (gn.output_sockets[0] if gn.output_sockets else None)
+                        if out_s:
+                            has_int_out = any(c.end_socket and c.end_socket.node in grp_nodes for c in out_s.connections)
+                            out_candidates.append((has_int_out, -gn.pos().x(), out_s))
+                    out_candidates.sort(key=lambda x: (x[0], x[1]))
+
+                    if in_candidates and out_candidates:
+                        entry_sock = in_candidates[0][2]
+                        exit_sock = out_candidates[0][2]
+                        self.node_scene.remove_connection(wire)
+                        self.node_scene.add_connection(src_sock, entry_sock)
+                        self.node_scene.add_connection(exit_sock, dst_sock)
+                        spliced = True
+                elif isinstance(self._dragged_node, BaseNodeItem) and self._dragged_node.input_sockets and self._dragged_node.output_sockets:
                     self.node_scene.remove_connection(wire)
                     self.node_scene.add_connection(src_sock, self._dragged_node.input_sockets[0])
                     self.node_scene.add_connection(self._dragged_node.output_sockets[0], dst_sock)
+                    spliced = True
 
                 # Push destination node and all downstream nodes right to avoid overlap
-                if dst_node:
-                    node_right = self._dragged_node.pos().x() + self._dragged_node.width + 50.0
-                    shift_x = max(self._dragged_node.width + 50.0, node_right - dst_node.pos().x())
+                if spliced and dst_node:
+                    if isinstance(self._dragged_node, NodeGroupItem):
+                        dragged_w = self._dragged_node.rect().width()
+                    elif isinstance(self._dragged_node, LoopNodeItem):
+                        dragged_w = self._dragged_node.clamp_width
+                    else:
+                        dragged_w = getattr(self._dragged_node, "width", 150.0)
+
+                    node_right = self._dragged_node.pos().x() + dragged_w + 50.0
+                    shift_x = max(dragged_w + 50.0, node_right - dst_node.pos().x())
+
                     downstream = self._get_downstream_nodes(dst_node)
+
+                    # Collect body nodes of all LoopNodeItems in downstream so they aren't moved twice
+                    loop_body_nodes = set()
+                    for d in downstream:
+                        if isinstance(d, LoopNodeItem):
+                            loop_body_nodes.update(d.get_body_nodes())
+
+                    # Collect member nodes of all NodeGroupItems in downstream
+                    group_member_nodes = set()
+                    for d in downstream:
+                        if isinstance(d, NodeGroupItem):
+                            group_member_nodes.update(d.nodes)
+
                     for d_node in downstream:
+                        # Skip body nodes of loops and member nodes of groups to prevent double movement!
+                        if d_node in loop_body_nodes:
+                            continue
+                        if d_node in group_member_nodes and not isinstance(d_node, LoopNodeItem):
+                            continue
                         d_node.setPos(d_node.pos().x() + shift_x, d_node.pos().y())
                         if hasattr(d_node, "update_connected_wires"):
                             d_node.update_connected_wires()
 
                 self.node_scene.scene_modified.emit()
+                self.node_scene.update_loop_bounds()
 
         if self._hovered_wire:
             self._hovered_wire.is_drop_target = False

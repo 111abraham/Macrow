@@ -107,6 +107,36 @@ class BaseNodeItem(QGraphicsItem):
             sock.update_connections()
 
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
+        if change == QGraphicsItem.GraphicsItemChange.ItemPositionChange and self.scene():
+            new_pos = value
+            # Containment clamping: nodes cannot leave loop or group boundaries unless shaken free
+            if not getattr(self, "_in_node_sync", False) and not getattr(self, "_in_body_sync", False):
+                # 1. Enclosed inside a LoopNodeItem:
+                enclosing_loop = None
+                for n in getattr(self.scene(), "nodes", []):
+                    if isinstance(n, LoopNodeItem) and n is not self:
+                        if self in n.get_body_nodes():
+                            enclosing_loop = n
+                            break
+
+                if enclosing_loop and not getattr(enclosing_loop, "_in_body_sync", False) and not enclosing_loop.isSelected():
+                    lx = enclosing_loop.pos().x()
+                    ly = enclosing_loop.pos().y()
+                    min_x = lx + enclosing_loop.spine_width + 8.0
+                    min_y = ly + enclosing_loop.header_height + 8.0
+                    new_pos = QPointF(max(new_pos.x(), min_x), max(new_pos.y(), min_y))
+
+                # 2. Enclosed inside a NodeGroupItem:
+                grp = getattr(self, "group", None)
+                if grp and not getattr(grp, "_in_node_sync", False) and not getattr(grp, "_is_resizing", False) and not grp.isSelected():
+                    gx = grp.pos().x()
+                    gy = grp.pos().y()
+                    hdr_h = getattr(grp, "header_height", 32.0)
+                    min_x = gx + 8.0
+                    min_y = gy + hdr_h + 8.0
+                    new_pos = QPointF(max(new_pos.x(), min_x), max(new_pos.y(), min_y))
+            return super().itemChange(change, new_pos)
+
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
             # Update all connected wires when node moves
             self.update_connected_wires()
@@ -1161,6 +1191,16 @@ class LoopNodeItem(BaseNodeItem):
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionChange and self.scene():
             new_pos = value
+            # Group containment clamping: loop cannot leave left/top of group boundary when dragged
+            grp = getattr(self, "group", None)
+            if grp and not getattr(grp, "_in_node_sync", False) and not getattr(grp, "_is_resizing", False) and not grp.isSelected():
+                gx = grp.pos().x()
+                gy = grp.pos().y()
+                hdr_h = getattr(grp, "header_height", 32.0)
+                min_x = gx + 8.0
+                min_y = gy + hdr_h + 8.0
+                new_pos = QPointF(max(new_pos.x(), min_x), max(new_pos.y(), min_y))
+
             old_pos = self.pos()
             delta = new_pos - old_pos
             if not getattr(self, "_in_body_sync", False) and (delta.x() != 0 or delta.y() != 0):
@@ -1177,43 +1217,43 @@ class LoopNodeItem(BaseNodeItem):
                     moved_groups = set()
                     loop_scene_rect = self.sceneBoundingRect()
                     for b_node in list(moved_nodes):
-                        grp = getattr(b_node, "group", None)
-                        if grp and grp not in moved_groups and not grp.isSelected() and not getattr(grp, "_in_node_sync", False):
-                            if self not in grp.nodes:
-                                grp._in_node_sync = True
+                        b_grp = getattr(b_node, "group", None)
+                        if b_grp and b_grp not in moved_groups and not b_grp.isSelected() and not getattr(b_grp, "_in_node_sync", False):
+                            if self not in b_grp.nodes:
+                                b_grp._in_node_sync = True
                                 try:
-                                    grp.setPos(grp.pos() + delta)
+                                    b_grp.setPos(b_grp.pos() + delta)
+                                    for gn in b_grp.nodes:
+                                        if gn not in moved_nodes and not gn.isSelected():
+                                            gn.setPos(gn.pos() + delta)
+                                            gn.update_connected_wires()
+                                            moved_nodes.add(gn)
                                 finally:
-                                    grp._in_node_sync = False
-                                moved_groups.add(grp)
-                                for gn in grp.nodes:
-                                    if gn not in moved_nodes and not gn.isSelected():
-                                        gn.setPos(gn.pos() + delta)
-                                        gn.update_connected_wires()
-                                        moved_nodes.add(gn)
+                                    b_grp._in_node_sync = False
+                                moved_groups.add(b_grp)
 
                     scene_groups = getattr(self.scene(), "groups", [])
-                    for grp in scene_groups:
-                        if grp not in moved_groups and not grp.isSelected() and not getattr(grp, "_in_node_sync", False):
-                            if self not in grp.nodes and loop_scene_rect.contains(grp.sceneBoundingRect().center()):
-                                grp._in_node_sync = True
+                    for s_grp in scene_groups:
+                        if s_grp not in moved_groups and not s_grp.isSelected() and not getattr(s_grp, "_in_node_sync", False):
+                            if self not in s_grp.nodes and loop_scene_rect.contains(s_grp.sceneBoundingRect().center()):
+                                s_grp._in_node_sync = True
                                 try:
-                                    grp.setPos(grp.pos() + delta)
+                                    s_grp.setPos(s_grp.pos() + delta)
+                                    for gn in s_grp.nodes:
+                                        if gn not in moved_nodes and not gn.isSelected():
+                                            gn.setPos(gn.pos() + delta)
+                                            gn.update_connected_wires()
+                                            moved_nodes.add(gn)
                                 finally:
-                                    grp._in_node_sync = False
-                                moved_groups.add(grp)
-                                for gn in grp.nodes:
-                                    if gn not in moved_nodes and not gn.isSelected():
-                                        gn.setPos(gn.pos() + delta)
-                                        gn.update_connected_wires()
-                                        moved_nodes.add(gn)
+                                    s_grp._in_node_sync = False
+                                moved_groups.add(s_grp)
                 finally:
                     self._in_body_sync = False
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
             self.update_connected_wires()
             if getattr(self, "group", None) and not getattr(self.group, "_in_node_sync", False) and not getattr(self.group, "_is_resizing", False):
                 self.group.fit_to_nodes()
-        return super().itemChange(change, value)
+        return super().itemChange(change, new_pos if 'new_pos' in locals() else value)
 
     def get_summary_text(self) -> str:
         is_inf = bool(self.properties.get("infinite", True))

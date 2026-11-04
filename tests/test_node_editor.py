@@ -3089,6 +3089,138 @@ class TestNodeEditor(unittest.TestCase):
         loop.setPos(loop.pos() + QPointF(100, 50))
         self.assertTrue(grp.rect().contains(grp.mapFromScene(loop.sceneBoundingRect().bottomRight())))
 
+    def test_shake_disconnect_group_preserves_internal_nodes_and_heals_wire(self):
+        """Test shaking a group separates it, heals through-wire, and keeps internal nodes/wires intact."""
+        from app.ui.node_editor.node_items import ActionNodeItem
+
+        n_start = ActionNodeItem("click", {"x": 10, "y": 10})
+        n_g1 = ActionNodeItem("delay", {"duration": 50})
+        n_g2 = ActionNodeItem("delay", {"duration": 100})
+        n_end = ActionNodeItem("click", {"x": 500, "y": 10})
+
+        self.scene.add_node(n_start, QPointF(0, 100))
+        self.scene.add_node(n_g1, QPointF(200, 100))
+        self.scene.add_node(n_g2, QPointF(350, 100))
+        self.scene.add_node(n_end, QPointF(600, 100))
+
+        # Wire: start -> g1 -> g2 -> end
+        c_in = self.scene.add_connection(n_start.output_sockets[0], n_g1.input_sockets[0])
+        c_mid = self.scene.add_connection(n_g1.output_sockets[0], n_g2.input_sockets[0])
+        c_out = self.scene.add_connection(n_g2.output_sockets[0], n_end.input_sockets[0])
+
+        grp = self.scene.add_group("Shaken Group", nodes=[n_g1, n_g2])
+
+        # Shake group
+        self.view._trigger_shake_disconnect([grp])
+
+        # Internal connection between g1 and g2 MUST still exist!
+        self.assertIn(c_mid, self.scene.connections)
+        self.assertIn(n_g1, grp.nodes)
+        self.assertIn(n_g2, grp.nodes)
+
+        # External connections to start and end must be gone
+        self.assertNotIn(c_in, self.scene.connections)
+        self.assertNotIn(c_out, self.scene.connections)
+
+        # Healed connection between start and end must exist!
+        healed = [
+            c for c in self.scene.connections
+            if c.start_socket == n_start.output_sockets[0] and c.end_socket == n_end.input_sockets[0]
+        ]
+        self.assertEqual(len(healed), 1)
+
+    def test_drag_node_splice_before_loop_pushes_loop_preserving_internal_node_positions(self):
+        """Test splicing node before loop pushes loop right without altering relative positions of body nodes."""
+        from app.ui.node_editor.node_items import ActionNodeItem, LoopNodeItem
+
+        start = ActionNodeItem("click", {"x": 0, "y": 0})
+        loop = LoopNodeItem(properties={"count": 5})
+        body1 = ActionNodeItem("delay", {"duration": 50})
+        body2 = ActionNodeItem("click", {"x": 200, "y": 200})
+        new_node = ActionNodeItem("delay", {"duration": 100})
+
+        self.scene.add_node(start, QPointF(0, 100))
+        self.scene.add_node(loop, QPointF(200, 100))
+        self.scene.add_node(body1, QPointF(250, 150))
+        self.scene.add_node(body2, QPointF(350, 180))
+        self.scene.add_node(new_node, QPointF(150, 90))
+
+        wire = self.scene.add_connection(start.output_sockets[0], loop.socket_in)
+        self.scene.add_connection(loop.socket_body, body1.input_sockets[0])
+        self.scene.add_connection(body1.output_sockets[0], body2.input_sockets[0])
+        self.scene.add_connection(body2.output_sockets[0], loop.socket_repeat)
+
+        rel1_before = body1.pos() - loop.pos()
+        rel2_before = body2.pos() - loop.pos()
+        init_loop_x = loop.pos().x()
+
+        # Simulate wire splice of new_node onto wire
+        self.view._hovered_wire = wire
+        self.view._dragged_node = new_node
+
+        from PyQt6.QtGui import QMouseEvent
+        from PyQt6.QtCore import QEvent
+        ev_rel = QMouseEvent(
+            QEvent.Type.MouseButtonRelease,
+            QPointF(150, 90),
+            QPointF(150, 90),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        self.view.mouseReleaseEvent(ev_rel)
+
+        # Wire must be spliced
+        self.assertNotIn(wire, self.scene.connections)
+        self.assertEqual(len(loop.socket_in.connections), 1)
+        self.assertEqual(loop.socket_in.connections[0].start_socket, new_node.output_sockets[0])
+
+        # Loop must be pushed to the right
+        self.assertGreater(loop.pos().x(), init_loop_x)
+
+        # Relative location of body nodes inside loop must be EXACTLY preserved
+        rel1_after = body1.pos() - loop.pos()
+        rel2_after = body2.pos() - loop.pos()
+        self.assertEqual(rel1_after, rel1_before)
+        self.assertEqual(rel2_after, rel2_before)
+
+    def test_container_boundary_containment_and_shake_free(self):
+        """Test that nodes cannot be dragged past loop/group boundaries, but shake frees them."""
+        from app.ui.node_editor.node_items import ActionNodeItem, LoopNodeItem
+
+        loop = LoopNodeItem(properties={"count": 3})
+        body_node = ActionNodeItem("click", {"x": 50, "y": 50})
+        self.scene.add_node(loop, QPointF(200, 200))
+        self.scene.add_node(body_node, QPointF(260, 260))
+        self.scene.add_connection(loop.socket_body, body_node.input_sockets[0])
+
+        # Try dragging body_node outside to the left past loop spine
+        body_node.setPos(QPointF(50, 260))
+        min_allowed_x = loop.pos().x() + loop.spine_width + 8.0
+        self.assertGreaterEqual(body_node.pos().x(), min_allowed_x)
+
+        # Try dragging body_node above loop header
+        body_node.setPos(QPointF(260, 50))
+        min_allowed_y = loop.pos().y() + loop.header_height + 8.0
+        self.assertGreaterEqual(body_node.pos().y(), min_allowed_y)
+
+        # Test group boundary containment
+        normal_node = ActionNodeItem("click", {"x": 10, "y": 10})
+        self.scene.add_node(normal_node, QPointF(500, 500))
+        grp = self.scene.add_group("Containment Group", nodes=[normal_node])
+
+        # Try dragging normal_node outside to the left past group frame
+        normal_node.setPos(QPointF(100, normal_node.pos().y()))
+        self.assertGreaterEqual(normal_node.pos().x(), grp.pos().x() + 8.0)
+
+        # Shake normal_node free from group
+        self.view._trigger_shake_disconnect([normal_node])
+        self.assertIsNone(normal_node.group)
+
+        # Now normal_node can freely move anywhere
+        normal_node.setPos(QPointF(100, 100))
+        self.assertEqual(normal_node.pos(), QPointF(100, 100))
+
 
 if __name__ == "__main__":
     unittest.main()
