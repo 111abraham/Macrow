@@ -43,8 +43,8 @@ class ImportWizardDialog(QDialog):
 
     def _load_file_preview(self):
         try:
-            with open(self.filepath, "r", encoding="utf-8") as f:
-                data = json.load(f)
+            from app.config import load_macro_json_file
+            data = load_macro_json_file(self.filepath)
             if isinstance(data, dict):
                 if "macros" in data and isinstance(data["macros"], dict):
                     self.macros_found = data["macros"]

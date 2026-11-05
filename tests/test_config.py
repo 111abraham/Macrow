@@ -88,6 +88,40 @@ class TestConfigManager(unittest.TestCase):
         self.assertEqual(macro["steps"][0]["x"], 600)
         self.assertEqual(macro["steps"][0]["y"], 500)
 
+    def test_import_with_markdown_fences_and_llm_conversational_text(self):
+        # Case 1: fenced in ```json ... ``` with conversational preface and trailer
+        fenced_content = """Here is the macro you requested:
+```json
+{
+  "type": "point-clicker-macros",
+  "version": 1,
+  "macros": {
+    "LLM_Generated_Macro": {
+      "steps": [{"type": "click", "x": 50, "y": 75, "dt": 100}],
+      "duration": 100
+    }
+  }
+}
+```
+Hope this helps! Let me know if you have questions."""
+        fenced_path = os.path.join(self.temp_dir.name, "llm_macro.json")
+        with open(fenced_path, "w", encoding="utf-8") as f:
+            f.write(fenced_content)
+
+        imported = self.cfg.import_macros_from_file(fenced_path)
+        self.assertIn("LLM_Generated_Macro", imported)
+        self.assertIsNotNone(self.cfg.get_macro("LLM_Generated_Macro"))
+
+    def test_import_with_bom_and_plain_fences(self):
+        content = "\ufeff```\n{\"macros\": {\"BOM_Macro\": {\"steps\": []}}}\n```"
+        bom_path = os.path.join(self.temp_dir.name, "bom_macro.json")
+        with open(bom_path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+        imported = self.cfg.import_macros_from_file(bom_path)
+        self.assertIn("BOM_Macro", imported)
+        self.assertIsNotNone(self.cfg.get_macro("BOM_Macro"))
+
 
 if __name__ == "__main__":
     unittest.main()

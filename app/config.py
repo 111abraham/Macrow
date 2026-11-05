@@ -6,10 +6,72 @@ with full backward compatibility with the Chrome extension format.
 
 import json
 import os
+import re
 import copy
 from datetime import datetime
 from threading import Lock
 from typing import Optional, Dict, Any, List
+
+def load_macro_json_file(filepath: str):
+    """
+    Robustly load macro JSON from a file, handling:
+    - Standard JSON files
+    - UTF-8 with BOM (\ufeff)
+    - Markdown code fences (e.g. ```json ... ``` or ``` ... ```) from LLM outputs
+    - Explanatory/conversational text before or after JSON (extracts outer {...} or [...])
+    """
+    with open(filepath, "r", encoding="utf-8", errors="replace") as f:
+        raw = f.read().lstrip("\ufeff").strip()
+
+    # Fast path: try standard json.loads directly
+    try:
+        return json.loads(raw)
+    except Exception:
+        pass
+
+    cleaned = raw
+    # Strip markdown code fences if wrapped in ```json ... ``` or ``` ... ```
+    if "```" in cleaned:
+        fence_match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", cleaned, re.IGNORECASE)
+        if fence_match:
+            try:
+                return json.loads(fence_match.group(1).strip())
+            except Exception:
+                pass
+
+        lines = cleaned.splitlines()
+        start_idx = 0
+        end_idx = len(lines)
+        if lines and lines[0].strip().startswith("```"):
+            start_idx = 1
+        if lines and lines[-1].strip().startswith("```"):
+            end_idx = len(lines) - 1
+        sub = "\n".join(lines[start_idx:end_idx]).strip()
+        try:
+            return json.loads(sub)
+        except Exception:
+            pass
+
+    # Fallback: extract the outermost JSON object or array {...} or [...]
+    first_brace = cleaned.find("{")
+    last_brace = cleaned.rfind("}")
+    if first_brace != -1 and last_brace != -1 and last_brace > first_brace:
+        try:
+            return json.loads(cleaned[first_brace : last_brace + 1])
+        except Exception:
+            pass
+
+    first_bracket = cleaned.find("[")
+    last_bracket = cleaned.rfind("]")
+    if first_bracket != -1 and last_bracket != -1 and last_bracket > first_bracket:
+        try:
+            return json.loads(cleaned[first_bracket : last_bracket + 1])
+        except Exception:
+            pass
+
+    # Final attempt: let standard json.loads raise the detailed JSONDecodeError
+    return json.loads(raw)
+
 
 DEFAULT_TIMEFRAMES = ["M1", "M5", "M15", "M30", "H1", "H4", "D1"]
 
@@ -262,8 +324,7 @@ class ConfigManager:
         Applies offset_x, offset_y to steps to translate coordinates if imported from browser extension.
         Returns list of imported macro names.
         """
-        with open(source_filepath, "r", encoding="utf-8") as f:
-            payload = json.load(f)
+        payload = load_macro_json_file(source_filepath)
 
         imported_macros = {}
         if isinstance(payload, dict):
