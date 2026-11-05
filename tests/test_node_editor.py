@@ -3549,6 +3549,90 @@ class TestNodeEditor(unittest.TestCase):
         win._has_unsaved_changes = False
         win.close()
 
+    def test_drag_node_into_empty_group_with_glowing_indicator(self):
+        """Test dragging a node over an empty group activates glowing indicator and adopts node on drop."""
+        from PyQt6.QtGui import QMouseEvent
+        from app.ui.node_editor.node_items import ActionNodeItem
+
+        empty_grp = self.scene.add_group("Empty Container", nodes=[])
+        empty_grp.setPos(100, 100)
+        empty_grp.setRect(0, 0, 300, 200)
+
+        node = ActionNodeItem("click")
+        self.scene.add_node(node, QPointF(500, 500))
+
+        self.view._dragged_node = node
+        node.setSelected(True)
+
+        # Hover over empty group
+        move_ev = QMouseEvent(
+            QMouseEvent.Type.MouseMove,
+            QPointF(self.view.mapFromScene(QPointF(200, 150))),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        self.view.mouseMoveEvent(move_ev)
+        self.assertTrue(empty_grp.is_drop_target)
+        self.assertEqual(self.view._hovered_group_drop_target, empty_grp)
+
+        # Release over empty group
+        rel_ev = QMouseEvent(
+            QMouseEvent.Type.MouseButtonRelease,
+            QPointF(self.view.mapFromScene(QPointF(200, 150))),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        self.view.mouseReleaseEvent(rel_ev)
+
+        self.assertIn(node, empty_grp.nodes)
+        self.assertEqual(node.group, empty_grp)
+        self.assertFalse(empty_grp.is_drop_target)
+
+    def test_drag_connected_group_towards_another_group_no_crash_or_deletion(self):
+        """Test dragging a group with nodes in it towards another connected group in line doesn't crash or delete groups."""
+        from PyQt6.QtGui import QMouseEvent
+        from app.ui.node_editor.node_items import ActionNodeItem
+
+        n1 = ActionNodeItem("click")
+        n2 = ActionNodeItem("click")
+        self.scene.add_node(n1, QPointF(100, 400))
+        self.scene.add_node(n2, QPointF(500, 400))
+        self.scene.add_connection(n1.output_sockets[0], n2.input_sockets[0])
+
+        g1 = self.scene.add_group("G1", nodes=[n1])
+        g2 = self.scene.add_group("G2", nodes=[n2])
+
+        self.view._dragged_node = g1
+        g1.setSelected(True)
+
+        # Drag g1 over g2
+        for x in range(100, 520, 30):
+            m_ev = QMouseEvent(
+                QMouseEvent.Type.MouseMove,
+                QPointF(self.view.mapFromScene(QPointF(x, 400))),
+                Qt.MouseButton.LeftButton,
+                Qt.MouseButton.LeftButton,
+                Qt.KeyboardModifier.NoModifier,
+            )
+            self.view.mouseMoveEvent(m_ev)
+
+        # Release g1
+        r_ev = QMouseEvent(
+            QMouseEvent.Type.MouseButtonRelease,
+            QPointF(self.view.mapFromScene(QPointF(500, 400))),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        self.view.mouseReleaseEvent(r_ev)
+
+        self.assertIn(g1, self.scene.groups)
+        self.assertIn(g2, self.scene.groups)
+        self.assertIn(n1, g1.nodes)
+        self.assertIn(n2, g2.nodes)
+
 
 if __name__ == "__main__":
     unittest.main()

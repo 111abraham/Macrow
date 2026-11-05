@@ -34,6 +34,8 @@ class NodeGroupItem(QGraphicsRectItem):
         self.bg_color = QColor(30, 41, 59, 140)
 
         self.nodes: List["BaseNodeItem"] = []
+        self.group: Optional["NodeGroupItem"] = None
+        self.is_drop_target: bool = False
         self._last_drag_pos: Optional[QPointF] = None
         self._is_resizing: bool = False
         self._resize_start_scene: Optional[QPointF] = None
@@ -49,12 +51,11 @@ class NodeGroupItem(QGraphicsRectItem):
         self.setRect(0, 0, 300, 200)
 
     def add_node(self, node: "BaseNodeItem"):
-        if getattr(node, "group", None) and node.group is not self:
-            old_grp = node.group
+        if node is self:
+            return
+        old_grp = getattr(node, "group", None)
+        if isinstance(old_grp, NodeGroupItem) and old_grp is not self:
             old_grp.remove_node(node)
-            if not old_grp.nodes and old_grp.scene():
-                if hasattr(old_grp.scene(), "remove_group"):
-                    old_grp.scene().remove_group(old_grp)
         if node not in self.nodes:
             self.nodes.append(node)
             node.group = self
@@ -66,14 +67,38 @@ class NodeGroupItem(QGraphicsRectItem):
                 node.group = None
 
     def fit_to_nodes(self, padding: float = 24.0):
-        """Automatically contracts or expands the group frame to tightly enclose all member nodes (convex hull bounding box)."""
-        if not self.nodes or not self.scene() or getattr(self, "_in_node_sync", False) or self._is_resizing:
+        """Automatically contracts or expands the group frame to tightly enclose all member nodes and nested groups."""
+        if not self.scene() or getattr(self, "_in_node_sync", False) or self._is_resizing:
             return
 
-        min_x = min(n.pos().x() for n in self.nodes)
-        min_y = min(n.pos().y() for n in self.nodes)
-        max_x = max(n.pos().x() + (n.clamp_width if hasattr(n, "clamp_width") else getattr(n, "width", 150.0)) for n in self.nodes)
-        max_y = max(n.pos().y() + (n.clamp_height if hasattr(n, "clamp_height") else getattr(n, "height", 80.0)) for n in self.nodes)
+        def _item_w(n):
+            if hasattr(n, "rect") and callable(n.rect):
+                return n.rect().width()
+            if hasattr(n, "clamp_width"):
+                return n.clamp_width
+            return getattr(n, "width", 150.0)
+
+        def _item_h(n):
+            if hasattr(n, "rect") and callable(n.rect):
+                return n.rect().height()
+            if hasattr(n, "clamp_height"):
+                return n.clamp_height
+            return getattr(n, "height", 80.0)
+
+        items_to_fit = list(self.nodes)
+        # Also account for any nested groups inside this group
+        for og in getattr(self.scene(), "groups", []):
+            if og is not self and self.sceneBoundingRect().contains(og.sceneBoundingRect().center()):
+                if og not in items_to_fit:
+                    items_to_fit.append(og)
+
+        if not items_to_fit:
+            return
+
+        min_x = min(n.pos().x() for n in items_to_fit)
+        min_y = min(n.pos().y() for n in items_to_fit)
+        max_x = max(n.pos().x() + _item_w(n) for n in items_to_fit)
+        max_y = max(n.pos().y() + _item_h(n) for n in items_to_fit)
 
         x = min_x - padding
         y = min_y - padding - self.header_height
@@ -93,8 +118,8 @@ class NodeGroupItem(QGraphicsRectItem):
         if hasattr(self.scene(), "scene_modified"):
             self.scene().scene_modified.emit()
 
-    def expand_to_contain_node(self, node: "BaseNodeItem", padding: float = 24.0):
-        """Expands the group's bounding rectangle towards any of the 4 edges if a node is dragged near or beyond them."""
+    def expand_to_contain_node(self, node: Any, padding: float = 24.0):
+        """Expands the group's bounding rectangle towards any of the 4 edges if a node or nested group is dragged near or beyond them."""
         if not self.scene() or self._is_resizing or getattr(self, "_in_node_sync", False):
             return
         gx = self.pos().x()
@@ -102,8 +127,15 @@ class NodeGroupItem(QGraphicsRectItem):
         gw = self.rect().width()
         gh = self.rect().height()
 
-        item_w = node.clamp_width if hasattr(node, "clamp_width") else getattr(node, "width", 150.0)
-        item_h = node.clamp_height if hasattr(node, "clamp_height") else getattr(node, "height", 80.0)
+        if hasattr(node, "rect") and callable(node.rect):
+            item_w = node.rect().width()
+            item_h = node.rect().height()
+        elif hasattr(node, "clamp_width"):
+            item_w = node.clamp_width
+            item_h = node.clamp_height
+        else:
+            item_w = getattr(node, "width", 150.0)
+            item_h = getattr(node, "height", 80.0)
 
         n_x = node.pos().x()
         n_y = node.pos().y()
@@ -156,6 +188,9 @@ class NodeGroupItem(QGraphicsRectItem):
         adopted = []
         for n in getattr(self.scene(), "nodes", []):
             if n in grp_nodes or not isinstance(n, BaseNodeItem) or isinstance(n, LoopNodeItem):
+                continue
+            # If n already belongs to another group, do not steal it automatically!
+            if getattr(n, "group", None) is not None and n.group is not self:
                 continue
             # Completely unconnected node (0 connections on all sockets) cannot be adopted into group
             total_conns = sum(len(s.connections) for s in getattr(n, "input_sockets", [])) + sum(len(s.connections) for s in getattr(n, "output_sockets", []))
@@ -228,9 +263,11 @@ class NodeGroupItem(QGraphicsRectItem):
 
                 # If group is inside an enclosing NodeGroupItem, clamp inside outer group
                 enclosing_grp = None
+                my_area = self.rect().width() * self.rect().height()
                 for og in getattr(self.scene(), "groups", []):
                     if og is not self and not og.isSelected() and not getattr(og, "_in_node_sync", False):
-                        if og.sceneBoundingRect().contains(self.sceneBoundingRect().center()):
+                        og_area = og.rect().width() * og.rect().height()
+                        if og_area > my_area and og.sceneBoundingRect().contains(self.sceneBoundingRect().center()):
                             enclosing_grp = og
                             break
                 if enclosing_grp:
@@ -431,10 +468,34 @@ class NodeGroupItem(QGraphicsRectItem):
 
         # Border
         is_sel = self.isSelected()
-        border_col = QColor(251, 146, 60) if is_sel else self.color
-        painter.setPen(QPen(border_col, 2.0 if is_sel else 1.2, Qt.PenStyle.DashLine if not is_sel else Qt.PenStyle.SolidLine))
-        painter.setBrush(Qt.BrushStyle.NoBrush)
-        painter.drawRoundedRect(r, 8, 8)
+        is_drop = getattr(self, "is_drop_target", False)
+
+        if is_drop:
+            # Radiant glowing outer border indicator
+            glow_color = QColor(56, 189, 248)  # Electric Sky Blue
+            for radius, alpha in ((8, 35), (5, 75), (3, 140)):
+                painter.setPen(QPen(QColor(glow_color.red(), glow_color.green(), glow_color.blue(), alpha), radius))
+                painter.setBrush(Qt.BrushStyle.NoBrush)
+                painter.drawRoundedRect(r, 8, 8)
+
+            painter.setPen(QPen(glow_color, 2.5, Qt.PenStyle.SolidLine))
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawRoundedRect(r, 8, 8)
+
+            # Drop acceptance badge in top-right header
+            badge_w = 130.0
+            badge_rect = QRectF(r.right() - badge_w - 8, r.y() + 4, badge_w, self.header_height - 8)
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(QBrush(QColor(14, 165, 233, 230)))
+            painter.drawRoundedRect(badge_rect, 4, 4)
+            painter.setPen(QColor(255, 255, 255))
+            painter.setFont(QFont("Segoe UI", 8, QFont.Weight.Bold))
+            painter.drawText(badge_rect, Qt.AlignmentFlag.AlignCenter, "📥 Drop to Group")
+        else:
+            border_col = QColor(251, 146, 60) if is_sel else self.color
+            painter.setPen(QPen(border_col, 2.0 if is_sel else 1.2, Qt.PenStyle.DashLine if not is_sel else Qt.PenStyle.SolidLine))
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawRoundedRect(r, 8, 8)
 
         # Title text
         painter.setPen(QColor(255, 255, 255))

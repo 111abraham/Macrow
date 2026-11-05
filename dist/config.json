@@ -14691,14 +14691,191 @@
         }
       ],
       "duration": 4821
+    },
+    "dellll": {
+      "steps": [
+        {
+          "type": "move",
+          "x": 712,
+          "y": 582,
+          "dt": 237,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 1465,
+          "y": 535,
+          "dt": 285,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 1785,
+          "y": 456,
+          "dt": 333,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 1810,
+          "y": 451,
+          "dt": 381,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 1838,
+          "y": 451,
+          "dt": 421,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 1935,
+          "y": 433,
+          "dt": 469,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 2086,
+          "y": 411,
+          "dt": 517,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 2166,
+          "y": 407,
+          "dt": 565,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 2181,
+          "y": 406,
+          "dt": 613,
+          "direct_jump": false
+        },
+        {
+          "type": "down",
+          "x": 2181,
+          "y": 406,
+          "button": "right",
+          "dt": 757
+        },
+        {
+          "type": "up",
+          "x": 2181,
+          "y": 406,
+          "button": "right",
+          "dt": 830,
+          "is_click": true,
+          "is_dblclick": false
+        },
+        {
+          "type": "move",
+          "x": 2182,
+          "y": 406,
+          "dt": 933,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 2195,
+          "y": 418,
+          "dt": 981,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 2207,
+          "y": 431,
+          "dt": 1021,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 2213,
+          "y": 442,
+          "dt": 1069,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 2221,
+          "y": 454,
+          "dt": 1117,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 2226,
+          "y": 468,
+          "dt": 1165,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 2231,
+          "y": 479,
+          "dt": 1213,
+          "direct_jump": false
+        },
+        {
+          "type": "down",
+          "x": 2231,
+          "y": 479,
+          "button": "left",
+          "dt": 1510
+        },
+        {
+          "type": "up",
+          "x": 2231,
+          "y": 479,
+          "button": "left",
+          "dt": 1613,
+          "is_click": true,
+          "is_dblclick": false
+        },
+        {
+          "type": "move",
+          "x": 2217,
+          "y": 479,
+          "dt": 1821,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 1872,
+          "y": 482,
+          "dt": 1869,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 1202,
+          "y": 495,
+          "dt": 1917,
+          "direct_jump": false
+        },
+        {
+          "type": "move",
+          "x": 746,
+          "y": 532,
+          "dt": 1965,
+          "direct_jump": false
+        }
+      ],
+      "duration": 1965
     }
   },
   "instances": {
     "1": {
-      "x": 0,
-      "y": 0,
+      "x": 3344,
+      "y": 681,
       "minimized": false,
-      "selected_macro": "testttttt",
+      "selected_macro": "dellll",
       "speed": 1.01,
       "repeat": false,
       "width": 500,

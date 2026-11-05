@@ -105,6 +105,7 @@ class NodeView(QGraphicsView):
 
         # 4. Wire drop candidate
         self._hovered_wire: Optional[NodeConnection] = None
+        self._hovered_group_drop_target: Optional[NodeGroupItem] = None
 
         # 5. Multi-selection drag tracking
         self._pending_single_selection: Optional[QGraphicsItem] = None
@@ -1004,6 +1005,34 @@ class NodeView(QGraphicsView):
                     self._hovered_wire.update()
                     self._hovered_wire = None
 
+            # Group hover detection for glowing borders & drop-to-adopt
+            candidate_grp = None
+            if self._dragged_node and not self._is_cutting and not self._is_panning:
+                dragged_items = set(self.node_scene.selectedItems())
+                dragged_items.add(self._dragged_node)
+                cursor_scene_pos = self.mapToScene(event.pos())
+                for grp in getattr(self.node_scene, "groups", []):
+                    if grp in dragged_items:
+                        continue
+                    # Check if cursor or dragged item center is inside the group
+                    if grp.sceneBoundingRect().contains(cursor_scene_pos) or grp.sceneBoundingRect().contains(self._dragged_node.sceneBoundingRect().center()):
+                        candidate_grp = grp
+                        break
+
+            if candidate_grp != getattr(self, "_hovered_group_drop_target", None):
+                if getattr(self, "_hovered_group_drop_target", None):
+                    self._hovered_group_drop_target.is_drop_target = False
+                    self._hovered_group_drop_target.update()
+                self._hovered_group_drop_target = candidate_grp
+                if self._hovered_group_drop_target:
+                    self._hovered_group_drop_target.is_drop_target = True
+                    self._hovered_group_drop_target.update()
+        else:
+            if getattr(self, "_hovered_group_drop_target", None):
+                self._hovered_group_drop_target.is_drop_target = False
+                self._hovered_group_drop_target.update()
+                self._hovered_group_drop_target = None
+
     def mouseReleaseEvent(self, event: QMouseEvent):
         self._edge_scroll_timer.stop()
         self._edge_scroll_delta = QPointF(0, 0)
@@ -1176,10 +1205,11 @@ class NodeView(QGraphicsView):
 
                     if spliced and self._dragged_node:
                         target_grp = getattr(src_node, "group", None) or getattr(dst_node, "group", None)
-                        if target_grp and hasattr(target_grp, "add_node") and self._dragged_node not in target_grp.nodes:
-                            target_grp.add_node(self._dragged_node)
-                            if hasattr(target_grp, "expand_to_contain_node"):
-                                target_grp.expand_to_contain_node(self._dragged_node)
+                        if isinstance(target_grp, NodeGroupItem) and not isinstance(self._dragged_node, NodeGroupItem):
+                            if self._dragged_node not in target_grp.nodes:
+                                target_grp.add_node(self._dragged_node)
+                                if hasattr(target_grp, "expand_to_contain_node"):
+                                    target_grp.expand_to_contain_node(self._dragged_node)
 
                     # Push destination node and downstream nodes right only if physical overlap occurs
                     if spliced and dst_node:
@@ -1225,6 +1255,34 @@ class NodeView(QGraphicsView):
             self._hovered_wire.is_drop_target = False
             self._hovered_wire.update()
             self._hovered_wire = None
+
+        # Handle drop of nodes / loops / groups into glowing group frame
+        if getattr(self, "_hovered_group_drop_target", None):
+            target_grp = self._hovered_group_drop_target
+            target_grp.is_drop_target = False
+            target_grp.update()
+            self._hovered_group_drop_target = None
+
+            items_to_add = []
+            if self._dragged_node and self._dragged_node is not target_grp:
+                items_to_add.append(self._dragged_node)
+            for it in self.node_scene.selectedItems():
+                if it is not target_grp and it not in items_to_add:
+                    items_to_add.append(it)
+
+            added_any = False
+            for it in items_to_add:
+                if isinstance(it, BaseNodeItem):
+                    target_grp.add_node(it)
+                    target_grp.expand_to_contain_node(it)
+                    added_any = True
+                elif isinstance(it, NodeGroupItem) and it is not target_grp:
+                    target_grp.expand_to_contain_node(it)
+                    added_any = True
+
+            if added_any:
+                target_grp.fit_to_nodes()
+                self.node_scene.scene_modified.emit()
 
         # Handle Ctrl + Click (toggle selection)
         if self._ctrl_candidate_item:
