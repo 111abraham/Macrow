@@ -1086,7 +1086,7 @@ class NodeView(QGraphicsView):
                     downstream = self._get_downstream_nodes(anchor, main_line_only=True)
                     others = [n for n in downstream if n != anchor and isinstance(n, BaseNodeItem)]
 
-                others.sort(key=lambda n: n.pos().x())
+                # Preserve consecutive socket connection order along graph (ignore random physical placement)
                 curr_x = anchor_x + anchor_w + 50.0
                 for n in others:
                     n.setPos(curr_x, anchor_y)
@@ -1112,7 +1112,7 @@ class NodeView(QGraphicsView):
                     upstream = self._get_upstream_nodes(anchor, main_line_only=True)
                     others = [n for n in upstream if n != anchor and isinstance(n, BaseNodeItem)]
 
-                others.sort(key=lambda n: n.pos().x(), reverse=True)
+                # Preserve consecutive socket connection order along graph (ignore random physical placement)
                 curr_right = anchor_x - 50.0
                 for n in others:
                     nw = n.clamp_width if hasattr(n, "clamp_width") else getattr(n, "width", 150.0)

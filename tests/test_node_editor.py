@@ -3633,6 +3633,75 @@ class TestNodeEditor(unittest.TestCase):
         self.assertIn(n1, g1.nodes)
         self.assertIn(n2, g2.nodes)
 
+    def test_a_drag_align_consecutive_socket_order(self):
+        """Test A+Drag aligns nodes strictly by consecutive socket connection order, not random physical x placement."""
+        from PyQt6.QtGui import QMouseEvent
+        from app.ui.node_editor.node_items import ActionNodeItem
+
+        n1 = ActionNodeItem("click")
+        n2 = ActionNodeItem("click")
+        n3 = ActionNodeItem("click")
+
+        # Physically scrambled: n1 at 100, n3 at 200, n2 at 800
+        self.scene.add_node(n1, QPointF(100, 100))
+        self.scene.add_node(n2, QPointF(800, 100))
+        self.scene.add_node(n3, QPointF(200, 100))
+
+        # Graph connections in series: n1 -> n2 -> n3
+        self.scene.add_connection(n1.output_sockets[0], n2.input_sockets[0])
+        self.scene.add_connection(n2.output_sockets[0], n3.input_sockets[0])
+
+        self.view._a_key_held = True
+        self.view._a_align_node = n1
+        self.view._a_align_start_scene_pos = QPointF(100, 100)
+
+        ev = QMouseEvent(
+            QMouseEvent.Type.MouseButtonRelease,
+            QPointF(200, 100),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        orig_map = self.view.mapToScene
+        self.view.mapToScene = lambda p: QPointF(150, 100)
+        try:
+            self.view.mouseReleaseEvent(ev)
+        finally:
+            self.view.mapToScene = orig_map
+
+        self.assertLess(n1.pos().x(), n2.pos().x())
+        self.assertLess(n2.pos().x(), n3.pos().x())
+
+    def test_single_macro_export_and_import(self):
+        """Test exporting a single specific macro only saves that macro and imports cleanly."""
+        import tempfile
+        import json
+        import os
+        from app.config import ConfigManager
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cfg_file = os.path.join(tmpdir, "config.json")
+            cfg = ConfigManager(cfg_file)
+            cfg.save_macro("MacroAlpha", [{"type": "click", "x": 10, "y": 10}])
+            cfg.save_macro("MacroBeta", [{"type": "click", "x": 20, "y": 20}])
+
+            single_file = os.path.join(tmpdir, "single.json")
+            cnt = cfg.export_macros_to_file(single_file, macro_name="MacroAlpha")
+            self.assertEqual(cnt, 1)
+
+            with open(single_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            self.assertIn("MacroAlpha", data["macros"])
+            self.assertNotIn("MacroBeta", data["macros"])
+
+            # Import into fresh config
+            cfg2_file = os.path.join(tmpdir, "config2.json")
+            cfg2 = ConfigManager(cfg2_file)
+            imported = cfg2.import_macros_from_file(single_file)
+            self.assertIn("MacroAlpha", imported)
+            self.assertIn("MacroAlpha", cfg2.get_macros())
+            self.assertNotIn("MacroBeta", cfg2.get_macros())
+
 
 if __name__ == "__main__":
     unittest.main()

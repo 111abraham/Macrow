@@ -5,6 +5,7 @@ and JSON Export/Import with effortless edge-resizing and smooth scrolling.
 """
 
 import os
+import re
 from datetime import datetime
 from PyQt6.QtWidgets import (
     QWidget,
@@ -549,7 +550,7 @@ class MacrowPanel(QWidget):
         self.import_btn.clicked.connect(self._on_import_clicked)
         row.addWidget(self.import_btn, 1)
 
-        self.export_btn = QPushButton("Export All...")
+        self.export_btn = QPushButton("Export... ▾")
         self.export_btn.clicked.connect(self._on_export_clicked)
         row.addWidget(self.export_btn, 1)
 
@@ -905,16 +906,65 @@ class MacrowPanel(QWidget):
 
     # Export & Import
     def _on_export_clicked(self):
+        curr_macro = self.macro_combo.currentText().strip()
+        all_macros = self.cfg.get_all_macros()
+        total_count = len(all_macros)
+
+        menu = QMenu(self)
+        menu.setStyleSheet("""
+            QMenu {
+                background-color: #18181b;
+                border: 1px solid #3f3f46;
+                border-radius: 6px;
+                padding: 4px;
+                color: #e4e4e7;
+                font-family: 'Segoe UI', -apple-system, sans-serif;
+                font-size: 11px;
+            }
+            QMenu::item {
+                padding: 6px 16px;
+                border-radius: 4px;
+            }
+            QMenu::item:selected {
+                background-color: #27272a;
+                color: #38bdf8;
+            }
+        """)
+
+        act_single = None
+        if curr_macro and curr_macro in all_macros:
+            act_single = menu.addAction(f"📄 Export Current Macro ('{curr_macro}')...")
+
+        act_all = menu.addAction(f"📦 Export All Macros ({total_count})...")
+
+        btn_pos = self.export_btn.mapToGlobal(QPoint(0, self.export_btn.height() + 2))
+        selected_action = menu.exec(btn_pos)
+
+        if not selected_action:
+            return
+
         date_str = datetime.utcnow().strftime("%Y-%m-%d")
-        default_filename = f"macrow-macros-{date_str}.json"
-        filepath, _ = QFileDialog.getSaveFileName(
-            self, "Export Macros", default_filename, "JSON Files (*.json)"
-        )
-        if filepath:
-            count = self.cfg.export_macros_to_file(filepath)
-            QMessageBox.information(
-                self, "Export Successful", f"Exported {count} macro(s) to:\n{filepath}"
+        if selected_action == act_single:
+            safe_name = re.sub(r'[^\w\-_\. ]', '_', curr_macro).strip()
+            default_filename = f"{safe_name}-{date_str}.json"
+            filepath, _ = QFileDialog.getSaveFileName(
+                self, f"Export Macro '{curr_macro}'", default_filename, "JSON Files (*.json)"
             )
+            if filepath:
+                count = self.cfg.export_macros_to_file(filepath, macro_name=curr_macro)
+                QMessageBox.information(
+                    self, "Export Successful", f"Exported macro '{curr_macro}' to:\n{filepath}"
+                )
+        elif selected_action == act_all:
+            default_filename = f"macrow-macros-{date_str}.json"
+            filepath, _ = QFileDialog.getSaveFileName(
+                self, "Export All Macros", default_filename, "JSON Files (*.json)"
+            )
+            if filepath:
+                count = self.cfg.export_macros_to_file(filepath)
+                QMessageBox.information(
+                    self, "Export Successful", f"Exported {count} macro(s) to:\n{filepath}"
+                )
 
     def _on_import_clicked(self):
         filepath, _ = QFileDialog.getOpenFileName(

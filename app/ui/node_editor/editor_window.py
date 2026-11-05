@@ -22,6 +22,7 @@ from PyQt6.QtWidgets import (
     QDialog,
     QCheckBox,
     QFrame,
+    QFileDialog,
 )
 
 from app.ui.node_editor.node_scene import NodeScene
@@ -278,6 +279,27 @@ class MacroNodeEditorWindow(QMainWindow):
         """)
         self.save_btn.clicked.connect(lambda: self._save_and_apply(show_notification=True))
         toolbar.addWidget(self.save_btn)
+
+        # Export Single Macro button
+        self.export_btn = QPushButton("📤 Export JSON")
+        self.export_btn.setToolTip(f"Export this macro '{self.macro_name}' to a standalone JSON file")
+        self.export_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #334155;
+                color: #f1f5f9;
+                border: 1px solid #475569;
+                border-radius: 4px;
+                padding: 6px 12px;
+                font-weight: 500;
+            }
+            QPushButton:hover {
+                background-color: #475569;
+                border-color: #38bdf8;
+                color: #ffffff;
+            }
+        """)
+        self.export_btn.clicked.connect(self._export_macro_to_file)
+        toolbar.addWidget(self.export_btn)
 
         # Central Layout: QSplitter with horizontal draggable handle between View and Inspector!
         self.scene = NodeScene(self)
@@ -944,6 +966,44 @@ class MacroNodeEditorWindow(QMainWindow):
                 self,
                 "Saved & Applied",
                 f"Successfully updated macro '{self.macro_name}' with {len(compiled)} steps.\nReady to play back!",
+            )
+
+    def _export_macro_to_file(self):
+        """Export current macro and graph setup directly into a standalone JSON file."""
+        self._save_and_apply(show_notification=False)
+        from datetime import datetime
+        import re
+        date_str = datetime.utcnow().strftime("%Y-%m-%d")
+        safe_name = re.sub(r'[^\w\-_\. ]', '_', self.macro_name).strip()
+        default_filename = f"{safe_name}-{date_str}.json"
+        filepath, _ = QFileDialog.getSaveFileName(
+            self, f"Export Macro '{self.macro_name}'", default_filename, "JSON Files (*.json)"
+        )
+        if filepath:
+            if self.config and hasattr(self.config, "export_macros_to_file"):
+                count = self.config.export_macros_to_file(filepath, macro_name=self.macro_name)
+            else:
+                import json
+                compiled = graph_to_macro(self.scene)
+                graph_data = serialize_scene(self.scene)
+                export_payload = {
+                    "type": "point-clicker-macros",
+                    "version": 1,
+                    "exportedAt": datetime.utcnow().isoformat() + "Z",
+                    "macros": {
+                        self.macro_name: {
+                            "steps": compiled,
+                            "node_graph_data": graph_data,
+                        }
+                    },
+                }
+                with open(filepath, "w", encoding="utf-8") as f:
+                    json.dump(export_payload, f, indent=2, ensure_ascii=False)
+                count = 1
+            QMessageBox.information(
+                self,
+                "Export Successful",
+                f"Exported macro '{self.macro_name}' ({count} macro) to:\n{filepath}",
             )
 
     def _open_settings_dialog(self):

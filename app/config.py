@@ -9,6 +9,7 @@ import os
 import copy
 from datetime import datetime
 from threading import Lock
+from typing import Optional, Dict, Any, List
 
 DEFAULT_TIMEFRAMES = ["M1", "M5", "M15", "M30", "H1", "H4", "D1"]
 
@@ -187,6 +188,9 @@ class ConfigManager:
         with self.lock:
             return copy.deepcopy(self.data.get("macros", {}))
 
+    def get_all_macros(self):
+        return self.get_macros()
+
     def get_macro(self, name):
         with self.lock:
             macro = self.data.get("macros", {}).get(name)
@@ -232,14 +236,20 @@ class ConfigManager:
         self.save()
 
     # Export & Import
-    def export_macros_to_file(self, target_filepath):
-        """Export all macros in the exact format defined in the specifications."""
+    def export_macros_to_file(self, target_filepath, macro_name: Optional[str] = None):
+        """Export all macros or a single specific macro in the exact format defined in the specifications."""
         with self.lock:
+            all_macros = self.data.get("macros", {})
+            if macro_name:
+                macros_dict = {macro_name: copy.deepcopy(all_macros.get(macro_name, {}))}
+            else:
+                macros_dict = copy.deepcopy(all_macros)
+
             export_payload = {
                 "type": "point-clicker-macros",
                 "version": 1,
                 "exportedAt": datetime.utcnow().isoformat() + "Z",
-                "macros": copy.deepcopy(self.data.get("macros", {})),
+                "macros": macros_dict,
             }
         with open(target_filepath, "w", encoding="utf-8") as f:
             json.dump(export_payload, f, indent=2, ensure_ascii=False)
