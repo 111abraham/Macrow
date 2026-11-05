@@ -131,12 +131,6 @@ class BaseNodeItem(QGraphicsItem):
                     # 2. Enclosed inside a NodeGroupItem:
                     grp = getattr(self, "group", None)
                     if grp and not getattr(grp, "_in_node_sync", False) and not getattr(grp, "_is_resizing", False) and not grp.isSelected():
-                        gx = grp.pos().x()
-                        gy = grp.pos().y()
-                        hdr_h = getattr(grp, "header_height", 32.0)
-                        min_x = gx + 8.0
-                        min_y = gy + hdr_h + 8.0
-                        new_pos = QPointF(max(new_pos.x(), min_x), max(new_pos.y(), min_y))
                         if hasattr(grp, "expand_to_contain_node"):
                             grp.expand_to_contain_node(self)
             return super().itemChange(change, new_pos)
@@ -145,8 +139,10 @@ class BaseNodeItem(QGraphicsItem):
             # Update all connected wires when node moves
             self.update_connected_wires()
             grp = getattr(self, "group", None)
-            if grp and hasattr(grp, "expand_to_contain_node") and not getattr(grp, "_in_node_sync", False):
-                grp.expand_to_contain_node(self)
+            if grp and hasattr(grp, "fit_to_nodes") and not getattr(grp, "_in_node_sync", False) and not getattr(grp, "_is_resizing", False):
+                scene_loops = [n for n in getattr(self.scene(), "nodes", []) if isinstance(n, LoopNodeItem)] if self.scene() else []
+                if not any(getattr(ln, "_in_body_sync", False) for ln in scene_loops):
+                    grp.fit_to_nodes()
             if self.scene() and hasattr(self.scene(), "update_loop_bounds"):
                 self.scene().update_loop_bounds()
         return super().itemChange(change, value)
@@ -1198,17 +1194,31 @@ class LoopNodeItem(BaseNodeItem):
     def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionChange and self.scene():
             new_pos = value
-            # Group containment clamping: loop cannot leave left/top of group boundary when dragged
+            # Group containment clamping: loop expands group towards all 4 edges when dragged
             grp = getattr(self, "group", None)
             if grp and not getattr(grp, "_in_node_sync", False) and not getattr(grp, "_is_resizing", False) and not grp.isSelected():
-                gx = grp.pos().x()
-                gy = grp.pos().y()
-                hdr_h = getattr(grp, "header_height", 32.0)
-                min_x = gx + 8.0
-                min_y = gy + hdr_h + 8.0
-                new_pos = QPointF(max(new_pos.x(), min_x), max(new_pos.y(), min_y))
                 if hasattr(grp, "expand_to_contain_node"):
                     grp.expand_to_contain_node(self)
+
+            # Repeat-within-repeat containment: inner loop cannot leave outer loop cavity
+            if not getattr(self, "_in_body_sync", False):
+                scene_loops = [n for n in getattr(self.scene(), "nodes", []) if isinstance(n, LoopNodeItem) and n is not self]
+                enclosing_loop = None
+                my_body = set(self.get_body_nodes())
+                my_area = self.boundingRect().width() * self.boundingRect().height()
+                for n in scene_loops:
+                    if n in my_body:
+                        continue
+                    n_area = n.boundingRect().width() * n.boundingRect().height()
+                    if self in n.get_body_nodes() or (n_area > my_area and n.sceneBoundingRect().contains(self.sceneBoundingRect().center())):
+                        enclosing_loop = n
+                        break
+                if enclosing_loop and not getattr(enclosing_loop, "_in_body_sync", False) and not enclosing_loop.isSelected():
+                    lx = enclosing_loop.pos().x()
+                    ly = enclosing_loop.pos().y()
+                    min_x = lx + enclosing_loop.spine_width + 8.0
+                    min_y = ly + enclosing_loop.header_height + 8.0
+                    new_pos = QPointF(max(new_pos.x(), min_x), max(new_pos.y(), min_y))
 
             old_pos = self.pos()
             delta = new_pos - old_pos
@@ -1261,7 +1271,9 @@ class LoopNodeItem(BaseNodeItem):
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
             self.update_connected_wires()
             if getattr(self, "group", None) and not getattr(self.group, "_in_node_sync", False) and not getattr(self.group, "_is_resizing", False):
-                self.group.fit_to_nodes()
+                scene_loops = [n for n in getattr(self.scene(), "nodes", []) if isinstance(n, LoopNodeItem) and n is not self] if self.scene() else []
+                if not any(getattr(ln, "_in_body_sync", False) for ln in scene_loops):
+                    self.group.fit_to_nodes()
         return super().itemChange(change, new_pos if 'new_pos' in locals() else value)
 
     def get_summary_text(self) -> str:

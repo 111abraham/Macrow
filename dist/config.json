@@ -12933,8 +12933,8 @@
             "node_type": "click",
             "title": "🖱 Mouse Click",
             "pos": [
-              7139.484083538031,
-              -1062.4645912300646
+              6446.178291680137,
+              -1268.026034392939
             ],
             "bypassed": false,
             "properties": {
@@ -12981,8 +12981,8 @@
             "node_type": "click",
             "title": "🖱 Mouse Click",
             "pos": [
-              7538.31143546307,
-              -901.0793162051629
+              6637.436756723102,
+              -1157.2209723692642
             ],
             "bypassed": false,
             "properties": {
@@ -13023,8 +13023,8 @@
             "node_type": "loop_count",
             "title": "🔁 Repeat Zone (Loop)",
             "pos": [
-              4687.017786733938,
-              -1062.4645912300646
+              4214.816188977354,
+              -1268.026034392939
             ],
             "bypassed": false,
             "properties": {
@@ -13040,8 +13040,8 @@
             "node_type": "click",
             "title": "🖱 Mouse Click",
             "pos": [
-              4777.3863817465935,
-              -987.890953591391
+              4325.09169681559,
+              -1057.385183184826
             ],
             "bypassed": false,
             "properties": {
@@ -13054,8 +13054,8 @@
             "node_type": "loop_count",
             "title": "🔁 Repeat Zone (Loop)",
             "pos": [
-              5054.050902686085,
-              -939.0184731420849
+              4558.877127143806,
+              -1135.633175699991
             ],
             "bypassed": false,
             "properties": {
@@ -13071,8 +13071,8 @@
             "node_type": "click",
             "title": "🖱 Mouse Click",
             "pos": [
-              6463.7334446210525,
-              -1062.4645912300646
+              5835.094690733731,
+              -1268.026034392939
             ],
             "bypassed": false,
             "properties": {
@@ -13085,8 +13085,8 @@
             "node_type": "click",
             "title": "🖱 Mouse Click",
             "pos": [
-              4419.329327234097,
-              -1062.4645912300646
+              3978.7825431595966,
+              -1264.0596802106961
             ],
             "bypassed": false,
             "properties": {
@@ -13099,8 +13099,8 @@
             "node_type": "loop_count",
             "title": "🔁 Repeat Zone (Loop)",
             "pos": [
-              6808.2964272667,
-              -1062.4645912300646
+              6075.094690733731,
+              -1268.026034392939
             ],
             "bypassed": false,
             "properties": {
@@ -13116,8 +13116,8 @@
             "node_type": "click",
             "title": "🖱 Mouse Click",
             "pos": [
-              6915.335538198354,
-              -988.1318753053058
+              6170.144645862377,
+              -1218.14379475509
             ],
             "bypassed": false,
             "properties": {
@@ -13130,8 +13130,8 @@
             "node_type": "move",
             "title": "🏹 Mouse Move",
             "pos": [
-              5358.5539242153645,
-              -1045.7843009502094
+              4883.027399098215,
+              -1262.0765031195751
             ],
             "bypassed": false,
             "properties": {
@@ -13179,8 +13179,8 @@
             "node_type": "move",
             "title": "🏹 Mouse Move",
             "pos": [
-              5806.899708802389,
-              -1050.3063317234923
+              5355.094690733731,
+              -1268.026034392939
             ],
             "bypassed": false,
             "properties": {
@@ -13228,8 +13228,8 @@
             "node_type": "move",
             "title": "🏹 Mouse Move",
             "pos": [
-              5584.987831895518,
-              -1063.87242404334
+              5115.094690733731,
+              -1268.026034392939
             ],
             "bypassed": false,
             "properties": {
@@ -13277,8 +13277,440 @@
             "node_type": "move",
             "title": "🏹 Mouse Move",
             "pos": [
-              6150.90641658789,
-              -1063.87242404334
+              5595.094690733731,
+              -1268.026034392939
+            ],
+            "bypassed": false,
+            "properties": {
+              "type": "move",
+              "x": 409,
+              "y": 862,
+              "dt": 6630,
+              "direct_jump": false,
+              "path_points": [
+                {
+                  "type": "move",
+                  "x": 452,
+                  "y": 1086,
+                  "dt": 438,
+                  "direct_jump": false
+                },
+                {
+                  "type": "move",
+                  "x": 149,
+                  "y": 1093,
+                  "dt": 478,
+                  "direct_jump": false
+                },
+                {
+                  "type": "move",
+                  "x": 7,
+                  "y": 796,
+                  "dt": 6590,
+                  "direct_jump": false
+                },
+                {
+                  "type": "move",
+                  "x": 409,
+                  "y": 862,
+                  "dt": 6630,
+                  "direct_jump": false
+                }
+              ],
+              "action_type": "move"
+            }
+          },
+          {
+            "id": "09837f38",
+            "class_name": "LoopNodeItem",
+            "node_type": "loop_count",
+            "title": "🔁 Repeat Zone (Loop)",
+            "pos": [
+              4364.416650823163,
+              -674.8349281614007
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "loop_count",
+              "infinite": true,
+              "count": 5,
+              "var_name": "i"
+            }
+          },
+          {
+            "id": "f0ccf407",
+            "class_name": "ActionNodeItem",
+            "node_type": "move",
+            "title": "🏹 Mouse Move",
+            "pos": [
+              5576.095513058961,
+              -1788.3973876949642
+            ],
+            "bypassed": false,
+            "properties": {
+              "type": "move",
+              "x": 409,
+              "y": 862,
+              "dt": 6630,
+              "direct_jump": false,
+              "path_points": [
+                {
+                  "type": "move",
+                  "x": 452,
+                  "y": 1086,
+                  "dt": 438,
+                  "direct_jump": false
+                },
+                {
+                  "type": "move",
+                  "x": 149,
+                  "y": 1093,
+                  "dt": 478,
+                  "direct_jump": false
+                },
+                {
+                  "type": "move",
+                  "x": 7,
+                  "y": 796,
+                  "dt": 6590,
+                  "direct_jump": false
+                },
+                {
+                  "type": "move",
+                  "x": 409,
+                  "y": 862,
+                  "dt": 6630,
+                  "direct_jump": false
+                }
+              ],
+              "action_type": "move"
+            }
+          },
+          {
+            "id": "52c9daa9",
+            "class_name": "ActionNodeItem",
+            "node_type": "move",
+            "title": "🏹 Mouse Move",
+            "pos": [
+              5837.910461061296,
+              -1849.8758775197248
+            ],
+            "bypassed": false,
+            "properties": {
+              "type": "move",
+              "x": 409,
+              "y": 862,
+              "dt": 6630,
+              "direct_jump": false,
+              "path_points": [
+                {
+                  "type": "move",
+                  "x": 452,
+                  "y": 1086,
+                  "dt": 438,
+                  "direct_jump": false
+                },
+                {
+                  "type": "move",
+                  "x": 149,
+                  "y": 1093,
+                  "dt": 478,
+                  "direct_jump": false
+                },
+                {
+                  "type": "move",
+                  "x": 7,
+                  "y": 796,
+                  "dt": 6590,
+                  "direct_jump": false
+                },
+                {
+                  "type": "move",
+                  "x": 409,
+                  "y": 862,
+                  "dt": 6630,
+                  "direct_jump": false
+                }
+              ],
+              "action_type": "move"
+            }
+          },
+          {
+            "id": "51c6472e",
+            "class_name": "ActionNodeItem",
+            "node_type": "move",
+            "title": "🏹 Mouse Move",
+            "pos": [
+              6164.905911685243,
+              -2086.1485942627546
+            ],
+            "bypassed": false,
+            "properties": {
+              "type": "move",
+              "x": 409,
+              "y": 862,
+              "dt": 6630,
+              "direct_jump": false,
+              "path_points": [
+                {
+                  "type": "move",
+                  "x": 452,
+                  "y": 1086,
+                  "dt": 438,
+                  "direct_jump": false
+                },
+                {
+                  "type": "move",
+                  "x": 149,
+                  "y": 1093,
+                  "dt": 478,
+                  "direct_jump": false
+                },
+                {
+                  "type": "move",
+                  "x": 7,
+                  "y": 796,
+                  "dt": 6590,
+                  "direct_jump": false
+                },
+                {
+                  "type": "move",
+                  "x": 409,
+                  "y": 862,
+                  "dt": 6630,
+                  "direct_jump": false
+                }
+              ],
+              "action_type": "move"
+            }
+          },
+          {
+            "id": "74f1e289",
+            "class_name": "ActionNodeItem",
+            "node_type": "move",
+            "title": "🏹 Mouse Move",
+            "pos": [
+              5684.905911685243,
+              -2086.1485942627546
+            ],
+            "bypassed": false,
+            "properties": {
+              "type": "move",
+              "x": 409,
+              "y": 862,
+              "dt": 6630,
+              "direct_jump": false,
+              "path_points": [
+                {
+                  "type": "move",
+                  "x": 452,
+                  "y": 1086,
+                  "dt": 438,
+                  "direct_jump": false
+                },
+                {
+                  "type": "move",
+                  "x": 149,
+                  "y": 1093,
+                  "dt": 478,
+                  "direct_jump": false
+                },
+                {
+                  "type": "move",
+                  "x": 7,
+                  "y": 796,
+                  "dt": 6590,
+                  "direct_jump": false
+                },
+                {
+                  "type": "move",
+                  "x": 409,
+                  "y": 862,
+                  "dt": 6630,
+                  "direct_jump": false
+                }
+              ],
+              "action_type": "move"
+            }
+          },
+          {
+            "id": "687dd764",
+            "class_name": "ActionNodeItem",
+            "node_type": "move",
+            "title": "🏹 Mouse Move",
+            "pos": [
+              6428.9683781640915,
+              -1863.758117157573
+            ],
+            "bypassed": false,
+            "properties": {
+              "type": "move",
+              "x": 409,
+              "y": 862,
+              "dt": 6630,
+              "direct_jump": false,
+              "path_points": [
+                {
+                  "type": "move",
+                  "x": 452,
+                  "y": 1086,
+                  "dt": 438,
+                  "direct_jump": false
+                },
+                {
+                  "type": "move",
+                  "x": 149,
+                  "y": 1093,
+                  "dt": 478,
+                  "direct_jump": false
+                },
+                {
+                  "type": "move",
+                  "x": 7,
+                  "y": 796,
+                  "dt": 6590,
+                  "direct_jump": false
+                },
+                {
+                  "type": "move",
+                  "x": 409,
+                  "y": 862,
+                  "dt": 6630,
+                  "direct_jump": false
+                }
+              ],
+              "action_type": "move"
+            }
+          },
+          {
+            "id": "0285d94f",
+            "class_name": "ActionNodeItem",
+            "node_type": "move",
+            "title": "🏹 Mouse Move",
+            "pos": [
+              6188.9683781640915,
+              -1863.758117157573
+            ],
+            "bypassed": false,
+            "properties": {
+              "type": "move",
+              "x": 409,
+              "y": 862,
+              "dt": 6630,
+              "direct_jump": false,
+              "path_points": [
+                {
+                  "type": "move",
+                  "x": 452,
+                  "y": 1086,
+                  "dt": 438,
+                  "direct_jump": false
+                },
+                {
+                  "type": "move",
+                  "x": 149,
+                  "y": 1093,
+                  "dt": 478,
+                  "direct_jump": false
+                },
+                {
+                  "type": "move",
+                  "x": 7,
+                  "y": 796,
+                  "dt": 6590,
+                  "direct_jump": false
+                },
+                {
+                  "type": "move",
+                  "x": 409,
+                  "y": 862,
+                  "dt": 6630,
+                  "direct_jump": false
+                }
+              ],
+              "action_type": "move"
+            }
+          },
+          {
+            "id": "93f734e9",
+            "class_name": "VisionNodeItem",
+            "node_type": "wait_image",
+            "title": "⏱ Wait For Image",
+            "pos": [
+              5184.905911685243,
+              -2086.1485942627546
+            ],
+            "bypassed": false,
+            "properties": {
+              "action_type": "wait_image",
+              "confidence": 0.85,
+              "action": "none",
+              "button": "left",
+              "timeout": 5.0,
+              "template": "",
+              "break_loop_on_found": false,
+              "save_coords": true,
+              "var_x": "found_x",
+              "var_y": "found_y"
+            }
+          },
+          {
+            "id": "5746da87",
+            "class_name": "ActionNodeItem",
+            "node_type": "move",
+            "title": "🏹 Mouse Move",
+            "pos": [
+              5548.403150575448,
+              -2565.7409921365356
+            ],
+            "bypassed": false,
+            "properties": {
+              "type": "move",
+              "x": 409,
+              "y": 862,
+              "dt": 6630,
+              "direct_jump": false,
+              "path_points": [
+                {
+                  "type": "move",
+                  "x": 452,
+                  "y": 1086,
+                  "dt": 438,
+                  "direct_jump": false
+                },
+                {
+                  "type": "move",
+                  "x": 149,
+                  "y": 1093,
+                  "dt": 478,
+                  "direct_jump": false
+                },
+                {
+                  "type": "move",
+                  "x": 7,
+                  "y": 796,
+                  "dt": 6590,
+                  "direct_jump": false
+                },
+                {
+                  "type": "move",
+                  "x": 409,
+                  "y": 862,
+                  "dt": 6630,
+                  "direct_jump": false
+                }
+              ],
+              "action_type": "move"
+            }
+          },
+          {
+            "id": "ae2ae65f",
+            "class_name": "ActionNodeItem",
+            "node_type": "move",
+            "title": "🏹 Mouse Move",
+            "pos": [
+              6028.403150575448,
+              -2565.7409921365356
             ],
             "bypassed": false,
             "properties": {
@@ -13509,12 +13941,6 @@
             "to_socket_idx": 0
           },
           {
-            "from_node": "52db279b",
-            "from_socket_idx": 0,
-            "to_node": "458f7657",
-            "to_socket_idx": 0
-          },
-          {
             "from_node": "d0cf5408",
             "from_socket_idx": 0,
             "to_node": "f74d1088",
@@ -13524,6 +13950,48 @@
             "from_node": "f74d1088",
             "from_socket_idx": 0,
             "to_node": "e6396907",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "f0ccf407",
+            "from_socket_idx": 0,
+            "to_node": "52c9daa9",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "74f1e289",
+            "from_socket_idx": 0,
+            "to_node": "51c6472e",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "0285d94f",
+            "from_socket_idx": 0,
+            "to_node": "687dd764",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "93f734e9",
+            "from_socket_idx": 0,
+            "to_node": "74f1e289",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "93f734e9",
+            "from_socket_idx": 1,
+            "to_node": "f0ccf407",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "52c9daa9",
+            "from_socket_idx": 0,
+            "to_node": "0285d94f",
+            "to_socket_idx": 0
+          },
+          {
+            "from_node": "5746da87",
+            "from_socket_idx": 0,
+            "to_node": "ae2ae65f",
             "to_socket_idx": 0
           }
         ],
@@ -13609,7 +14077,8 @@
               "0227d0ff",
               "2cc45702",
               "d6b9d1a1",
-              "8e1c698c"
+              "8e1c698c",
+              "d6e653aa"
             ]
           },
           {
@@ -13618,12 +14087,12 @@
             "rect": [
               0.0,
               0.0,
-              2990.154756303934,
-              385.4461180879797
+              2737.39574852054,
+              432.64085120811296
             ],
             "pos": [
-              4389.329327234097,
-              -1124.4645912300646
+              3948.7825431595966,
+              -1330.026034392939
             ],
             "node_ids": [
               "acb65189",
@@ -13633,7 +14102,52 @@
               "72e5b70b",
               "6449e320",
               "7bcf6434",
-              "52db279b"
+              "52db279b",
+              "b7be2b09",
+              "e6396907",
+              "f74d1088",
+              "d0cf5408"
+            ]
+          },
+          {
+            "title": "Group 7",
+            "color": "#6366f1",
+            "rect": [
+              0.0,
+              0.0,
+              1514.0624664788484,
+              494.7512065677904
+            ],
+            "pos": [
+              5154.905911685243,
+              -2148.1485942627546
+            ],
+            "node_ids": [
+              "f0ccf407",
+              "0285d94f",
+              "687dd764",
+              "52c9daa9",
+              "74f1e289",
+              "93f734e9",
+              "51c6472e"
+            ]
+          },
+          {
+            "title": "Group 7",
+            "color": "#6366f1",
+            "rect": [
+              0.0,
+              0.0,
+              750.0,
+              197.0
+            ],
+            "pos": [
+              5518.403150575448,
+              -2627.7409921365356
+            ],
+            "node_ids": [
+              "5746da87",
+              "ae2ae65f"
             ]
           }
         ],
@@ -14181,10 +14695,10 @@
   },
   "instances": {
     "1": {
-      "x": 678,
-      "y": 374,
+      "x": 0,
+      "y": 0,
       "minimized": false,
-      "selected_macro": "Macro 1",
+      "selected_macro": "testttttt",
       "speed": 1.01,
       "repeat": false,
       "width": 500,

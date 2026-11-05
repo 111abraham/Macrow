@@ -199,6 +199,11 @@ class MacroNodeEditorWindow(QMainWindow):
         # Canvas Documentation & Notes
         add_menu.addSection("DOCUMENTATION & NOTES")
         add_menu.addAction("📝 Sticky Note", lambda: self._add_custom_node(StickyNoteNodeItem()))
+        add_menu.addSeparator()
+
+        # Organization & Groups
+        add_menu.addSection("ORGANIZATION & GROUPS")
+        add_menu.addAction("📦 Group Frame (Container)", self._add_group_node)
 
         self.add_node_btn.setMenu(add_menu)
         toolbar.addWidget(self.add_node_btn)
@@ -514,6 +519,15 @@ class MacroNodeEditorWindow(QMainWindow):
         self.scene.clearSelection()
         node.setSelected(True)
         self.status_bar.showMessage(f"Added {node.title} node.")
+
+    def _add_group_node(self):
+        center = self.view.mapToScene(self.view.viewport().rect().center())
+        grp = self.scene.add_group(title=f"Group {len(self.scene.groups) + 1}", nodes=[])
+        grp.setPos(center - QPointF(150, 100))
+        self.scene.clearSelection()
+        grp.setSelected(True)
+        self.scene.scene_modified.emit()
+        self.status_bar.showMessage(f"Added {grp.title} node.")
 
     def _load_example_preset(self, preset_key: str, confirm: bool = True):
         """Loads a fully wired working example graph illustrating repeat zone and other node patterns."""

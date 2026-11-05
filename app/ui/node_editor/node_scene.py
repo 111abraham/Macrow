@@ -354,7 +354,18 @@ class NodeScene(QGraphicsScene):
                     if n not in selected_nodes and not isinstance(n, StartNodeItem):
                         selected_nodes.append(n)
 
-        if not selected_nodes:
+        # Also include body nodes of any selected LoopNodeItems so loops duplicate with their contents
+        from app.ui.node_editor.node_items import LoopNodeItem
+        extra_body_nodes = []
+        for n in list(selected_nodes):
+            if isinstance(n, LoopNodeItem):
+                for bn in n.get_body_nodes():
+                    if bn not in selected_nodes and bn not in extra_body_nodes and not isinstance(bn, StartNodeItem):
+                        extra_body_nodes.append(bn)
+        selected_nodes.extend(extra_body_nodes)
+
+        selected_groups = [grp for grp in self.groups if grp.isSelected()]
+        if not selected_nodes and not selected_groups:
             return 0
 
         nodes_data = []
@@ -409,7 +420,7 @@ class NodeScene(QGraphicsScene):
         except Exception:
             pass
 
-        return len(nodes_data)
+        return len(nodes_data) if nodes_data else len(groups_data)
 
     def paste_clipboard(self, offset_step: Optional[QPointF] = None) -> List[BaseNodeItem]:
         """Pastes clipboard contents with offset into the scene."""
@@ -484,18 +495,19 @@ class NodeScene(QGraphicsScene):
                 if s_idx < len(src.output_sockets) and e_idx < len(dst.input_sockets):
                     self.add_connection(src.output_sockets[s_idx], dst.input_sockets[e_idx])
 
+        new_items = list(new_nodes)
         # Recreate groups between newly pasted nodes
         for gd in groups_data:
             grp_nodes = [id_map[nid] for nid in gd.get("node_ids", []) if nid in id_map]
-            if grp_nodes:
-                grp_col = QColor(gd["color"]) if "color" in gd else None
-                new_grp = self.add_group(title=gd.get("title", "Group"), nodes=grp_nodes, color=grp_col)
-                if "rect" in gd and "pos" in gd:
-                    p = gd["pos"]
-                    r = gd["rect"]
-                    new_grp.setPos(p[0] + offset.x(), p[1] + offset.y())
-                    new_grp.setRect(r[0], r[1], r[2], r[3])
-                new_grp.setSelected(True)
+            grp_col = QColor(gd["color"]) if "color" in gd else None
+            new_grp = self.add_group(title=gd.get("title", "Group"), nodes=grp_nodes, color=grp_col)
+            if "rect" in gd and "pos" in gd:
+                p = gd["pos"]
+                r = gd["rect"]
+                new_grp.setPos(p[0] + offset.x(), p[1] + offset.y())
+                new_grp.setRect(r[0], r[1], r[2], r[3])
+            new_grp.setSelected(True)
+            new_items.append(new_grp)
 
         self.scene_modified.emit()
         return new_nodes
@@ -551,7 +563,8 @@ class NodeScene(QGraphicsScene):
             item for item in self.selectedItems()
             if isinstance(item, BaseNodeItem) and not isinstance(item, StartNodeItem)
         ]
-        if not selected_nodes:
+        selected_groups = [grp for grp in self.groups if grp.isSelected()]
+        if not selected_nodes and not selected_groups:
             return 0
 
         # If any node is NOT bypassed, bypass all. If all are already bypassed, unbypass all.

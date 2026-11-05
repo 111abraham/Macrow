@@ -279,50 +279,52 @@ class NodeView(QGraphicsView):
         return items
 
     def _find_nodes_between(self, node_a: BaseNodeItem, node_b: BaseNodeItem) -> Set[BaseNodeItem]:
-        """Finds all nodes on the graph path between node_a and node_b for Shift+Click range selection."""
-        # 1. Check directed path A -> B
-        down_a = {x for x in self._get_downstream_nodes(node_a) if isinstance(x, BaseNodeItem)}
-        up_b = {x for x in self._get_upstream_nodes(node_b) if isinstance(x, BaseNodeItem)}
-        between_ab = down_a.intersection(up_b)
-        if between_ab:
-            return between_ab
+        """Finds only the nodes strictly on the graph path between node_a and node_b for Shift+Click range selection."""
+        # 1. Directed search A -> B
+        def find_directed_path(src: BaseNodeItem, dst: BaseNodeItem) -> Optional[Set[BaseNodeItem]]:
+            queue = [[src]]
+            visited = {src}
+            while queue:
+                path = queue.pop(0)
+                curr = path[-1]
+                if curr == dst:
+                    return set(path)
+                out_socks = [curr.socket_done] if isinstance(curr, LoopNodeItem) else curr.output_sockets
+                for sock in out_socks:
+                    for conn in sock.connections:
+                        nxt = conn.end_socket.node if conn.end_socket else None
+                        if nxt and nxt not in visited and isinstance(nxt, BaseNodeItem):
+                            visited.add(nxt)
+                            queue.append(path + [nxt])
+            return None
 
-        # 2. Check directed path B -> A
-        down_b = {x for x in self._get_downstream_nodes(node_b) if isinstance(x, BaseNodeItem)}
-        up_a = {x for x in self._get_upstream_nodes(node_a) if isinstance(x, BaseNodeItem)}
-        between_ba = down_b.intersection(up_a)
-        if between_ba:
-            return between_ba
+        p = find_directed_path(node_a, node_b)
+        if p is not None:
+            return p
+        p = find_directed_path(node_b, node_a)
+        if p is not None:
+            return p
 
-        # 3. Check undirected shortest path via BFS across all connections
+        # 2. Undirected connection BFS fallback
         adj: Dict[BaseNodeItem, List[BaseNodeItem]] = {}
         for conn in self.node_scene.connections:
             if conn.start_socket and conn.end_socket:
                 na, nb = conn.start_socket.node, conn.end_socket.node
-                if na and nb:
+                if na and nb and isinstance(na, BaseNodeItem) and isinstance(nb, BaseNodeItem):
                     adj.setdefault(na, []).append(nb)
                     adj.setdefault(nb, []).append(na)
 
-        visited = {node_a: None}
-        queue = [node_a]
-        found = False
+        queue = [[node_a]]
+        visited = {node_a}
         while queue:
-            curr = queue.pop(0)
+            path = queue.pop(0)
+            curr = path[-1]
             if curr == node_b:
-                found = True
-                break
+                return set(path)
             for neighbor in adj.get(curr, []):
                 if neighbor not in visited:
-                    visited[neighbor] = curr
-                    queue.append(neighbor)
-
-        if found:
-            path = set()
-            curr = node_b
-            while curr is not None:
-                path.add(curr)
-                curr = visited[curr]
-            return path
+                    visited.add(neighbor)
+                    queue.append(path + [neighbor])
 
         return {node_a, node_b}
 
@@ -486,6 +488,16 @@ class NodeView(QGraphicsView):
         menu.addSection("DOCUMENTATION & ANNOTATION")
         menu.addAction("📝 Sticky Note (Canvas Note)", lambda: add_node_item(StickyNoteNodeItem()))
 
+        menu.addSeparator()
+        menu.addSection("ORGANIZATION & GROUPS")
+        def add_group_item():
+            self.node_scene.clearSelection()
+            grp = self.node_scene.add_group(title=f"Group {len(self.node_scene.groups) + 1}", nodes=[])
+            grp.setPos(scene_pos)
+            grp.setSelected(True)
+            self.node_scene.scene_modified.emit()
+        menu.addAction("📦 Group Frame (Container)", add_group_item)
+
         menu.exec(global_pos)
 
     def drawBackground(self, painter: QPainter, rect: QRectF):
@@ -639,6 +651,10 @@ class NodeView(QGraphicsView):
                 grp = getattr(n, "group", None)
                 if grp:
                     grp.remove_node(n)
+                    if isinstance(n, LoopNodeItem):
+                        for bn in n.get_body_nodes():
+                            if bn in grp.nodes:
+                                grp.remove_node(bn)
                     if not grp.nodes and grp.scene() and hasattr(grp.scene(), "remove_group"):
                         grp.scene().remove_group(grp)
                     else:
@@ -666,17 +682,28 @@ class NodeView(QGraphicsView):
             return
 
         # 2. Alt + Left click:
-        # If clicked on a node: Duplicate selected node(s) in-place and drag duplicates!
+        # If clicked on a node or group: Duplicate selected node(s)/group in-place and drag duplicates!
         # If clicked on empty canvas: Canvas panning
         if event.button() == Qt.MouseButton.LeftButton and (event.modifiers() & Qt.KeyboardModifier.AltModifier):
-            target_node = self._get_node_at(event.pos())
-            if target_node and not isinstance(target_node, StartNodeItem):
-                if not target_node.isSelected():
+            target_item = self._get_selectable_item_at(event.pos())
+            if target_item and not isinstance(target_item, StartNodeItem):
+                if not target_item.isSelected():
                     self.node_scene.clearSelection()
-                    target_node.setSelected(True)
+                    target_item.setSelected(True)
+                    if isinstance(target_item, LoopNodeItem):
+                        for bn in target_item.get_body_nodes():
+                            bn.setSelected(True)
+                    elif isinstance(target_item, NodeGroupItem):
+                        for gn in target_item.nodes:
+                            gn.setSelected(True)
 
                 self.node_scene.duplicate_selected_in_place()
-                super().mousePressEvent(event)
+                self._alt_drag_items = [it for it in self.node_scene.selectedItems() if isinstance(it, (BaseNodeItem, NodeGroupItem))]
+                self._alt_drag_start_scene_pos = self.mapToScene(event.pos())
+                self._alt_drag_initial_positions = {it: it.pos() for it in self._alt_drag_items}
+                self._dragged_node = target_item
+                self._press_view_pos = event.pos()
+                event.accept()
                 return
             else:
                 self._is_panning = True
@@ -812,6 +839,17 @@ class NodeView(QGraphicsView):
             self._pan_start_pos = event.pos()
             self.horizontalScrollBar().setValue(int(self.horizontalScrollBar().value() - delta.x()))
             self.verticalScrollBar().setValue(int(self.verticalScrollBar().value() - delta.y()))
+            event.accept()
+            return
+
+        # Alt + Drag duplication movement
+        if getattr(self, "_alt_drag_items", None) and getattr(self, "_alt_drag_start_scene_pos", None):
+            delta = self.mapToScene(event.pos()) - self._alt_drag_start_scene_pos
+            for it, init_p in getattr(self, "_alt_drag_initial_positions", {}).items():
+                it.setPos(init_p + delta)
+                if hasattr(it, "update_connected_wires"):
+                    it.update_connected_wires()
+            self.node_scene.update_loop_bounds()
             event.accept()
             return
 
@@ -1234,12 +1272,21 @@ class NodeView(QGraphicsView):
             self._pending_single_selection = None
         self._press_view_pos = None
 
+        if getattr(self, "_alt_drag_items", None):
+            self._alt_drag_items = None
+            self._alt_drag_start_scene_pos = None
+            self._alt_drag_initial_positions = None
+
         self._dragged_node = None
         self._shake_samples.clear()
         self._shake_triggered = False
 
         super().mouseReleaseEvent(event)
         self.node_scene.update_loop_bounds()
+
+        for grp in getattr(self.node_scene, "groups", []):
+            if hasattr(grp, "fit_to_nodes") and not getattr(grp, "_in_node_sync", False) and not getattr(grp, "_is_resizing", False):
+                grp.fit_to_nodes()
 
         # If user did a Shift + Drag (rubberband) across empty canvas, retain initial selection
         if getattr(self, "_shift_rubberband_initial_selection", None) is not None:

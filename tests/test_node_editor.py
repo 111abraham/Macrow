@@ -3257,36 +3257,39 @@ class TestNodeEditor(unittest.TestCase):
         self.assertTrue(any(c.start_socket == new_node2.output_sockets[0] and c.end_socket == node_a.input_sockets[0] for c in self.scene.connections))
 
     def test_group_node_four_wall_containment(self):
-        """Test that nodes cannot leak out of left or top walls, and dragging right or down expands the group."""
+        """Test that nodes expand group towards all 4 edges (right, down, left, up) and group contracts to convex hull."""
         from app.ui.node_editor.node_items import ActionNodeItem
 
+        anchor = ActionNodeItem("click", {"x": 10, "y": 10})
         node = ActionNodeItem("click", {"x": 10, "y": 10})
-        self.scene.add_node(node, QPointF(200, 200))
-        grp = self.scene.add_group("Strict Box", nodes=[node])
-        grp.setPos(150, 150)
-        grp.setRect(0, 0, 300, 200)
+        self.scene.add_node(anchor, QPointF(150, 150))
+        self.scene.add_node(node, QPointF(250, 150))
+        grp = self.scene.add_group("Strict Box", nodes=[anchor, node])
 
-        # Dragging right expands the group rect width
         orig_w = grp.rect().width()
-        node.setPos(QPointF(500, 200))
-        self.assertGreater(grp.rect().width(), orig_w)
-        self.assertGreaterEqual(grp.rect().width(), (500 - 150) + node.width)
-
-        # Dragging down expands the group rect height
         orig_h = grp.rect().height()
-        node.setPos(QPointF(200, 500))
+
+        # Dragging right expands group width
+        node.setPos(QPointF(500, 150))
+        self.assertGreater(grp.rect().width(), orig_w)
+        self.assertGreaterEqual(grp.rect().width(), (500 - grp.pos().x()) + node.width)
+
+        # Dragging down expands group height
+        node.setPos(QPointF(250, 500))
         self.assertGreater(grp.rect().height(), orig_h)
-        self.assertGreaterEqual(grp.rect().height(), (500 - 150) + node.height)
+        self.assertGreaterEqual(grp.rect().height(), (500 - grp.pos().y()) + node.height)
 
-        # Try dragging past left wall (strictly clamped)
-        node.setPos(QPointF(-100, 200))
-        min_allowed_x = grp.pos().x() + 8.0
-        self.assertGreaterEqual(node.pos().x(), min_allowed_x - 0.1)
+        # Dragging left expands group to the left (reducing pos.x to contain node)
+        node.setPos(QPointF(-100, 150))
+        self.assertLessEqual(grp.pos().x(), -100.0)
 
-        # Try dragging past top wall (strictly clamped)
-        node.setPos(QPointF(200, -100))
-        min_allowed_y = grp.pos().y() + grp.header_height + 8.0
-        self.assertGreaterEqual(node.pos().y(), min_allowed_y - 0.1)
+        # Dragging up expands group upwards (reducing pos.y to contain node)
+        node.setPos(QPointF(250, -100))
+        self.assertLessEqual(grp.pos().y(), -100.0)
+
+        # Moving node closer contracts group to convex hull
+        node.setPos(QPointF(200, 150))
+        self.assertLess(grp.rect().width(), orig_w)
 
     def test_group_adopts_spliced_and_chained_nodes(self):
         """Test that nodes inserted into the chain of grouped nodes are adopted into the group."""
@@ -3428,6 +3431,123 @@ class TestNodeEditor(unittest.TestCase):
         self.assertEqual(node_b.pos(), init_b_pos)
         # Node mid Y was snapped to horizontal line (100)
         self.assertEqual(node_mid.pos().y(), 100.0)
+
+    def test_shift_click_strict_path_selection_inside_group(self):
+        """Test shift-click selects only the path between clicked nodes, excluding unrelated group members."""
+        from app.ui.node_editor.node_items import ActionNodeItem
+
+        n1 = ActionNodeItem("click")
+        n2 = ActionNodeItem("click")
+        n3 = ActionNodeItem("click")
+        n4_unrelated = ActionNodeItem("click")
+        self.scene.add_node(n1, QPointF(100, 100))
+        self.scene.add_node(n2, QPointF(200, 100))
+        self.scene.add_node(n3, QPointF(300, 100))
+        self.scene.add_node(n4_unrelated, QPointF(200, 250))
+        self.scene.add_connection(n1.output_sockets[0], n2.input_sockets[0])
+        self.scene.add_connection(n2.output_sockets[0], n3.input_sockets[0])
+        grp = self.scene.add_group("Chain", nodes=[n1, n2, n3, n4_unrelated])
+
+        path = self.view._find_nodes_between(n1, n3)
+        self.assertIn(n1, path)
+        self.assertIn(n2, path)
+        self.assertIn(n3, path)
+        self.assertNotIn(n4_unrelated, path)
+
+    def test_repeat_within_repeat_cavity_containment(self):
+        """Test that an inner LoopNodeItem cannot leak out of the outer LoopNodeItem cavity."""
+        from app.ui.node_editor.node_items import LoopNodeItem
+
+        l_outer = LoopNodeItem()
+        self.scene.add_node(l_outer, QPointF(100, 100))
+        l_inner = LoopNodeItem()
+        self.scene.add_node(l_inner, QPointF(200, 150))
+        self.scene.add_connection(l_outer.socket_body, l_inner.socket_in)
+
+        # Attempt to drag inner loop outside top/left of outer cavity
+        l_inner.setPos(QPointF(50, 50))
+        min_x = l_outer.pos().x() + l_outer.spine_width + 8.0
+        min_y = l_outer.pos().y() + l_outer.header_height + 8.0
+        self.assertGreaterEqual(l_inner.pos().x(), min_x - 0.1)
+        self.assertGreaterEqual(l_inner.pos().y(), min_y - 0.1)
+
+    def test_shake_loop_inside_group_separates_and_heals(self):
+        """Test shaking a loop inside a group removes loop and body nodes from group while healing external wires."""
+        from app.ui.node_editor.node_items import ActionNodeItem, LoopNodeItem
+
+        before = ActionNodeItem("click")
+        loop = LoopNodeItem()
+        body_node = ActionNodeItem("click")
+        after = ActionNodeItem("click")
+
+        self.scene.add_node(before, QPointF(50, 100))
+        self.scene.add_node(loop, QPointF(200, 100))
+        self.scene.add_node(body_node, QPointF(250, 140))
+        self.scene.add_node(after, QPointF(500, 100))
+
+        self.scene.add_connection(before.output_sockets[0], loop.socket_in)
+        self.scene.add_connection(loop.socket_body, body_node.input_sockets[0])
+        self.scene.add_connection(body_node.output_sockets[0], loop.socket_repeat)
+        self.scene.add_connection(loop.socket_done, after.input_sockets[0])
+
+        grp = self.scene.add_group("LoopGrp", nodes=[loop, body_node])
+
+        # Shake loop
+        self.view._trigger_shake_disconnect([loop])
+
+        self.assertNotIn(loop, grp.nodes)
+        self.assertNotIn(body_node, grp.nodes)
+        # Inner loop connections intact
+        self.assertTrue(any(c.start_socket == loop.socket_body and c.end_socket == body_node.input_sockets[0] for c in self.scene.connections))
+        self.assertTrue(any(c.start_socket == body_node.output_sockets[0] and c.end_socket == loop.socket_repeat for c in self.scene.connections))
+        # External wire healed
+        self.assertTrue(any(c.start_socket == before.output_sockets[0] and c.end_socket == after.input_sockets[0] for c in self.scene.connections))
+
+    def test_alt_drag_duplication_loop_and_group(self):
+        """Test Alt+drag duplication includes loop body nodes and group member nodes."""
+        from app.ui.node_editor.node_items import ActionNodeItem, LoopNodeItem
+
+        loop = LoopNodeItem()
+        body_node = ActionNodeItem("click")
+        self.scene.add_node(loop, QPointF(100, 100))
+        self.scene.add_node(body_node, QPointF(150, 150))
+        self.scene.add_connection(loop.socket_body, body_node.input_sockets[0])
+
+        self.scene.clearSelection()
+        loop.setSelected(True)
+        self.scene.duplicate_selected_in_place()
+
+        loops = [n for n in self.scene.nodes if isinstance(n, LoopNodeItem)]
+        actions = [n for n in self.scene.nodes if isinstance(n, ActionNodeItem)]
+        self.assertEqual(len(loops), 2)
+        self.assertEqual(len(actions), 2)
+
+    def test_unconnected_node_not_adopted_by_group(self):
+        """Test completely unconnected node overlapping a group is never adopted into group."""
+        from app.ui.node_editor.node_items import ActionNodeItem
+
+        n1 = ActionNodeItem("click")
+        n2 = ActionNodeItem("click")
+        self.scene.add_node(n1, QPointF(100, 100))
+        self.scene.add_node(n2, QPointF(300, 100))
+        self.scene.add_connection(n1.output_sockets[0], n2.input_sockets[0])
+        grp = self.scene.add_group("Active Chain", nodes=[n1, n2])
+
+        lone_node = ActionNodeItem("click")
+        self.scene.add_node(lone_node, QPointF(200, 100))
+        grp.sync_chain_nodes()
+        self.assertNotIn(lone_node, grp.nodes)
+
+    def test_add_group_toolbar_action(self):
+        """Test adding group frame from toolbar menu."""
+        from app.ui.node_editor.editor_window import MacroNodeEditorWindow
+
+        win = MacroNodeEditorWindow("TestMacro", [])
+        initial_group_count = len(win.scene.groups)
+        win._add_group_node()
+        self.assertEqual(len(win.scene.groups), initial_group_count + 1)
+        win._has_unsaved_changes = False
+        win.close()
 
 
 if __name__ == "__main__":

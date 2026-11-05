@@ -65,35 +65,37 @@ class NodeGroupItem(QGraphicsRectItem):
             if getattr(node, "group", None) == self:
                 node.group = None
 
-    def fit_to_nodes(self, padding: float = 30.0):
-        """Automatically expand bounding box to tightly enclose all member nodes."""
-        if not self.nodes:
+    def fit_to_nodes(self, padding: float = 24.0):
+        """Automatically contracts or expands the group frame to tightly enclose all member nodes (convex hull bounding box)."""
+        if not self.nodes or not self.scene() or getattr(self, "_in_node_sync", False) or self._is_resizing:
             return
 
         min_x = min(n.pos().x() for n in self.nodes)
         min_y = min(n.pos().y() for n in self.nodes)
-        max_x = max(n.pos().x() + (n.clamp_width if hasattr(n, "clamp_width") else n.boundingRect().width()) for n in self.nodes)
-        max_y = max(n.pos().y() + (n.clamp_height if hasattr(n, "clamp_height") else n.boundingRect().height()) for n in self.nodes)
+        max_x = max(n.pos().x() + (n.clamp_width if hasattr(n, "clamp_width") else getattr(n, "width", 150.0)) for n in self.nodes)
+        max_y = max(n.pos().y() + (n.clamp_height if hasattr(n, "clamp_height") else getattr(n, "height", 80.0)) for n in self.nodes)
 
         x = min_x - padding
         y = min_y - padding - self.header_height
-        w = (max_x - min_x) + padding * 2
-        h = (max_y - min_y) + padding * 2 + self.header_height
+        w = max(200.0, (max_x - min_x) + padding * 2)
+        h = max(150.0, (max_y - min_y) + padding * 2 + self.header_height)
 
         self._in_node_sync = True
         try:
             self.prepareGeometryChange()
             self.setPos(x, y)
-            self.setRect(0, 0, max(w, 200.0), max(h, 150.0))
+            self.setRect(0, 0, w, h)
             self.update()
         finally:
             self._in_node_sync = False
-        if self.scene() and hasattr(self.scene(), "scene_modified"):
+        if hasattr(self.scene(), "update_loop_bounds"):
+            self.scene().update_loop_bounds()
+        if hasattr(self.scene(), "scene_modified"):
             self.scene().scene_modified.emit()
 
     def expand_to_contain_node(self, node: "BaseNodeItem", padding: float = 24.0):
-        """Expands the group's bounding rectangle if a node is dragged near or beyond its right/bottom bounds."""
-        if not self.scene():
+        """Expands the group's bounding rectangle towards any of the 4 edges if a node is dragged near or beyond them."""
+        if not self.scene() or self._is_resizing or getattr(self, "_in_node_sync", False):
             return
         gx = self.pos().x()
         gy = self.pos().y()
@@ -103,17 +105,42 @@ class NodeGroupItem(QGraphicsRectItem):
         item_w = node.clamp_width if hasattr(node, "clamp_width") else getattr(node, "width", 150.0)
         item_h = node.clamp_height if hasattr(node, "clamp_height") else getattr(node, "height", 80.0)
 
-        needed_w = (node.pos().x() - gx) + item_w + padding
-        needed_h = (node.pos().y() - gy) + item_h + padding
+        n_x = node.pos().x()
+        n_y = node.pos().y()
 
-        new_w = max(gw, needed_w)
-        new_h = max(gh, needed_h)
+        new_gx = gx
+        new_gy = gy
+        new_gw = gw
+        new_gh = gh
 
-        if new_w > gw + 1.0 or new_h > gh + 1.0:
+        # Expand Left
+        if n_x < gx + padding:
+            shift_x = (gx + padding) - n_x
+            new_gx = gx - shift_x
+            new_gw = gw + shift_x
+
+        # Expand Top
+        if n_y < gy + self.header_height + padding:
+            shift_y = (gy + self.header_height + padding) - n_y
+            new_gy = gy - shift_y
+            new_gh = gh + shift_y
+
+        # Expand Right
+        needed_w = (n_x - new_gx) + item_w + padding
+        if needed_w > new_gw:
+            new_gw = needed_w
+
+        # Expand Bottom
+        needed_h = (n_y - new_gy) + item_h + padding
+        if needed_h > new_gh:
+            new_gh = needed_h
+
+        if abs(new_gx - gx) > 0.5 or abs(new_gy - gy) > 0.5 or (new_gw > gw + 1.0) or (new_gh > gh + 1.0):
             self._in_node_sync = True
             try:
                 self.prepareGeometryChange()
-                self.setRect(0, 0, new_w, new_h)
+                self.setPos(new_gx, new_gy)
+                self.setRect(0, 0, new_gw, new_gh)
                 self.update()
             finally:
                 self._in_node_sync = False
@@ -129,6 +156,10 @@ class NodeGroupItem(QGraphicsRectItem):
         adopted = []
         for n in getattr(self.scene(), "nodes", []):
             if n in grp_nodes or not isinstance(n, BaseNodeItem) or isinstance(n, LoopNodeItem):
+                continue
+            # Completely unconnected node (0 connections on all sockets) cannot be adopted into group
+            total_conns = sum(len(s.connections) for s in getattr(n, "input_sockets", [])) + sum(len(s.connections) for s in getattr(n, "output_sockets", []))
+            if total_conns == 0:
                 continue
             # Check 1: Spliced or connected between two nodes of this group
             # (has an upstream link from a group node AND a downstream link to a group node)
@@ -195,6 +226,23 @@ class NodeGroupItem(QGraphicsRectItem):
                         min(max(new_pos.y(), min_y), max_y)
                     )
 
+                # If group is inside an enclosing NodeGroupItem, clamp inside outer group
+                enclosing_grp = None
+                for og in getattr(self.scene(), "groups", []):
+                    if og is not self and not og.isSelected() and not getattr(og, "_in_node_sync", False):
+                        if og.sceneBoundingRect().contains(self.sceneBoundingRect().center()):
+                            enclosing_grp = og
+                            break
+                if enclosing_grp:
+                    og_x = enclosing_grp.pos().x()
+                    og_y = enclosing_grp.pos().y()
+                    hdr_h = enclosing_grp.header_height
+                    min_x = og_x + 8.0
+                    min_y = og_y + hdr_h + 8.0
+                    new_pos = QPointF(max(new_pos.x(), min_x), max(new_pos.y(), min_y))
+                    if hasattr(enclosing_grp, "expand_to_contain_node"):
+                        enclosing_grp.expand_to_contain_node(self)
+
             old_pos = self.pos()
             delta = new_pos - old_pos
             if not getattr(self, "_in_node_sync", False) and not self._is_resizing and (delta.x() != 0 or delta.y() != 0):
@@ -211,6 +259,21 @@ class NodeGroupItem(QGraphicsRectItem):
                             node.setPos(node.pos() + delta)
                             if hasattr(node, "update_connected_wires"):
                                 node.update_connected_wires()
+
+                    # Also move any nested groups sitting inside this group
+                    for other_grp in getattr(self.scene(), "groups", []):
+                        if other_grp is not self and not other_grp.isSelected() and not getattr(other_grp, "_in_node_sync", False):
+                            if self.sceneBoundingRect().contains(other_grp.sceneBoundingRect().center()):
+                                other_grp._in_node_sync = True
+                                try:
+                                    other_grp.setPos(other_grp.pos() + delta)
+                                    for on in other_grp.nodes:
+                                        if not on.isSelected():
+                                            on.setPos(on.pos() + delta)
+                                            if hasattr(on, "update_connected_wires"):
+                                                on.update_connected_wires()
+                                finally:
+                                    other_grp._in_node_sync = False
                 finally:
                     self._in_node_sync = False
             return super().itemChange(change, new_pos)
